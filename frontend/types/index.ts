@@ -88,7 +88,10 @@ export interface BlendedForecastResponse {
   timeline_length: number;
   timeline: TimelinePoint[];
   extreme_events: ExtremeEvent[];
-  sources: DataSourceItem[];
+  sources?: DataSourceItem[];
+  forecast_run_time?: string;
+  horizon_hours?: number;
+  blending_method?: string;
 }
 
 export interface WhyThisForecastData {
