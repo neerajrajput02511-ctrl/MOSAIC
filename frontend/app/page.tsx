@@ -29,6 +29,10 @@ import { MeteorologicalChatModal } from "@/components/MeteorologicalChatModal";
 import { ModelWeightMapView } from "@/components/ModelWeightMapView";
 import { BaselineComparisonView } from "@/components/BaselineComparisonView";
 import { AutomatedPipelineView } from "@/components/AutomatedPipelineView";
+import { ForecastReplayView } from "@/components/ForecastReplayView";
+import { ModelMonitorView } from "@/components/ModelMonitorView";
+import { ScientificIntegrityView } from "@/components/ScientificIntegrityView";
+import { OverviewView } from "@/components/OverviewView";
 import { 
   CloudRain, 
   Thermometer, 
@@ -48,8 +52,8 @@ export default function Home() {
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<LocationItem | null>(null);
   const [nerFilter, setNerFilter] = useState<boolean>(false);
-  // Default to Screen 1 Hero Visual as specified in the 90-second demo script!
-  const [activeTab, setActiveTab] = useState<NavTab>("weight_map");
+  // Default to OVERVIEW command center as specified by SIH26081 Section 23!
+  const [activeTab, setActiveTab] = useState<NavTab>("overview");
   const [isLightMode, setIsLightMode] = useState<boolean>(false);
   const [showLanding, setShowLanding] = useState<boolean>(false);
   const [chatModalOpen, setChatModalOpen] = useState<boolean>(false);
@@ -149,87 +153,54 @@ export default function Home() {
         onOpenChat={() => setChatModalOpen(true)}
       />
 
+      {/* Main Command-Center Workspace */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
+        {/* Left Operational Sidebar (11 Canonical Screens) */}
         <Sidebar
           activeTab={activeTab}
           onSelectTab={(tab) => {
-            setActiveTab(tab);
             setShowLanding(false);
+            setActiveTab(tab);
           }}
           extremeEventsCount={forecastData?.extreme_events?.length || 0}
         />
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          {/* Landing / Hero Toggle */}
+        {/* Dynamic Center Work Area */}
+        <main className="flex-1 overflow-y-auto p-6 bg-[#060a12]">
+          {/* LANDING / HERO INTRO MODAL */}
           {showLanding && (
             <LandingHero
               onOpenConsole={() => {
                 setShowLanding(false);
-                setActiveTab("weight_map");
+                setActiveTab("overview");
               }}
               onOpenMethodology={() => {
                 setShowLanding(false);
-                setActiveTab("skill_trends");
+                setActiveTab("scientific_integrity");
               }}
             />
           )}
 
-          {/* SCREEN 1: SPATIAL MODEL WEIGHT MAP (HERO VISUAL) */}
-          {activeTab === "weight_map" && !showLanding && (
-            <ModelWeightMapView 
-              onSelectRegion={(regCode) => {
-                // When selecting a region, pick a station in that zone if available
-                if (regCode === "NER" && locations.length > 0) {
-                  const nerStation = locations.find(l => l.is_ner);
-                  if (nerStation) setSelectedLocation(nerStation);
-                }
-              }}
-              onOpenCopilot={(initialQuery) => {
-                setChatModalOpen(true);
-              }}
-            />
-          )}
-
-          {/* SCREEN 2: BLENDED FORECAST VS. BASELINES */}
-          {activeTab === "baseline_comparison" && !showLanding && (
-            <BaselineComparisonView
-              timeline={forecastData?.timeline || []}
+          {/* 1. OVERVIEW SCREEN (SECTION 23) */}
+          {activeTab === "overview" && !showLanding && (
+            <OverviewView
+              locations={locations}
               selectedLocation={selectedLocation}
+              onSelectLocation={handleSelectLocation}
+              forecastData={forecastData}
               selectedLeadTime={selectedLeadTime}
               onSelectLeadTime={(lead) => setSelectedLeadTime(lead)}
+              onOpenExplainability={() => handleOpenExplainability(selectedLeadTime)}
+              onNavigateTab={(t) => setActiveTab(t)}
             />
           )}
 
-          {/* SCREEN 3: SKILL SCORE TRENDS (VERIFICATION AGAINST ERA5) */}
-          {activeTab === "skill_trends" && !showLanding && (
-            <ScientificValidationView />
-          )}
-
-          {/* SCREEN 4: AUTOMATED DAILY BLENDING PIPELINE */}
-          {activeTab === "pipeline_status" && !showLanding && (
-            <AutomatedPipelineView />
-          )}
-
-          {/* SCREEN 5: EXTREME WEATHER & EARLY WARNING INTELLIGENCE */}
-          {activeTab === "extreme_weather" && !showLanding && (
-            <div className="space-y-6">
-              <ExtremeWeatherPanel
-                events={forecastData?.extreme_events || []}
-                locationName={selectedLocation?.name || "NER"}
-                probHeavyRain={currentPoint?.gefs_prob_gt_15mm ?? 0.38}
-                probVeryHeavyRain={currentPoint?.gefs_prob_gt_50mm ?? 0.15}
-              />
-            </div>
-          )}
-
-          {/* OPERATIONAL FORECASTER CONSOLE (COMMAND CENTER) */}
-          {activeTab === "command_center" && !showLanding && (
+          {/* 2. FORECAST CONSOLE (COMMAND CENTER) */}
+          {activeTab === "forecast" && !showLanding && (
             <div className="space-y-6">
               {/* Executive Location Header */}
               {selectedLocation && (
-                <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0c1322] border border-[#1e2c47] rounded-lg px-5 py-3 shadow-md">
+                <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0c1322] border border-[#1e2c47] rounded-xl px-5 py-3 shadow-md">
                   <div>
                     <div className="flex items-center space-x-2">
                       <h1 className="text-xl font-bold text-slate-100 tracking-tight">
@@ -255,7 +226,7 @@ export default function Home() {
                       <span>Spatial Weight Map</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab("baseline_comparison")}
+                      onClick={() => setActiveTab("blending_engine")}
                       className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-200 text-xs rounded font-medium transition"
                     >
                       <Layers className="w-3.5 h-3.5" />
@@ -381,25 +352,71 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB: NER MULTI-STATE SURVEILLANCE */}
-          {activeTab === "ner_monitoring" && !showLanding && (
-            <NERMonitoringView
-              onSelectStation={(loc) => {
-                setSelectedLocation(loc);
-                setActiveTab("command_center");
-              }}
-              locations={locations}
+          {/* 3. BLENDING ENGINE (BMA MATH & BASELINES) */}
+          {activeTab === "blending_engine" && !showLanding && (
+            <BaselineComparisonView
+              timeline={forecastData?.timeline || []}
+              selectedLocation={selectedLocation}
+              selectedLeadTime={selectedLeadTime}
+              onSelectLeadTime={(lead) => setSelectedLeadTime(lead)}
             />
           )}
 
-          {/* TAB: DATA SOURCES */}
+          {/* 4. WEIGHT MAP (SPATIAL WEIGHT MAP - HERO VISUAL) */}
+          {activeTab === "weight_map" && !showLanding && (
+            <ModelWeightMapView 
+              onSelectRegion={(regCode) => {
+                if (regCode === "NER" && locations.length > 0) {
+                  const nerStation = locations.find(l => l.is_ner);
+                  if (nerStation) setSelectedLocation(nerStation);
+                }
+              }}
+              onOpenCopilot={() => {
+                setChatModalOpen(true);
+              }}
+            />
+          )}
+
+          {/* 5. VERIFICATION LAB (ERA5 BENCHMARKS) */}
+          {activeTab === "verification" && !showLanding && (
+            <ScientificValidationView />
+          )}
+
+          {/* 6. FORECAST REPLAY (HISTORICAL CASE STUDIES) */}
+          {activeTab === "forecast_replay" && !showLanding && (
+            <ForecastReplayView />
+          )}
+
+          {/* 7. EXTREME WEATHER CENTER */}
+          {activeTab === "extreme_weather" && !showLanding && (
+            <div className="space-y-6">
+              <ExtremeWeatherPanel
+                events={forecastData?.extreme_events || []}
+                locationName={selectedLocation?.name || "NER"}
+                probHeavyRain={currentPoint?.gefs_prob_gt_15mm ?? 0.38}
+                probVeryHeavyRain={currentPoint?.gefs_prob_gt_50mm ?? 0.15}
+              />
+            </div>
+          )}
+
+          {/* 8. MODEL MONITOR (TELEMETRY & FALLBACK) */}
+          {activeTab === "model_monitor" && !showLanding && (
+            <ModelMonitorView />
+          )}
+
+          {/* 9. OPERATIONAL PIPELINE (12 STAGES) */}
+          {activeTab === "pipeline" && !showLanding && (
+            <AutomatedPipelineView />
+          )}
+
+          {/* 10. DATA SOURCES & PROVENANCE */}
           {activeTab === "data_sources" && !showLanding && (
             <DataSourcesView />
           )}
 
-          {/* TAB: SYSTEM HEALTH */}
-          {activeTab === "system_health" && !showLanding && (
-            <SystemHealthView />
+          {/* 11. SCIENTIFIC INTEGRITY & SIH26081 TRACEABILITY */}
+          {activeTab === "scientific_integrity" && !showLanding && (
+            <ScientificIntegrityView />
           )}
         </main>
       </div>

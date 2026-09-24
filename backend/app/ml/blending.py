@@ -144,7 +144,7 @@ class BlendingEngine:
             if "AIFS" in m:
                 if lead_bucket in ["day4_5", "day6_7"]:
                     logits[m] += 0.35
-                    rationale_parts.append(f"{m} receives +35% logit boost at extended lead ({lead_bucket}) due to superior medium-range wave retention")
+                    rationale_parts.append(f"{m} receives +35% logit boost at extended lead ({lead_bucket}) due to superior planetary wave retention")
                 elif lead_bucket == "day1":
                     logits[m] -= 0.15
             elif "IFS" in m:
@@ -153,24 +153,72 @@ class BlendingEngine:
                     rationale_parts.append(f"{m} prioritized at short lead ({lead_bucket}) for resolved orographic boundary physics")
             elif "GEFS" in m:
                 if disagreement_std > 8.0:
-                    logits[m] += 0.20
+                    logits[m] += 0.25
                     rationale_parts.append("GEFS ensemble weighting elevated under high atmospheric uncertainty")
             elif "GFS" in m:
-                if season == "Monsoon" and weather_regime in ["Heavy Rainfall", "Extreme Rainfall"]:
+                if season == "Monsoon" and weather_regime in ["HEAVY_RAIN", "ACTIVE_MONSOON", "Heavy Rainfall", "Active Monsoon"]:
                     logits[m] -= 0.15
                     rationale_parts.append("GFS down-weighted slightly to mitigate known Indian monsoon wet bias")
 
-        # 2. Regional Orographic & Synoptic Conditioning
-        if region_code == "NER":
-            # Complex topography: ECMWF IFS and AIFS show higher skill in NE hills than GFS
+        # 2. Comprehensive 10-Regime Meteorological Conditioning
+        regime_upper = weather_regime.upper().replace(" ", "_")
+        if regime_upper in ["CYCLONIC"]:
+            if "ECMWF_IFS" in logits:
+                logits["ECMWF_IFS"] += 0.30
+            if "NOAA_GEFS" in logits:
+                logits["NOAA_GEFS"] += 0.25
+            rationale_parts.append("Cyclonic regime: Prioritizing high-resolution IFS track physics and GEFS ensemble spread")
+        elif regime_upper in ["ACTIVE_MONSOON"]:
+            if "ECMWF_AIFS" in logits:
+                logits["ECMWF_AIFS"] += 0.20
+            if "ECMWF_IFS" in logits:
+                logits["ECMWF_IFS"] += 0.20
+            rationale_parts.append("Active Monsoon: Balanced AI wave progression and IFS terrain rainfall uplift")
+        elif regime_upper in ["BREAK_MONSOON"]:
             if "ECMWF_IFS" in logits:
                 logits["ECMWF_IFS"] += 0.15
+            rationale_parts.append("Break Monsoon: Foothills rainfall gradient anchored on ECMWF IFS physics")
+        elif regime_upper in ["HEAVY_RAIN", "EXTREME_RAIN"]:
+            if "ECMWF_IFS" in logits:
+                logits["ECMWF_IFS"] += 0.30
+            if "NOAA_GEFS" in logits:
+                logits["NOAA_GEFS"] += 0.15
+            rationale_parts.append("Heavy Rainfall regime: Orographic convection resolving prioritized")
+        elif regime_upper in ["HEATWAVE"]:
+            if "ECMWF_AIFS" in logits:
+                logits["ECMWF_AIFS"] += 0.30
+            rationale_parts.append("Heatwave regime: ECMWF AIFS 2m thermal advection neural representation prioritized")
+        elif regime_upper in ["HIGH_WIND"]:
+            if "ECMWF_IFS" in logits:
+                logits["ECMWF_IFS"] += 0.25
+            if "NOAA_GEFS" in logits:
+                logits["NOAA_GEFS"] += 0.20
+            rationale_parts.append("High Wind regime: Ensemble momentum and boundary-layer dissipation prioritized")
+        elif regime_upper in ["WESTERN_DISTURBANCE"]:
+            if "ECMWF_IFS" in logits:
+                logits["ECMWF_IFS"] += 0.20
+            if "NOAA_GFS" in logits:
+                logits["NOAA_GFS"] += 0.15
+            rationale_parts.append("Western Disturbance: Mid-latitude synoptic tracking prioritized across Northern India")
+        elif regime_upper in ["CONVECTIVE"]:
+            if "ECMWF_IFS" in logits:
+                logits["ECMWF_IFS"] += 0.20
+            if "NOAA_GEFS" in logits:
+                logits["NOAA_GEFS"] += 0.20
+            rationale_parts.append("Convective regime: High-CAPE proxy with ensemble dispersion weighting")
+        elif regime_upper in ["DRY_STABLE"]:
+            # Near-equal weighting across stable anticyclonic conditions
+            rationale_parts.append("Dry Stable regime: Low variance; baseline inverse-skill weights maintained")
+
+        # 3. Regional Orographic & Synoptic Conditioning
+        if region_code == "NER":
+            if "ECMWF_IFS" in logits:
+                logits["ECMWF_IFS"] += 0.20
         elif region_code == "MONSOON_CORE":
-            # Synoptic scale monsoon depressions: AIFS captures low-pressure progression exceptionally well
             if lead_bucket in ["day2_3", "day4_5"] and "ECMWF_AIFS" in logits:
                 logits["ECMWF_AIFS"] += 0.20
 
-        # 3. Model Disagreement Stabilization
+        # 4. Model Disagreement Stabilization
         if disagreement_std > 10.0:
             best_model = min(models, key=lambda m: historical_maes.get(m, 99.0))
             logits[best_model] += 0.30
@@ -179,16 +227,26 @@ class BlendingEngine:
         # Softmax normalization: sum(w_i) == 1.0, w_i >= 0
         exp_vals = {m: math.exp(logits[m]) for m in models}
         total_exp = sum(exp_vals.values())
-        final_weights = {m: round(exp_vals[m] / total_exp, 4) for m in models}
-        
-        diff = 1.0 - sum(final_weights.values())
-        first_key = next(iter(final_weights))
-        final_weights[first_key] = round(final_weights[first_key] + diff, 4)
+        raw_bma_weights = {m: exp_vals[m] / total_exp for m in models}
 
-        dominant_model = max(final_weights.items(), key=lambda x: x[1])[0]
-        rationale = " | ".join(rationale_parts) if rationale_parts else f"Balanced BMA weighted by verified {season} historical skill"
+        # 5. Scientific Regularization: L2 Shrinkage towards Equal-Weighted Prior (shrinkage_lambda = 0.12)
+        # Prevents over-fitting to historical skill and prevents complete weight collapse on one model
+        shrinkage_lambda = 0.12
+        equal_weight = 1.0 / len(models)
+        regularized_weights = {
+            m: round((1.0 - shrinkage_lambda) * raw_bma_weights[m] + shrinkage_lambda * equal_weight, 4)
+            for m in models
+        }
         
-        return final_weights, cls.METHOD_BMA_ADAPTIVE, f"Dominant: {dominant_model} ({int(final_weights[dominant_model]*100)}%). {rationale}"
+        # Enforce exact sum to 1.0000
+        diff = 1.0 - sum(regularized_weights.values())
+        first_key = next(iter(regularized_weights))
+        regularized_weights[first_key] = round(regularized_weights[first_key] + diff, 4)
+
+        dominant_model = max(regularized_weights.items(), key=lambda x: x[1])[0]
+        rationale = " | ".join(rationale_parts) if rationale_parts else f"Balanced regularized BMA weighted by verified {season} historical skill"
+        
+        return regularized_weights, cls.METHOD_BMA_ADAPTIVE, f"Dominant: {dominant_model} ({int(regularized_weights[dominant_model]*100)}%). {rationale}"
 
     @classmethod
     def blend(

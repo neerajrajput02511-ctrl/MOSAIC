@@ -131,11 +131,15 @@ class ModelPerformance(Base):
     rmse = Column(Float, nullable=True)
     mean_bias_error = Column(Float, nullable=True)
     correlation = Column(Float, nullable=True)
+    crps = Column(Float, nullable=True) # Continuous Ranked Probability Score
     
     # Categorical / Extreme Rain Contingency Metrics
-    pod = Column(Float, nullable=True) # Probability of Detection (Hit Rate)
+    pod = Column(Float, nullable=True) # Probability of Detection (Hit Rate / Recall)
     far = Column(Float, nullable=True) # False Alarm Ratio
     csi = Column(Float, nullable=True) # Critical Success Index (Threat Score)
+    precision = Column(Float, nullable=True) # Positive Predictive Value
+    recall = Column(Float, nullable=True) # Sensitivity (equivalent to POD)
+    brier_score = Column(Float, nullable=True) # Brier Score for threshold exceedance
     
     sample_size = Column(Integer, nullable=False)
     evaluation_start = Column(DateTime, nullable=False)
@@ -252,3 +256,38 @@ class Alert(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     
     location = relationship("Location", back_populates="alerts")
+
+class PipelineStageExecution(Base):
+    __tablename__ = "pipeline_stage_executions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    stage_number = Column(Integer, nullable=False) # 1 to 12
+    stage_name = Column(String(100), nullable=False)
+    status = Column(String(50), nullable=False) # SUCCESS, RUNNING, DEGRADED, FAILED
+    started_at = Column(DateTime, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    duration_seconds = Column(Float, nullable=True)
+    records_processed = Column(Integer, default=0, nullable=False)
+    error_message = Column(Text, nullable=True)
+    retry_count = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class HistoricalReplayCase(Base):
+    __tablename__ = "historical_replay_cases"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(String(50), unique=True, nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    event_type = Column(String(50), nullable=False) # CYCLONE, FLASH_FLOOD, HEATWAVE, MONSOON_DEPRESSION
+    region_code = Column(String(50), nullable=False)
+    event_date = Column(DateTime, nullable=False)
+    initialization_time = Column(DateTime, nullable=False)
+    lead_time_hours = Column(Integer, nullable=False)
+    primary_variable = Column(String(50), nullable=False)
+    observed_value = Column(Float, nullable=False)
+    observation_source = Column(String(100), nullable=False) # IMD_AWS, ERA5_REANALYSIS
+    forecast_values = Column(JSON, nullable=False) # {NOAA_GFS: x, ECMWF_IFS: y, ECMWF_AIFS: z, NOAA_GEFS: w, EQUAL_MEAN: e, MOSAIC_BLEND: m}
+    bma_weights = Column(JSON, nullable=False)
+    synoptic_summary = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
