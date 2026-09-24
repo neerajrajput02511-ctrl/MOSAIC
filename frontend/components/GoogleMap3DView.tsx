@@ -19,7 +19,7 @@ export interface GoogleMap3DViewProps {
   onToggleEngine?: (engine: "google" | "maplibre" | "leaflet") => void;
 }
 
-const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyDMATo2x1vn0jGZ8WVvTgfXxa5SzaZm0WI";
+const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 // Helper to load Google Maps script once
 function loadGoogleMaps(apiKey: string): Promise<any> {

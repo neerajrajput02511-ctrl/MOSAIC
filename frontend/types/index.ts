@@ -142,21 +142,6 @@ export interface ModelPerformanceBenchmark {
   evaluation_period?: string;
 }
 
-export interface SpatialStationItem {
-  id: number;
-  name: string;
-  state: string;
-  district?: string;
-  latitude: number;
-  longitude: number;
-  elevation_m?: number;
-  is_ner: boolean;
-  dominant_model: string;
-  dominant_weight_pct: number;
-  predictions: Record<string, number>;
-  weights: Record<string, number>;
-}
-
 export interface SpatialRegionCell {
   region_code: string;
   region_name: string;
@@ -179,10 +164,10 @@ export interface SpatialRegionCell {
     physics_pct: number;
     ensemble_pct: number;
   };
-  historical_era5_mae?: Record<string, number>;
   contingency_threat_score?: number;
   rationale: string;
   tactical_advisory?: string;
+  historical_era5_mae?: Record<string, number>;
   geometry?: {
     type: string;
     coordinates: number[][][];
@@ -190,15 +175,43 @@ export interface SpatialRegionCell {
   stations?: SpatialStationItem[];
 }
 
+export interface SpatialStationItem {
+  id: number;
+  station_id?: string;
+  name: string;
+  state: string;
+  district?: string;
+  latitude: number;
+  longitude: number;
+  elevation_m?: number;
+  is_ner?: boolean;
+  data_source?: string;
+  observation_time?: string;
+  variables?: string[];
+  quality_flag?: string;
+  mode?: string;
+  dominant_model: string;
+  dominant_weight_pct: number;
+  color?: string;
+  predictions?: Record<string, number>;
+  weights?: Record<string, number>;
+}
+
 export interface SpatialNationalSummary {
-  ai_coverage_pct: number;
-  physics_coverage_pct: number;
-  mean_ai_weight_pct: number;
-  mean_physics_weight_pct: number;
-  mean_ensemble_weight_pct: number;
-  frontier_crossover: string;
-  total_stations_active: number;
-  mean_bma_entropy: number;
+  ai_coverage_pct?: number | null;
+  physics_coverage_pct?: number | null;
+  mean_ai_weight_pct?: number | null;
+  mean_physics_weight_pct?: number | null;
+  mean_ensemble_weight_pct?: number | null;
+  frontier_crossover?: string;
+  total_stations_active?: number;
+  mean_bma_entropy?: number | null;
+  definition?: string;
+  grid_cells_evaluated?: number;
+  grid_cells_ai_dominant?: number;
+  variable?: string;
+  verification_period?: string;
+  is_calculated?: boolean;
 }
 
 export interface SpatialWeightMapResponse {

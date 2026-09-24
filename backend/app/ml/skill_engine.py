@@ -103,8 +103,11 @@ class HistoricalSkillEngine:
         observed: np.ndarray,
         predicted: np.ndarray,
         threshold: float = 15.6, # e.g. Moderate rainfall threshold (mm)
-        forecast_probs: Optional[np.ndarray] = None
+        forecast_probs: Optional[np.ndarray] = None,
+        threshold_mm: Optional[float] = None
     ) -> Dict[str, Optional[float]]:
+        if threshold_mm is not None:
+            threshold = threshold_mm
         """
         Calculates 2x2 Contingency Table and categorical scores:
         - Hits (a): Obs >= threshold & Pred >= threshold

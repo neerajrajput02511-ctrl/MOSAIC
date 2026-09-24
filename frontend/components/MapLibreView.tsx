@@ -19,17 +19,21 @@ interface MapLibreViewProps {
   onToggleEngine?: (engine: "google" | "maplibre" | "leaflet") => void;
 }
 
-const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyDMATo2x1vn0jGZ8WVvTgfXxa5SzaZm0WI";
-const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY || "Pr9J7otpKZto27g0b9Fu";
+const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY || "";
 
 const STYLES = {
   "maptiler-satellite": {
     name: "MapTiler 3D Satellite",
-    style: `https://api.maptiler.com/maps/satellite/style.json?key=${MAPTILER_KEY}`
+    style: MAPTILER_KEY 
+      ? `https://api.maptiler.com/maps/satellite/style.json?key=${MAPTILER_KEY}`
+      : "https://demotiles.maplibre.org/style.json"
   },
   "maptiler-topo": {
     name: "MapTiler 3D Relief",
-    style: `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`
+    style: MAPTILER_KEY
+      ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`
+      : "https://demotiles.maplibre.org/style.json"
   },
   "google-satellite": {
     name: "Google 3D Satellite",
@@ -38,11 +42,13 @@ const STYLES = {
       sources: {
         "google-sat": {
           type: "raster" as const,
-          tiles: [
+          tiles: GOOGLE_KEY ? [
             `https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${GOOGLE_KEY}`,
             `https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${GOOGLE_KEY}`,
             `https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${GOOGLE_KEY}`,
             `https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${GOOGLE_KEY}`
+          ] : [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           ],
           tileSize: 256,
           attribution: "Imagery &copy; Google Maps"

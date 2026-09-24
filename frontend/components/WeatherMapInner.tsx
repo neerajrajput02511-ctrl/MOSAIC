@@ -24,14 +24,18 @@ const BASEMAPS = {
   },
   maptiler: {
     name: "MapTiler Satellite",
-    url: `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY || "Pr9J7otpKZto27g0b9Fu"}`,
+    url: process.env.NEXT_PUBLIC_MAPTILER_API_KEY 
+      ? `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
+      : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     attribution: "&copy; MapTiler &copy; OpenStreetMap",
     maxZoom: 20
   },
   google: {
     name: "Google Satellite",
-    url: `https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyDMATo2x1vn0jGZ8WVvTgfXxa5SzaZm0WI"}`,
-    attribution: "&copy; Google Maps",
+    url: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+      ? `https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: "&copy; Google Maps / Esri Imagery",
     maxZoom: 20
   },
   satellite: {

@@ -17,10 +17,12 @@ import {
   Compass, 
   ArrowUpRight,
   Sparkles,
-  Server
+  Server,
+  Database
 } from "lucide-react";
 import { LocationItem, BlendedForecastResponse, TimelinePoint } from "@/types";
 import { WeatherMap } from "@/components/WeatherMap";
+import { ProvenanceDrawer } from "@/components/ProvenanceDrawer";
 
 interface OverviewViewProps {
   locations: LocationItem[];
@@ -48,6 +50,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   ) || (forecastData?.timeline ? forecastData.timeline[0] : null);
 
   const [pipelineState, setPipelineState] = useState<any>(null);
+  const [showProvenance, setShowProvenance] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadPipeline() {
@@ -324,10 +327,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Nav shortcut to Replay or Verification */}
+          {/* Quick Nav shortcut to Replay, Verification or Provenance */}
           <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-4 space-y-2 text-xs">
             <span className="text-[10px] font-mono text-slate-400 uppercase">OPERATIONAL ACTIONS:</span>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               <button
                 onClick={() => onNavigateTab("forecast_replay")}
                 className="p-2.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-medium text-left transition"
@@ -341,6 +344,16 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               >
                 <div className="font-bold">Verification Lab</div>
                 <div className="text-[10px] text-slate-400 mt-0.5">RMSE vs Equal Mean</div>
+              </button>
+              <button
+                onClick={() => setShowProvenance(true)}
+                className="p-2.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 font-medium text-left transition col-span-2 md:col-span-1"
+              >
+                <div className="font-bold flex items-center space-x-1">
+                  <Database className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Data Provenance</span>
+                </div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Audit Trace & Origin</div>
               </button>
             </div>
           </div>
@@ -424,10 +437,22 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <div className="text-xl font-bold text-emerald-300">
               {currentPoint?.blended_precipitation_mm?.toFixed(1) || "15.4"} mm
             </div>
-            <span className="text-[10px] text-emerald-400 block">⭐ 16.4% Error Reduction</span>
+            <span className="text-[10px] text-emerald-400 block">
+              {currentPoint?.improvement_vs_baseline_pct !== undefined 
+                ? `⭐ ${currentPoint.improvement_vs_baseline_pct.toFixed(1)}% vs Equal Mean`
+                : "Calibrated vs Equal Mean"}
+            </span>
           </div>
         </div>
       </div>
+
+      {/* Slide-out Data Provenance & Verification Drawer */}
+      <ProvenanceDrawer
+        isOpen={showProvenance}
+        onClose={() => setShowProvenance(false)}
+        currentPoint={currentPoint}
+        selectedLocation={selectedLocation}
+      />
     </div>
   );
 };
