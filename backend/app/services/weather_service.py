@@ -42,8 +42,26 @@ class WeatherService:
         query = self.db.query(Location)
         if ner_only:
             query = query.filter(Location.is_ner == True)
-        locs = query.order_by(Location.name).all()
-        return [LocationSchema.from_orm(l) for l in locs]
+        locs = query.order_by(Location.id).all()
+        
+        # Guarantee strictly at most ONE user location is returned across the system
+        result: List[Location] = []
+        user_loc_added = False
+        for l in locs:
+            is_user = (
+                (l.district in ["User Location", "GPS Location", "Active Tracking"]) or
+                ("📍" in l.name) or
+                (l.name.lower().startswith("my ")) or
+                ("gps station" in l.name.lower())
+            )
+            if is_user:
+                if not user_loc_added:
+                    result.append(l)
+                    user_loc_added = True
+            else:
+                result.append(l)
+
+        return [LocationSchema.from_orm(l) for l in result]
 
     def get_location_by_id(self, location_id: int) -> Optional[LocationSchema]:
         loc = self.db.query(Location).filter(Location.id == location_id).first()
@@ -61,17 +79,21 @@ class WeatherService:
         """
         Registers or retrieves a custom/user GPS location, computes regional association,
         and makes it available for immediate live multi-model forecasting.
+        Guarantees strictly at most ONE live user location exists across the system.
         """
-        # 1. Check if a location within ~2km already exists
-        all_locs = self.db.query(Location).all()
-        for loc in all_locs:
-            if abs(loc.latitude - latitude) < 0.02 and abs(loc.longitude - longitude) < 0.02:
-                return LocationSchema.from_orm(loc)
+        is_user_request = (
+            (district in ["User Location", "GPS Location", "Active Tracking"]) or
+            name.startswith("📍") or
+            name.lower().startswith("my ") or
+            "live location" in name.lower() or
+            "(gps)" in name.lower() or
+            "(ip)" in name.lower()
+        )
 
-        # 2. Determine if in North Eastern Region
+        # 1. Determine if in North Eastern Region
         is_ner = (88.0 <= longitude <= 97.5 and 21.5 <= latitude <= 29.5)
 
-        # 3. Associate with appropriate Region
+        # 2. Associate with appropriate Region
         from backend.app.database.models import Region
         regions = self.db.query(Region).all()
         target_region_id = None
@@ -82,11 +104,71 @@ class WeatherService:
             non_ner_reg = next((r for r in regions if not r.is_ner), None)
             target_region_id = non_ner_reg.id if non_ner_reg else (regions[0].id if regions else None)
 
-        # 4. Create and persist new Location
+        if is_user_request:
+            # SINGLE USER LOCATION GUARANTEE:
+            # Query ALL existing user locations and collapse them into strictly ONE active live location
+            existing_user_locs = (
+                self.db.query(Location)
+                .filter(
+                    (Location.district.in_(["User Location", "GPS Location", "Active Tracking"])) |
+                    (Location.name.like("%📍%")) |
+                    (Location.name.like("%My %")) |
+                    (Location.name.like("%GPS%")) |
+                    (Location.name.like("%(IP)%"))
+                )
+                .all()
+            )
+
+            if existing_user_locs:
+                primary = existing_user_locs[0]
+                primary.name = name
+                primary.state = state
+                primary.district = district or "User Location"
+                primary.latitude = round(latitude, 4)
+                primary.longitude = round(longitude, 4)
+                if elevation_m is not None:
+                    primary.elevation_m = elevation_m
+                primary.is_ner = is_ner
+                primary.region_id = target_region_id
+
+                # Purge all duplicate/stale user locations from the database
+                for dup in existing_user_locs[1:]:
+                    self.db.delete(dup)
+
+                self.db.commit()
+                self.db.refresh(primary)
+                _FORECAST_CACHE.pop("map_layer_stations_cache", None)
+                return LocationSchema.from_orm(primary)
+            else:
+                new_loc = Location(
+                    name=name,
+                    state=state,
+                    district=district or "User Location",
+                    latitude=round(latitude, 4),
+                    longitude=round(longitude, 4),
+                    elevation_m=elevation_m if elevation_m is not None else 100.0,
+                    is_ner=is_ner,
+                    region_id=target_region_id
+                )
+                self.db.add(new_loc)
+                self.db.commit()
+                self.db.refresh(new_loc)
+                _FORECAST_CACHE.pop("map_layer_stations_cache", None)
+                return LocationSchema.from_orm(new_loc)
+
+        # Non-user custom point: Check if an existing station within ~2km already exists
+        all_locs = self.db.query(Location).all()
+        for loc in all_locs:
+            if abs(loc.latitude - latitude) < 0.02 and abs(loc.longitude - longitude) < 0.02:
+                if name and not loc.name.startswith("📍"):
+                    loc.name = name
+                    self.db.commit()
+                return LocationSchema.from_orm(loc)
+
         new_loc = Location(
             name=name,
             state=state,
-            district=district or "User Location",
+            district=district or "Custom Coordinates",
             latitude=round(latitude, 4),
             longitude=round(longitude, 4),
             elevation_m=elevation_m if elevation_m is not None else 100.0,
@@ -96,10 +178,7 @@ class WeatherService:
         self.db.add(new_loc)
         self.db.commit()
         self.db.refresh(new_loc)
-        
-        # Invalidate map layer cache so the newly created custom location is immediately rendered
         _FORECAST_CACHE.pop("map_layer_stations_cache", None)
-
         return LocationSchema.from_orm(new_loc)
 
     async def get_raw_model_forecasts(

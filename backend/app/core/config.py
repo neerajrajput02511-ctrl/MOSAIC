@@ -16,9 +16,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
-    # Database & Storage
+    # Database & Storage (Supports SQLite & Supabase PostgreSQL)
     DATABASE_URL: str = "sqlite:///./weatherfusion.db"
     REDIS_URL: Optional[str] = None
+    
+    # Supabase Cloud Configuration
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
     
     # Official IMD API
     IMD_API_BASE_URL: str = "https://api.imd.gov.in"

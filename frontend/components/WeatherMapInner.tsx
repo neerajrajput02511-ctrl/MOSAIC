@@ -562,8 +562,32 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
             </>
           )}
 
-          {/* Render GIS Stations & Data Layers */}
-          {locations.map((loc) => {
+          {/* Render GIS Stations & Data Layers (Deduplicated so at most ONE user location exists) */}
+          {(() => {
+            const isUserLocItem = (l: LocationItem) =>
+              l.name.includes("📍") ||
+              l.name.toLowerCase().includes("my") ||
+              l.district === "User Location" ||
+              l.district === "Active Tracking";
+
+            const activeUserLoc = (selectedLocation && isUserLocItem(selectedLocation))
+              ? selectedLocation
+              : locations.find(isUserLocItem);
+
+            const renderedLocations: LocationItem[] = [];
+            let userLocIncluded = false;
+            for (const loc of locations) {
+              if (isUserLocItem(loc)) {
+                if (!userLocIncluded) {
+                  renderedLocations.push(activeUserLoc || loc);
+                  userLocIncluded = true;
+                }
+              } else {
+                renderedLocations.push(loc);
+              }
+            }
+            return renderedLocations;
+          })().map((loc) => {
             const isSelected = selectedLocation?.id === loc.id;
             
             // Find corresponding GeoJSON property if fetched

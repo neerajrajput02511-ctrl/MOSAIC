@@ -296,7 +296,33 @@ export const MapLibreView: React.FC<MapLibreViewProps> = ({
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    locations.forEach((loc) => {
+    // Helper: is this a user-originated GPS/custom location?
+    const isUserLocItem = (l: LocationItem) =>
+      l.name.includes("📍") ||
+      l.name.toLowerCase().includes("my") ||
+      l.district === "User Location" ||
+      l.district === "Active Tracking";
+
+    // 1. Identify the single active live GPS user location
+    const activeUserLoc = (selectedLocation && isUserLocItem(selectedLocation))
+      ? selectedLocation
+      : locations.find(isUserLocItem);
+
+    // 2. Filter locations to guarantee strictly at most ONE user location marker on the map
+    const renderedLocations: LocationItem[] = [];
+    let userLocIncluded = false;
+    for (const loc of locations) {
+      if (isUserLocItem(loc)) {
+        if (!userLocIncluded) {
+          renderedLocations.push(activeUserLoc || loc);
+          userLocIncluded = true;
+        }
+      } else {
+        renderedLocations.push(loc);
+      }
+    }
+
+    renderedLocations.forEach((loc) => {
       const isSelected = selectedLocation?.id === loc.id;
       const feat = gisData?.features?.find((f: any) => f.properties?.location_id === loc.id);
       const props = feat?.properties || {};
@@ -304,7 +330,8 @@ export const MapLibreView: React.FC<MapLibreViewProps> = ({
       let badgeColor = "#06b6d4";
       let label = "";
 
-      const isUserLocation = loc.name.includes("📍") || loc.name.toLowerCase().includes("my");
+      // ONLY the single live user GPS location gets the YOU badge & radar animation
+      const isUserLocation = Boolean(activeUserLoc && loc.id === activeUserLoc.id);
 
       if (activeLayer === "rainfall") {
         const val = props.rainfall_mm ?? 1.2;

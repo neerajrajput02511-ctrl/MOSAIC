@@ -3,16 +3,28 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from backend.app.core.config import settings
 
-# Configure SQLite vs PostgreSQL parameters
-connect_args = {}
-if settings.DATABASE_URL.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
+# Configure SQLite vs PostgreSQL / Supabase parameters
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+engine_kwargs = {
+    "echo": False,
+    "future": True
+}
+
+if db_url.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    # Supabase / PostgreSQL enterprise pooling & auto-reconnect
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 20
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_recycle"] = 300
 
 engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args=connect_args,
-    echo=False,
-    future=True
+    db_url,
+    **engine_kwargs
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -58,7 +58,7 @@ async def register_custom_location(
     return await service.get_or_create_custom_location(
         name=payload.name or "My Location",
         state=payload.state or "GPS Location",
-        district=payload.district,
+        district=payload.district or "User Location",
         latitude=payload.latitude,
         longitude=payload.longitude,
         elevation_m=payload.elevation_m

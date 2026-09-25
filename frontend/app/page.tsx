@@ -72,14 +72,35 @@ export default function Home() {
   useEffect(() => {
     async function init() {
       const locs = await fetchLocations(nerFilter);
-      setLocations(locs);
-      if (locs.length > 0 && !selectedLocation) {
+
+      // Guarantee strictly at most ONE user location in frontend state
+      const cleanedLocs: LocationItem[] = [];
+      let userFound = false;
+      for (const l of locs) {
+        const isUser = (
+          l.name.includes("📍") ||
+          l.name.toLowerCase().includes("my") ||
+          l.district === "User Location" ||
+          l.district === "Active Tracking"
+        );
+        if (isUser) {
+          if (!userFound) {
+            cleanedLocs.push(l);
+            userFound = true;
+          }
+        } else {
+          cleanedLocs.push(l);
+        }
+      }
+      setLocations(cleanedLocs);
+
+      if (cleanedLocs.length > 0 && !selectedLocation) {
         // Prefer any already added GPS user location, or default to Guwahati
-        const userLoc = locs.find(l => l.name.includes("📍") || l.name.toLowerCase().includes("my location"));
+        const userLoc = cleanedLocs.find(l => l.name.includes("📍") || l.name.toLowerCase().includes("my location"));
         if (userLoc) {
           setSelectedLocation(userLoc);
         } else {
-          const guwahati = locs.find(l => l.name === "Guwahati") || locs[0];
+          const guwahati = cleanedLocs.find(l => l.name === "Guwahati") || cleanedLocs[0];
           setSelectedLocation(guwahati);
           
           // Check if browser geolocation permission is already granted
@@ -122,9 +143,26 @@ export default function Home() {
     setLoadingExplain(false);
   };
 
-  // 4. Robust Location Selection (including newly added custom GPS stations)
+  // 4. Robust Location Selection (guarantees strictly ONE live GPS user location in system)
   const handleSelectLocation = (loc: LocationItem) => {
+    const isUser = (
+      loc.name.includes("📍") ||
+      loc.name.toLowerCase().includes("my") ||
+      loc.district === "User Location" ||
+      loc.district === "Active Tracking"
+    );
+
     setLocations((prev) => {
+      if (isUser) {
+        // Drop any other previous user location so only this single live GPS location is tracked
+        const nonUserLocs = prev.filter(l => !(
+          l.name.includes("📍") ||
+          l.name.toLowerCase().includes("my") ||
+          l.district === "User Location" ||
+          l.district === "Active Tracking"
+        ));
+        return [loc, ...nonUserLocs];
+      }
       if (!prev.some((l) => l.id === loc.id)) {
         return [loc, ...prev];
       }
