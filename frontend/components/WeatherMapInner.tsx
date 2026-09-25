@@ -159,6 +159,7 @@ interface WeatherMapInnerProps {
   activeLayer?: string;
   engine?: "google" | "maplibre" | "leaflet";
   onToggleEngine?: (engine: "google" | "maplibre" | "leaflet") => void;
+  currentPoint?: any;
 }
 
 export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({

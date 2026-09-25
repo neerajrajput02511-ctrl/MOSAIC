@@ -18,6 +18,7 @@ interface MapLibreViewProps {
   activeLayer?: string;
   engine?: "google" | "maplibre" | "leaflet";
   onToggleEngine?: (engine: "google" | "maplibre" | "leaflet") => void;
+  currentPoint?: any;
 }
 
 const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
@@ -157,7 +158,8 @@ export const MapLibreView: React.FC<MapLibreViewProps> = ({
   onSelectLocation,
   activeLayer: propActiveLayer,
   engine = "maplibre",
-  onToggleEngine
+  onToggleEngine,
+  currentPoint
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -339,22 +341,42 @@ export const MapLibreView: React.FC<MapLibreViewProps> = ({
       const isUserLocation = Boolean(activeUserLoc && loc.id === activeUserLoc.id);
 
       if (activeLayer === "rainfall") {
-        const val = props.precipitation_mm ?? props.rainfall_mm ?? props.precip_mm ?? props.primary_value ?? 1.2;
+        let val = props.precipitation_mm ?? props.rainfall_mm ?? props.precip_mm ?? props.primary_value;
+        if ((isUserLocation || isSelected) && currentPoint?.blended_precipitation_mm !== undefined && currentPoint?.blended_precipitation_mm !== null) {
+          val = currentPoint.blended_precipitation_mm;
+        } else if (val === undefined || val === null) {
+          val = 0.0;
+        }
         label = `${val.toFixed(1)}mm`;
         if (val > 64.5) badgeColor = "#ef4444";
         else if (val > 15.5) badgeColor = "#f97316";
         else if (val > 2.5) badgeColor = "#eab308";
         else badgeColor = "#06b6d4";
       } else if (activeLayer === "temperature") {
-        const val = props.temperature_c ?? props.temp_c ?? props.primary_value ?? 26.5;
+        let val = props.temperature_c ?? props.temp_c ?? props.primary_value;
+        if ((isUserLocation || isSelected) && currentPoint?.blended_temperature_c !== undefined && currentPoint?.blended_temperature_c !== null) {
+          val = currentPoint.blended_temperature_c;
+        } else if (val === undefined || val === null) {
+          val = 26.5;
+        }
         label = `${val.toFixed(1)}°`;
         badgeColor = val > 35 ? "#ef4444" : val > 28 ? "#f97316" : val > 20 ? "#10b981" : "#3b82f6";
       } else if (activeLayer === "wind") {
-        const val = props.wind_speed_ms ?? props.primary_value ?? 3.2;
+        let val = props.wind_speed_ms ?? props.primary_value;
+        if ((isUserLocation || isSelected) && currentPoint?.blended_wind_speed_ms !== undefined && currentPoint?.blended_wind_speed_ms !== null) {
+          val = currentPoint.blended_wind_speed_ms;
+        } else if (val === undefined || val === null) {
+          val = 3.2;
+        }
         label = `${val.toFixed(1)}m/s`;
         badgeColor = val > 15 ? "#ef4444" : val > 8 ? "#f97316" : "#3b82f6";
       } else if (activeLayer === "disagreement") {
-        const val = props.disagreement_std ?? props.primary_value ?? 0.8;
+        let val = props.disagreement_std ?? props.primary_value;
+        if ((isUserLocation || isSelected) && currentPoint?.model_disagreement_spread !== undefined && currentPoint?.model_disagreement_spread !== null) {
+          val = currentPoint.model_disagreement_spread;
+        } else if (val === undefined || val === null) {
+          val = 0.8;
+        }
         label = `±${val.toFixed(1)}`;
         badgeColor = val > 2.5 ? "#ef4444" : val > 1.2 ? "#f97316" : "#10b981";
       } else {
@@ -456,7 +478,7 @@ export const MapLibreView: React.FC<MapLibreViewProps> = ({
         markersRef.current.push(marker);
       }
     });
-  }, [locations, selectedLocation, gisData, activeLayer]);
+  }, [locations, selectedLocation, gisData, activeLayer, currentPoint]);
 
   // Toggle 3D Perspective Pitch
   const toggle3dPitch = () => {

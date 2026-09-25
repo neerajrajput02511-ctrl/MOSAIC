@@ -49,6 +49,7 @@ interface WeatherMapProps {
   selectedLocation: LocationItem | null;
   onSelectLocation: (loc: LocationItem) => void;
   activeLayer: string;
+  currentPoint?: any;
 }
 
 export const WeatherMap: React.FC<WeatherMapProps> = (props) => {

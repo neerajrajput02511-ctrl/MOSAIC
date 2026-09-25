@@ -18,6 +18,7 @@ export interface GoogleMap3DViewProps {
   activeLayer?: string;
   engine?: "google" | "maplibre" | "leaflet";
   onToggleEngine?: (engine: "google" | "maplibre" | "leaflet") => void;
+  currentPoint?: any;
 }
 
 const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
@@ -55,7 +56,8 @@ export const GoogleMap3DView: React.FC<GoogleMap3DViewProps> = ({
   onSelectLocation,
   activeLayer: propActiveLayer,
   engine = "google",
-  onToggleEngine
+  onToggleEngine,
+  currentPoint
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -189,6 +191,22 @@ export const GoogleMap3DView: React.FC<GoogleMap3DViewProps> = ({
 
     // Helper to get real layer value
     const getLayerVal = (loc: LocationItem) => {
+      const isSelected = selectedLocation?.id === loc.id;
+      if (isSelected && currentPoint) {
+        if (activeLayer === "rainfall" && currentPoint.blended_precipitation_mm !== undefined && currentPoint.blended_precipitation_mm !== null) {
+          return currentPoint.blended_precipitation_mm;
+        }
+        if (activeLayer === "temperature" && currentPoint.blended_temperature_c !== undefined && currentPoint.blended_temperature_c !== null) {
+          return currentPoint.blended_temperature_c;
+        }
+        if (activeLayer === "wind" && currentPoint.blended_wind_speed_ms !== undefined && currentPoint.blended_wind_speed_ms !== null) {
+          return currentPoint.blended_wind_speed_ms;
+        }
+        if (activeLayer === "disagreement" && currentPoint.model_disagreement_spread !== undefined && currentPoint.model_disagreement_spread !== null) {
+          return currentPoint.model_disagreement_spread;
+        }
+      }
+
       if (!gisData || !gisData.features) return null;
       const feat = gisData.features.find((f: any) => 
         (f.properties?.location_id && f.properties.location_id === loc.id) ||
@@ -292,7 +310,7 @@ export const GoogleMap3DView: React.FC<GoogleMap3DViewProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [locations, selectedLocation, gisData, activeLayer, mapLoaded]);
+  }, [locations, selectedLocation, gisData, activeLayer, mapLoaded, currentPoint]);
 
   // Toggle 3D Perspective Tilt
   const toggle3dPitch = () => {

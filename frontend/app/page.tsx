@@ -359,6 +359,7 @@ export default function Home() {
                     selectedLocation={selectedLocation}
                     onSelectLocation={handleSelectLocation}
                     activeLayer="rainfall"
+                    currentPoint={currentPoint}
                   />
                 </div>
 

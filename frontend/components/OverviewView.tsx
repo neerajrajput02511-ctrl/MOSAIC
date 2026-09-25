@@ -279,6 +279,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               selectedLocation={selectedLocation} 
               onSelectLocation={onSelectLocation} 
               activeLayer="rainfall"
+              currentPoint={currentPoint}
             />
           </div>
 
