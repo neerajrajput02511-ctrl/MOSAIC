@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { LocationItem } from "@/types";
 import { addAndFetchMyLocation } from "@/services/locationService";
+import { apiFetch } from "@/services/api";
 
 export interface GoogleMap3DViewProps {
   locations: LocationItem[];
@@ -95,7 +96,7 @@ export const GoogleMap3DView: React.FC<GoogleMap3DViewProps> = ({
   const fetchGisLayer = async (layerName: string) => {
     setLayerLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/map/layers/${layerName}`);
+      const res = await apiFetch(`/map/layers/${layerName}`);
       if (res.ok) {
         const data = await res.json();
         setGisData(data);
@@ -319,7 +320,7 @@ export const GoogleMap3DView: React.FC<GoogleMap3DViewProps> = ({
     }
     setIsSearching(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/geocoding/search?q=${encodeURIComponent(query)}`);
+      const res = await apiFetch(`/geocoding/search?q=${encodeURIComponent(query)}`);
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data);

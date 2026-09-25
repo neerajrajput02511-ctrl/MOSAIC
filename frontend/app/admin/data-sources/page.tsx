@@ -6,6 +6,7 @@ import {
   Database, ShieldCheck, KeyRound, RefreshCw, CheckCircle2, 
   AlertTriangle, XCircle, ArrowLeft, ExternalLink, Activity, Clock
 } from "lucide-react";
+import { apiFetch } from "@/services/api";
 
 interface TestResult {
   source: string;
@@ -40,8 +41,8 @@ export default function AdminDataSourcesPage() {
     setLoading(true);
     try {
       const [imdRes, mosdacRes] = await Promise.all([
-        fetch("http://localhost:8000/api/data-sources/imd/status").then(r => r.json()).catch(() => null),
-        fetch("http://localhost:8000/api/data-sources/mosdac/status").then(r => r.json()).catch(() => null)
+        apiFetch("/data-sources/imd/status").then(r => r.json()).catch(() => null),
+        apiFetch("/data-sources/mosdac/status").then(r => r.json()).catch(() => null)
       ]);
       setImdStatus(imdRes);
       setMosdacStatus(mosdacRes);
@@ -59,7 +60,7 @@ export default function AdminDataSourcesPage() {
   const handleTestConnection = async (sourceCode: string) => {
     setTestingSource(sourceCode);
     try {
-      const res = await fetch(`http://localhost:8000/api/admin/data-sources/test?source=${sourceCode}`, {
+      const res = await apiFetch(`/admin/data-sources/test?source=${sourceCode}`, {
         method: "POST"
       });
       const data = await res.json();
@@ -85,7 +86,7 @@ export default function AdminDataSourcesPage() {
     setConfigLoading(true);
     setConfigMessage(null);
     try {
-      const res = await fetch("http://localhost:8000/api/admin/data-sources/configure", {
+      const res = await apiFetch("/admin/data-sources/configure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source, ...payload })

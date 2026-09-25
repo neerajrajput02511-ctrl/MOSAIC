@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Layers, AlertTriangle, ShieldCheck, CloudRain, Thermometer, Wind, ArrowUpRight } from "lucide-react";
 import { LocationItem } from "@/types";
+import { fetchNerMonitoring } from "@/services/api";
 
 interface NERStationSummary {
   location_id: number;
@@ -34,9 +35,8 @@ export const NERMonitoringView: React.FC<NERMonitoringViewProps> = ({
     async function loadNER() {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:8000/api/v1/ner/monitoring");
-        if (res.ok) {
-          const result = await res.json();
+        const result = await fetchNerMonitoring();
+        if (result && result.states) {
           setData(result.states || []);
         }
       } catch (err) {

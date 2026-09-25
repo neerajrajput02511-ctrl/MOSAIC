@@ -30,9 +30,8 @@ export const AutomatedPipelineView: React.FC = () => {
   async function loadStatus() {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/pipeline");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await fetchPipelineStatus();
+      if (data) {
         setPipeline(data);
       }
     } catch (e) {

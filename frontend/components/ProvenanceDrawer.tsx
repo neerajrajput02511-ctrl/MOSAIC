@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, ShieldCheck, Database, Layers, CheckCircle2, Clock, Globe, Cpu, FileText } from "lucide-react";
 import { TimelinePoint, LocationItem } from "@/types";
+import { fetchProvenance } from "@/services/api";
 
 interface ProvenanceDrawerProps {
   isOpen: boolean;
@@ -22,9 +23,8 @@ export const ProvenanceDrawer: React.FC<ProvenanceDrawerProps> = ({
   useEffect(() => {
     async function loadProvenance() {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/provenance");
-        if (res.ok) {
-          const d = await res.json();
+        const d = await fetchProvenance();
+        if (d) {
           setProvenanceData(d);
         }
       } catch (e) {

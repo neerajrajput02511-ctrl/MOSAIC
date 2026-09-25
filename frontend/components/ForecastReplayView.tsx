@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Zap
 } from "lucide-react";
+import { fetchReplayCases, fetchReplayCaseDetail } from "@/services/api";
 
 interface CaseStudy {
   case_id: string;
@@ -78,9 +79,8 @@ export const ForecastReplayView: React.FC = () => {
   useEffect(() => {
     async function loadCases() {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/replay/cases");
-        if (res.ok) {
-          const data = await res.json();
+        const data = await fetchReplayCases();
+        if (data && data.cases) {
           setCases(data.cases || []);
         }
       } catch (e) {
@@ -97,9 +97,8 @@ export const ForecastReplayView: React.FC = () => {
     async function loadDetail() {
       if (!selectedCaseId) return;
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/replay/case/${selectedCaseId}`);
-        if (res.ok) {
-          const data = await res.json();
+        const data = await fetchReplayCaseDetail(selectedCaseId);
+        if (data && data.lead_time_progression) {
           setProgression(data.lead_time_progression || []);
           setSelectedLeadIndex(2); // +72h
         }

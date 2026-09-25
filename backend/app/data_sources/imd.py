@@ -305,9 +305,16 @@ class IMDProvider(WeatherDataProvider):
         latitude: float,
         longitude: float
     ) -> List[Dict[str, Any]]:
+        # In-memory cache for 15 minutes to prevent blocking on sluggish external MoES portals
+        now = time.time()
+        if hasattr(self, "_cached_warnings") and self._cached_warnings:
+            cached_time, cached_data = self._cached_warnings
+            if now - cached_time < 900:
+                return cached_data
+
         warnings: List[Dict[str, Any]] = []
         try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
+            async with httpx.AsyncClient(timeout=3.0, follow_redirects=True) as client:
                 resp = await client.get(self._nowcast_geojson_url)
                 if resp.status_code == 200:
                     data = resp.json()
@@ -322,8 +329,11 @@ class IMDProvider(WeatherDataProvider):
                             "valid_until": props.get("vupto"),
                             "color_hex": props.get("Color")
                         })
+                    self._cached_warnings = (now, warnings)
         except Exception as e:
-            logger.warning(f"Failed to retrieve IMD nowcast warnings: {e}")
+            logger.warning(f"IMD nowcast warnings query skipped/timed out: {e}")
+            if hasattr(self, "_cached_warnings") and self._cached_warnings:
+                return self._cached_warnings[1]
         return warnings
 
     async def check_health(self) -> Dict[str, Any]:

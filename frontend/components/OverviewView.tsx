@@ -62,9 +62,9 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   useEffect(() => {
     async function loadPipeline() {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/pipeline");
-        if (res.ok) {
-          const d = await res.json();
+        const { fetchPipelineStatus } = await import("@/services/api");
+        const d = await fetchPipelineStatus();
+        if (d) {
           setPipelineState(d);
         }
       } catch (e) {
@@ -216,7 +216,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             {pipelineSchedule.time}
           </div>
           <div className="text-[10px] text-slate-400 font-mono truncate">
-            {pipelineSchedule.countdown} &middot; 12 Stages Synced
+            {pipelineSchedule.countdown} &middot; {pipelineState?.status ? `${pipelineState.stages?.length || 12} Stages ${pipelineState.status}` : "12 Stages Synced"}
           </div>
         </div>
       </div>

@@ -90,7 +90,16 @@ export function getCachedBackendHealth(): boolean | null {
 
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const base = getApiBase();
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  let cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (base.endsWith("/api/v1")) {
+    if (cleanPath.startsWith("/api/v1/")) {
+      cleanPath = cleanPath.slice(7);
+    } else if (cleanPath.startsWith("/api/")) {
+      cleanPath = cleanPath.slice(4);
+    }
+  } else if (base.endsWith("/api") && cleanPath.startsWith("/api/")) {
+    cleanPath = cleanPath.slice(4);
+  }
   const url = path.startsWith("http") ? path : `${base}${cleanPath}`;
   const headers = new Headers(options.headers || {});
   headers.set("bypass-tunnel-reminder", "true");
@@ -99,6 +108,73 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     headers,
   });
 }
+
+export async function fetchPipelineStatus(): Promise<any> {
+  try {
+    const res = await apiFetch("/pipeline");
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchPipelineStatus fallback:", err);
+    return null;
+  }
+}
+
+export async function triggerPipelineRun(locationId: number = 1): Promise<any> {
+  try {
+    const res = await apiFetch(`/pipeline/trigger?location_id=${locationId}`, { method: "POST" });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("triggerPipelineRun fallback:", err);
+    return null;
+  }
+}
+
+export async function fetchReplayCases(): Promise<any> {
+  try {
+    const res = await apiFetch("/replay/cases");
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchReplayCases fallback:", err);
+    return null;
+  }
+}
+
+export async function fetchReplayCaseDetail(caseId: string): Promise<any> {
+  try {
+    const res = await apiFetch(`/replay/case/${caseId}`);
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchReplayCaseDetail fallback:", err);
+    return null;
+  }
+}
+
+export async function fetchProvenance(): Promise<any> {
+  try {
+    const res = await apiFetch("/provenance");
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchProvenance fallback:", err);
+    return null;
+  }
+}
+
+export async function fetchNerMonitoring(): Promise<any> {
+  try {
+    const res = await apiFetch("/ner/monitoring");
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchNerMonitoring fallback:", err);
+    return null;
+  }
+}
+
 
 export const FALLBACK_LOCATIONS: LocationItem[] = [
   { id: 1, name: "Guwahati", state: "Assam", country: "India", latitude: 26.1445, longitude: 91.7362, elevation_m: 55.0, is_ner: true },
@@ -139,7 +215,7 @@ export async function fetchLocations(nerOnly: boolean = false): Promise<Location
 
 export async function fetchBlendedForecast(locationId: number, horizonHours: number = 72): Promise<BlendedForecastResponse | null> {
   try {
-    const res = await apiFetch(`/forecast/blended?location_id=${locationId}&horizon_hours=${horizonHours}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    const res = await apiFetch(`/forecast/blended?location_id=${locationId}&horizon_hours=${horizonHours}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const data = await res.json();
     _isBackendHealthy = true;
@@ -530,31 +606,6 @@ export async function fetchSkillTrends(
     return await res.json();
   } catch (err) {
     console.error("Failed to fetch skill trends:", err);
-    return null;
-  }
-}
-
-export async function fetchPipelineStatus(): Promise<any> {
-  try {
-    const res = await apiFetch("/pipeline/status", { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error("Failed to fetch pipeline status:", err);
-    return null;
-  }
-}
-
-export async function triggerPipelineRun(locationId: number = 1): Promise<any> {
-  try {
-    const res = await apiFetch(`/pipeline/trigger?location_id=${locationId}`, {
-      method: "POST",
-      cache: "no-store"
-    });
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error("Failed to trigger pipeline run:", err);
     return null;
   }
 }
