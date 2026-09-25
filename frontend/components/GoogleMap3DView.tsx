@@ -191,14 +191,15 @@ export const GoogleMap3DView: React.FC<GoogleMap3DViewProps> = ({
     const getLayerVal = (loc: LocationItem) => {
       if (!gisData || !gisData.features) return null;
       const feat = gisData.features.find((f: any) => 
-        Math.abs(f.geometry.coordinates[1] - loc.latitude) < 0.05 &&
-        Math.abs(f.geometry.coordinates[0] - loc.longitude) < 0.05
+        (f.properties?.location_id && f.properties.location_id === loc.id) ||
+        (Math.abs(f.geometry.coordinates[1] - loc.latitude) < 0.1 &&
+         Math.abs(f.geometry.coordinates[0] - loc.longitude) < 0.1)
       );
       if (feat && feat.properties) {
-        if (activeLayer === "rainfall") return feat.properties.precip_mm ?? feat.properties.rainfall_mm;
-        if (activeLayer === "temperature") return feat.properties.temp_c;
-        if (activeLayer === "wind") return feat.properties.wind_speed_ms;
-        if (activeLayer === "disagreement") return feat.properties.disagreement_std;
+        if (activeLayer === "rainfall") return feat.properties.precipitation_mm ?? feat.properties.rainfall_mm ?? feat.properties.precip_mm ?? feat.properties.primary_value;
+        if (activeLayer === "temperature") return feat.properties.temperature_c ?? feat.properties.temp_c ?? feat.properties.primary_value;
+        if (activeLayer === "wind") return feat.properties.wind_speed_ms ?? feat.properties.primary_value;
+        if (activeLayer === "disagreement") return feat.properties.disagreement_std ?? feat.properties.primary_value;
       }
       return null;
     };

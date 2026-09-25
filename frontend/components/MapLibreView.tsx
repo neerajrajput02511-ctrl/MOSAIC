@@ -325,7 +325,11 @@ export const MapLibreView: React.FC<MapLibreViewProps> = ({
 
     renderedLocations.forEach((loc) => {
       const isSelected = selectedLocation?.id === loc.id;
-      const feat = gisData?.features?.find((f: any) => f.properties?.location_id === loc.id);
+      const feat = gisData?.features?.find((f: any) => 
+        (f.properties?.location_id && f.properties.location_id === loc.id) ||
+        (Math.abs(f.geometry.coordinates[1] - loc.latitude) < 0.1 &&
+         Math.abs(f.geometry.coordinates[0] - loc.longitude) < 0.1)
+      );
       const props = feat?.properties || {};
 
       let badgeColor = "#06b6d4";
@@ -335,22 +339,22 @@ export const MapLibreView: React.FC<MapLibreViewProps> = ({
       const isUserLocation = Boolean(activeUserLoc && loc.id === activeUserLoc.id);
 
       if (activeLayer === "rainfall") {
-        const val = props.rainfall_mm ?? 1.2;
+        const val = props.precipitation_mm ?? props.rainfall_mm ?? props.precip_mm ?? props.primary_value ?? 1.2;
         label = `${val.toFixed(1)}mm`;
         if (val > 64.5) badgeColor = "#ef4444";
         else if (val > 15.5) badgeColor = "#f97316";
         else if (val > 2.5) badgeColor = "#eab308";
         else badgeColor = "#06b6d4";
       } else if (activeLayer === "temperature") {
-        const val = props.temperature_c ?? 26.5;
+        const val = props.temperature_c ?? props.temp_c ?? props.primary_value ?? 26.5;
         label = `${val.toFixed(1)}°`;
         badgeColor = val > 35 ? "#ef4444" : val > 28 ? "#f97316" : val > 20 ? "#10b981" : "#3b82f6";
       } else if (activeLayer === "wind") {
-        const val = props.wind_speed_ms ?? 3.2;
+        const val = props.wind_speed_ms ?? props.primary_value ?? 3.2;
         label = `${val.toFixed(1)}m/s`;
         badgeColor = val > 15 ? "#ef4444" : val > 8 ? "#f97316" : "#3b82f6";
       } else if (activeLayer === "disagreement") {
-        const val = props.disagreement_std ?? 0.8;
+        const val = props.disagreement_std ?? props.primary_value ?? 0.8;
         label = `±${val.toFixed(1)}`;
         badgeColor = val > 2.5 ? "#ef4444" : val > 1.2 ? "#f97316" : "#10b981";
       } else {
