@@ -49,9 +49,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isBackendOnline, setIsBackendOnline] = useState<boolean | null>(null);
 
   React.useEffect(() => {
-    import("@/services/api").then(({ checkBackendHealth }) => {
-      checkBackendHealth().then(setIsBackendOnline);
-    });
+    let active = true;
+    const verifyHealth = async () => {
+      try {
+        const { checkBackendHealth } = await import("@/services/api");
+        const ok = await checkBackendHealth();
+        if (active) setIsBackendOnline(ok);
+      } catch {
+        if (active) setIsBackendOnline(false);
+      }
+    };
+    verifyHealth();
+    const interval = setInterval(verifyHealth, 10000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Real-time GPS Tracking Watcher
@@ -98,13 +111,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Live Operational Beacon (Requirements 18 & 23) */}
-        <div className={`hidden lg:flex items-center space-x-2 px-2.5 py-1 rounded-full text-[11px] font-mono border ${
+        <div className={`hidden lg:flex items-center space-x-2 px-2.5 py-1 rounded-full text-[11px] font-mono border transition-all ${
           isBackendOnline === true
             ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
             : "bg-amber-500/10 border-amber-500/30 text-amber-300"
         }`}>
-          <span className={`w-2 h-2 rounded-full ${isBackendOnline === true ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`} />
-          <span>{isBackendOnline === true ? "DATA STATUS: LIVE" : "DEMO MODE — live backend unavailable"}</span>
+          <span className={`w-2 h-2 rounded-full ${isBackendOnline === true ? "bg-emerald-400 animate-ping" : "bg-amber-400 animate-pulse"}`} />
+          <span>{isBackendOnline === true ? "DATA STATUS: LIVE" : (isBackendOnline === false ? "DEMO MODE — live backend unavailable" : "CONNECTING TO LIVE BACKEND...")}</span>
         </div>
       </div>
 

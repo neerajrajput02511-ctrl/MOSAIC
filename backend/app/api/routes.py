@@ -16,6 +16,10 @@ from backend.app.data_sources.imd import IMD_STATE_IDS
 
 router = APIRouter()
 
+@router.get("/ping", summary="Instant Liveness Ping")
+def ping():
+    return {"status": "ok", "backend": "live", "timestamp": datetime.datetime.utcnow().isoformat()}
+
 @router.get("/health", summary="System Health & Live Source Connectivity")
 async def get_system_health(db: Session = Depends(get_db)):
     service = WeatherService(db)

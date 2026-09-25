@@ -7,16 +7,73 @@ import {
   ForecastSnapshot
 } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const DEFAULT_PUBLIC_BACKEND = "https://trends-flyer-vat-engineering.trycloudflare.com/api/v1";
+
+export function getApiBase(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined") {
+    // If the page is running on HTTPS (like GitHub Pages or production domain)
+    if (window.location.protocol === "https:") {
+      return DEFAULT_PUBLIC_BACKEND;
+    }
+    // If running on local dev over HTTP
+    return "http://localhost:8000/api/v1";
+  }
+  return DEFAULT_PUBLIC_BACKEND;
+}
+
+const API_BASE = getApiBase();
 
 let _isBackendHealthy: boolean | null = null;
 
 export async function checkBackendHealth(): Promise<boolean> {
+  const base = getApiBase();
+  const headers: Record<string, string> = {
+    "bypass-tunnel-reminder": "true",
+  };
+
+  // 1. Try fast /ping endpoint (instantaneous, avoids heavy external API sweeps)
   try {
-    const res = await fetch(`${API_BASE}/health`, { cache: "no-store", signal: AbortSignal.timeout(3000) });
+    const pingRes = await fetch(`${base}/ping`, {
+      cache: "no-store",
+      headers,
+      signal: AbortSignal.timeout(4000),
+    });
+    if (pingRes.ok) {
+      _isBackendHealthy = true;
+      return true;
+    }
+  } catch (pingErr) {
+    // Fall through to /health check
+  }
+
+  // 2. Try full /health check with realistic network timeout
+  try {
+    const res = await fetch(`${base}/health`, {
+      cache: "no-store",
+      headers,
+      signal: AbortSignal.timeout(8000),
+    });
     _isBackendHealthy = res.ok;
     return res.ok;
-  } catch {
+  } catch (healthErr) {
+    // 3. If remote failed and on localhost, try local backend directly
+    if (base !== "http://localhost:8000/api/v1" && typeof window !== "undefined" && window.location.hostname === "localhost") {
+      try {
+        const localPing = await fetch("http://localhost:8000/api/v1/ping", {
+          cache: "no-store",
+          signal: AbortSignal.timeout(2000),
+        });
+        if (localPing.ok) {
+          _isBackendHealthy = true;
+          return true;
+        }
+      } catch {
+        // failed
+      }
+    }
     _isBackendHealthy = false;
     return false;
   }
@@ -24,6 +81,18 @@ export async function checkBackendHealth(): Promise<boolean> {
 
 export function getCachedBackendHealth(): boolean | null {
   return _isBackendHealthy;
+}
+
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const base = getApiBase();
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const url = path.startsWith("http") ? path : `${base}${cleanPath}`;
+  const headers = new Headers(options.headers || {});
+  headers.set("bypass-tunnel-reminder", "true");
+  return fetch(url, {
+    ...options,
+    headers,
+  });
 }
 
 export const FALLBACK_LOCATIONS: LocationItem[] = [
@@ -51,7 +120,7 @@ export const FALLBACK_LOCATIONS: LocationItem[] = [
 
 export async function fetchLocations(nerOnly: boolean = false): Promise<LocationItem[]> {
   try {
-    const res = await fetch(`${API_BASE}/locations?ner_only=${nerOnly}`, { cache: "no-store", signal: AbortSignal.timeout(4000) });
+    const res = await apiFetch(`/locations?ner_only=${nerOnly}`, { cache: "no-store", signal: AbortSignal.timeout(6000) });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const data = await res.json();
     _isBackendHealthy = true;
@@ -65,7 +134,7 @@ export async function fetchLocations(nerOnly: boolean = false): Promise<Location
 
 export async function fetchBlendedForecast(locationId: number, horizonHours: number = 72): Promise<BlendedForecastResponse | null> {
   try {
-    const res = await fetch(`${API_BASE}/forecast/blended?location_id=${locationId}&horizon_hours=${horizonHours}`, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+    const res = await apiFetch(`/forecast/blended?location_id=${locationId}&horizon_hours=${horizonHours}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const data = await res.json();
     _isBackendHealthy = true;
@@ -171,9 +240,9 @@ export async function fetchForecastSnapshot(
 ): Promise<ForecastSnapshot | null> {
   try {
     const disabledQuery = disabledModel ? `&disabled_model=${disabledModel}` : "";
-    const res = await fetch(
-      `${API_BASE}/forecast/snapshot?location_id=${locationId}&lead_time_hours=${leadTimeHours}&variable=${variable}${disabledQuery}`,
-      { cache: "no-store", signal: AbortSignal.timeout(5000) }
+    const res = await apiFetch(
+      `/forecast/snapshot?location_id=${locationId}&lead_time_hours=${leadTimeHours}&variable=${variable}${disabledQuery}`,
+      { cache: "no-store", signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const data = await res.json();
@@ -353,7 +422,7 @@ export async function fetchForecastSnapshot(
 
 export async function fetchIntegrityCheck(): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE}/integrity-check`, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+    const res = await apiFetch("/integrity-check", { cache: "no-store", signal: AbortSignal.timeout(6000) });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -380,7 +449,7 @@ export async function fetchIntegrityCheck(): Promise<any> {
 
 export async function fetchWhyThisForecast(locationId: number, leadTimeHours: number = 24, variable: string = "precipitation_mm"): Promise<WhyThisForecastData | null> {
   try {
-    const res = await fetch(`${API_BASE}/explainability/why?location_id=${locationId}&lead_time_hours=${leadTimeHours}&variable=${variable}`, { cache: "no-store" });
+    const res = await apiFetch(`/explainability/why?location_id=${locationId}&lead_time_hours=${leadTimeHours}&variable=${variable}`, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -391,10 +460,10 @@ export async function fetchWhyThisForecast(locationId: number, leadTimeHours: nu
 
 export async function fetchModelPerformance(season?: string, variable: string = "precipitation_mm"): Promise<ModelPerformanceBenchmark[]> {
   try {
-    const url = season 
-      ? `${API_BASE}/models/performance?season=${season}&variable=${variable}`
-      : `${API_BASE}/models/performance?variable=${variable}`;
-    const res = await fetch(url, { cache: "no-store" });
+    const path = season 
+      ? `/models/performance?season=${season}&variable=${variable}`
+      : `/models/performance?variable=${variable}`;
+    const res = await apiFetch(path, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -405,7 +474,7 @@ export async function fetchModelPerformance(season?: string, variable: string = 
 
 export async function fetchDataSources(): Promise<DataSourceItem[]> {
   try {
-    const res = await fetch(`${API_BASE}/data-sources`, { cache: "no-store" });
+    const res = await apiFetch("/data-sources", { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -416,7 +485,7 @@ export async function fetchDataSources(): Promise<DataSourceItem[]> {
 
 export async function fetchSystemHealth(): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE}/health`, { cache: "no-store" });
+    const res = await apiFetch("/health", { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -431,8 +500,8 @@ export async function fetchSpatialWeightMap(
   regime: string = "Normal"
 ): Promise<any> {
   try {
-    const res = await fetch(
-      `${API_BASE}/spatial/weight-map?lead_time_hours=${leadTimeHours}&season=${season}&regime=${regime}`,
+    const res = await apiFetch(
+      `/spatial/weight-map?lead_time_hours=${leadTimeHours}&season=${season}&regime=${regime}`,
       { cache: "no-store" }
     );
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -448,8 +517,8 @@ export async function fetchSkillTrends(
   variable: string = "precipitation_mm"
 ): Promise<any> {
   try {
-    const res = await fetch(
-      `${API_BASE}/verification/skill-trends?region_code=${regionCode}&variable=${variable}`,
+    const res = await apiFetch(
+      `/verification/skill-trends?region_code=${regionCode}&variable=${variable}`,
       { cache: "no-store" }
     );
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -462,7 +531,7 @@ export async function fetchSkillTrends(
 
 export async function fetchPipelineStatus(): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE}/pipeline/status`, { cache: "no-store" });
+    const res = await apiFetch("/pipeline/status", { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -473,7 +542,7 @@ export async function fetchPipelineStatus(): Promise<any> {
 
 export async function triggerPipelineRun(locationId: number = 1): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE}/pipeline/trigger?location_id=${locationId}`, {
+    const res = await apiFetch(`/pipeline/trigger?location_id=${locationId}`, {
       method: "POST",
       cache: "no-store"
     });
@@ -491,7 +560,7 @@ export async function askMeteorologicalCopilot(
   history?: { role: string; content: string }[]
 ): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE}/chat/query`, {
+    const res = await apiFetch("/chat/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -516,7 +585,7 @@ export async function createCustomLocation(
   elevation_m?: number
 ): Promise<LocationItem | null> {
   try {
-    const res = await fetch(`${API_BASE}/locations/custom`, {
+    const res = await apiFetch("/locations/custom", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
