@@ -136,8 +136,8 @@ export const ForecastReplayView: React.FC = () => {
               <h2 className="text-xl font-bold text-slate-100 tracking-tight">
                 Historical Extreme Event Replay Lab
               </h2>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                SIH26081 MANDATE · SEC 12
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                HISTORICAL REPLAY · ARCHIVED EVENT (NOT LIVE FORECAST)
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 max-w-3xl">

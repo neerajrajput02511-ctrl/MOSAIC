@@ -41,9 +41,14 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
             </p>
           </div>
         </div>
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
-          SCREEN 5 · EARLY WARNING
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
+            MOSAIC MODEL GUIDANCE
+          </span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            EARLY WARNING
+          </span>
+        </div>
       </div>
 
       {/* 31-Member GEFS Ensemble Probability Indicators */}
