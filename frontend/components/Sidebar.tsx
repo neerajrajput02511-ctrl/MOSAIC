@@ -2,184 +2,87 @@
 
 import React from "react";
 import { 
-  LayoutDashboard,
-  Compass, 
+  Home, 
   Layers, 
-  Sliders, 
-  FileCheck2, 
-  RotateCcw, 
-  AlertTriangle, 
-  Activity, 
-  Server, 
-  Database, 
-  ShieldCheck
+  CheckCircle2, 
+  Bell, 
+  Settings, 
+  CloudSun, 
+  Mountain 
 } from "lucide-react";
 
-export type NavTab = 
-  | "overview"
-  | "forecast"
-  | "blending_engine"
-  | "weight_map"
-  | "verification"
-  | "forecast_replay"
-  | "extreme_weather"
-  | "model_monitor"
-  | "pipeline"
-  | "data_sources"
-  | "scientific_integrity";
+export type NavTab = "forecast" | "models" | "verification" | "events" | "system";
 
 interface SidebarProps {
   activeTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
-  extremeEventsCount: number;
+  extremeEventsCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onSelectTab,
-  extremeEventsCount
+  extremeEventsCount = 0
 }) => {
-  const menuItems = [
-    { 
-      id: "overview" as NavTab, 
-      label: "OVERVIEW", 
-      icon: LayoutDashboard, 
-      badge: "LIVE OPS", 
-      badgeColor: "bg-blue-500/20 text-blue-300 border-blue-500/30" 
-    },
-    { 
-      id: "forecast" as NavTab, 
-      label: "FORECAST CONSOLE", 
-      icon: Compass, 
-      badge: null 
-    },
-    { 
-      id: "blending_engine" as NavTab, 
-      label: "BLENDING ENGINE", 
-      icon: Layers, 
-      badge: "SKILL MATH", 
-      badgeColor: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" 
-    },
-    { 
-      id: "weight_map" as NavTab, 
-      label: "WEIGHT MAP", 
-      icon: Sliders, 
-      badge: "HERO VISUAL", 
-      badgeColor: "bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold" 
-    },
-    { 
-      id: "verification" as NavTab, 
-      label: "VERIFICATION LAB", 
-      icon: FileCheck2, 
-      badge: "ERA5", 
-      badgeColor: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30" 
-    },
-    { 
-      id: "forecast_replay" as NavTab, 
-      label: "FORECAST REPLAY", 
-      icon: RotateCcw, 
-      badge: "CASES", 
-      badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 font-bold" 
-    },
-    { 
-      id: "extreme_weather" as NavTab, 
-      label: "EXTREME WEATHER", 
-      icon: AlertTriangle, 
-      badge: extremeEventsCount > 0 ? `${extremeEventsCount}` : "ALERTS", 
-      badgeColor: extremeEventsCount > 0 ? "bg-rose-500/20 text-rose-400 border-rose-500/30 font-bold" : "bg-slate-800 text-slate-400 border-slate-700" 
-    },
-    { 
-      id: "model_monitor" as NavTab, 
-      label: "MODEL MONITOR", 
-      icon: Activity, 
-      badge: "SEC 16", 
-      badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30" 
-    },
-    { 
-      id: "pipeline" as NavTab, 
-      label: "PIPELINE (12 STAGES)", 
-      icon: Server, 
-      badge: "DAILY CRON", 
-      badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" 
-    },
-    { 
-      id: "data_sources" as NavTab, 
-      label: "DATA SOURCES", 
-      icon: Database, 
-      badge: "PROVENANCE" 
-    },
-    { 
-      id: "scientific_integrity" as NavTab, 
-      label: "SCIENTIFIC INTEGRITY", 
-      icon: ShieldCheck, 
-      badge: "SIH26081", 
-      badgeColor: "bg-purple-500/20 text-purple-300 border-purple-500/30 font-bold" 
-    }
+  const navItems: { id: NavTab; label: string; icon: any; count?: number }[] = [
+    { id: "forecast", label: "Forecast", icon: Home },
+    { id: "models", label: "Models", icon: Layers },
+    { id: "verification", label: "Verification", icon: CheckCircle2 },
+    { id: "events", label: "Events", icon: Bell, count: extremeEventsCount },
+    { id: "system", label: "System", icon: Settings },
   ];
 
   return (
-    <aside 
-      className="w-64 bg-[#080d19] border-r border-[#1a263d] flex flex-col shrink-0 select-none"
-      role="navigation"
-      aria-label="Operational Navigation"
-    >
-      {/* Platform Title Sub-header */}
-      <div className="px-4 py-3 border-b border-[#1a263d] bg-[#0c1322]/50">
-        <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[11px] font-mono text-emerald-400 font-bold tracking-wider uppercase">
-            OPERATIONAL NCMRWF BLEND
-          </span>
-        </div>
-        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-          MoES / SIH26081 Architecture
-        </p>
-      </div>
-
-      {/* Navigation Menu */}
-      <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
+    <aside className="w-60 shrink-0 bg-white border-r border-[#D9E0E7] flex flex-col justify-between select-none z-30 min-h-[calc(100vh-72px)]">
+      {/* Top Navigation Links */}
+      <div className="p-4 space-y-1.5">
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
-
           return (
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition group ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-blue-600/20 text-blue-300 border border-blue-500/40 shadow-sm shadow-blue-900/20 font-semibold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-[#10192d] border border-transparent"
+                  ? "bg-[#0B1F33] text-white shadow-sm"
+                  : "text-[#475569] hover:bg-[#EEF2F6] hover:text-[#0F172A]"
               }`}
             >
-              <div className="flex items-center space-x-2.5 truncate">
-                <Icon className={`w-4 h-4 shrink-0 transition ${
-                  isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-300"
-                }`} />
-                <span className="truncate">{item.label}</span>
+              <div className="flex items-center space-x-3">
+                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-[#64748B]"}`} />
+                <span className="tracking-tight">{item.label}</span>
               </div>
-
-              {item.badge && (
-                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase shrink-0 ml-1.5 ${
-                  item.badgeColor || "bg-slate-800 text-slate-400 border-slate-700"
+              {item.count !== undefined && item.count > 0 && (
+                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold ${
+                  isActive ? "bg-rose-500 text-white" : "bg-rose-100 text-rose-700"
                 }`}>
-                  {item.badge}
+                  {item.count}
                 </span>
               )}
             </button>
           );
         })}
-      </nav>
+      </div>
 
-      {/* Footer / NCMRWF Attribution */}
-      <div className="p-3 border-t border-[#1a263d] bg-[#060a12] text-[10px] text-slate-400 font-mono space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400 font-bold">MOSAIC v2.4</span>
-          <span className="text-emerald-400">● REAL DATA</span>
+      {/* Bottom Mission Watermark (Reference Image Aesthetic) */}
+      <div className="p-5 border-t border-[#EDF2F7] relative overflow-hidden bg-gradient-to-b from-transparent to-[#F8FAFC]">
+        {/* Subtle decorative mountain silhouette svg */}
+        <div className="opacity-15 absolute bottom-0 right-0 left-0 pointer-events-none flex justify-center">
+          <svg viewBox="0 0 240 70" fill="none" className="w-full text-[#1769AA]" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 70L45 35L80 50L135 15L175 42L210 25L240 70H0Z" fill="currentColor" opacity="0.3" />
+            <path d="M30 70L85 28L120 45L165 20L205 48L240 70H30Z" fill="currentColor" opacity="0.2" />
+          </svg>
         </div>
-        <p className="text-[9px] text-slate-400">
-          MoES / NCMRWF · SIH 2026
-        </p>
+
+        <div className="relative z-10 space-y-1">
+          <h4 className="text-xs font-bold text-[#0F172A] tracking-tight">
+            Better Forecasts<br />for a Safer Tomorrow
+          </h4>
+          <p className="text-[11px] text-[#64748B] leading-tight">
+            AI-powered meteorological intelligence for a more resilient world.
+          </p>
+        </div>
       </div>
     </aside>
   );

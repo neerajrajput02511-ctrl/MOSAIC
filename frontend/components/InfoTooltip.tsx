@@ -81,7 +81,7 @@ export const InfoTooltip: React.FC<TooltipProps> = ({
         onFocus={() => setIsOpen(true)}
         onBlur={() => setIsOpen(false)}
         aria-label={term ? `What is ${term}?` : "Help explanation"}
-        className="ml-1 inline-flex items-center justify-center p-0.5 text-slate-400 hover:text-cyan-400 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 rounded"
+        className="ml-1 inline-flex items-center justify-center p-0.5 text-[#64748B] hover:text-[#1769AA] transition-colors focus:outline-none focus:ring-1 focus:ring-[#1769AA] rounded"
       >
         <Info className="w-3.5 h-3.5" />
       </button>
@@ -90,15 +90,15 @@ export const InfoTooltip: React.FC<TooltipProps> = ({
         <div
           ref={tooltipRef}
           role="tooltip"
-          className={`absolute z-50 w-64 max-w-[280px] p-2.5 bg-[#0f172a] text-slate-200 text-xs leading-relaxed rounded-lg border border-[#334155] shadow-2xl backdrop-blur-md pointer-events-auto transition-all animate-in fade-in duration-150 ${positionClasses[position]}`}
+          className={`absolute z-50 w-64 max-w-[280px] p-3 bg-[#0B1F33] text-white text-xs leading-relaxed rounded-xl border border-[#1e2f4d] shadow-2xl pointer-events-auto transition-all animate-in fade-in duration-150 ${positionClasses[position]}`}
         >
           {term && (
-            <div className="font-semibold text-cyan-300 text-[11px] mb-1 uppercase tracking-wider flex items-center justify-between border-b border-slate-700/60 pb-1">
-              <span>{term}</span>
-              <span className="text-[9px] text-slate-500 font-mono">MOSAIC GUIDE</span>
+            <div className="font-bold text-[#38BDF8] text-[11px] mb-1.5 uppercase tracking-wider flex items-center justify-between border-b border-slate-700/60 pb-1 font-mono">
+              <span>{term.replace(/_/g, " ")}</span>
+              <span className="text-[9px] text-slate-400">GUIDE</span>
             </div>
           )}
-          <div className="text-[11px] text-slate-300 font-sans">
+          <div className="text-[11px] text-slate-200 leading-normal font-sans">
             {text}
           </div>
         </div>

@@ -2,171 +2,210 @@
 
 import React, { useState, useEffect } from "react";
 import { 
-  Radio, 
+  Search, 
+  Clock, 
+  Calendar, 
+  MapPin, 
+  CheckCircle2, 
   HelpCircle, 
   Bot, 
-  MapPin, 
-  Crosshair, 
-  Loader2, 
-  Navigation, 
-  Clock, 
-  Sparkles, 
-  Layers 
+  ChevronDown, 
+  Cloud 
 } from "lucide-react";
 import { LocationItem } from "@/types";
 
-export type PrimaryTab = "forecast" | "models" | "verification" | "events" | "system";
-
 interface NavbarProps {
-  activeTab: PrimaryTab;
-  onSelectTab: (tab: PrimaryTab) => void;
+  locations: LocationItem[];
+  selectedLocation: LocationItem | null;
+  onSelectLocation: (loc: LocationItem) => void;
   onOpenHelp: () => void;
   onOpenChat?: () => void;
   isBackendOnline?: boolean | null;
-  selectedLocation?: LocationItem | null;
+  lastUpdated?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  activeTab,
-  onSelectTab,
+  locations,
+  selectedLocation,
+  onSelectLocation,
   onOpenHelp,
   onOpenChat,
   isBackendOnline = true,
-  selectedLocation = null
+  lastUpdated = "4 min ago"
 }) => {
-  const [currentTime, setCurrentTime] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState("06:00 UTC");
 
   useEffect(() => {
     const update = () => {
       const now = new Date();
-      const utc = now.toISOString().slice(11, 16) + " UTC";
-      setCurrentTime(utc);
+      const utcHours = String(now.getUTCHours()).padStart(2, "0");
+      const utcMinutes = String(now.getUTCMinutes()).padStart(2, "0");
+      setCurrentTime(`${utcHours}:${utcMinutes} UTC`);
     };
     update();
-    const timer = setInterval(update, 30000);
+    const timer = setInterval(update, 60000);
     return () => clearInterval(timer);
   }, []);
 
-  const navItems: { id: PrimaryTab; label: string }[] = [
-    { id: "forecast", label: "Forecast" },
-    { id: "models", label: "Models" },
-    { id: "verification", label: "Verification" },
-    { id: "events", label: "Events" },
-    { id: "system", label: "System" },
-  ];
+  const filteredLocations = locations.filter((loc) =>
+    loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    loc.state.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <header className="h-16 border-b border-[#1e2f4d] bg-[#070b14]/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-4 lg:px-8">
-      {/* 1. LEFT: Clean Brand Identity (Section 4) */}
-      <div className="flex items-center space-x-3 shrink-0">
-        <div 
-          onClick={() => onSelectTab("forecast")}
-          className="flex items-center space-x-2.5 cursor-pointer group"
-        >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-900/40 group-hover:scale-105 transition-transform">
-            <Radio className="w-4 h-4 text-white animate-pulse" />
+    <header className="h-[72px] bg-white border-b border-[#D9E0E7] sticky top-0 z-40 flex items-center justify-between px-6 select-none shadow-sm">
+      {/* 1. LEFT: Brand Wordmark (Reference Image) */}
+      <div className="flex items-center space-x-6 shrink-0">
+        <div className="flex items-center space-x-3 cursor-pointer">
+          {/* Custom Stylized Weather Wave/Cloud Icon */}
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] flex items-center justify-center shadow-sm">
+            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+            </svg>
           </div>
           <div>
-            <div className="flex items-center space-x-1.5">
-              <span className="font-extrabold tracking-wider text-base text-slate-100 font-mono">
-                MOSAIC
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                AI–NWP
-              </span>
+            <div className="text-xl font-black text-[#0B1F33] tracking-tight leading-none font-mono">
+              MOSAIC
             </div>
-            <p className="text-[10px] text-slate-400 tracking-tight hidden sm:block">
-              Hybrid Forecast Intelligence
-            </p>
+            <div className="text-[9px] font-bold text-[#64748B] tracking-[0.16em] uppercase mt-1">
+              WEATHERFUSION AI
+            </div>
           </div>
+        </div>
+
+        {/* 2. Search Field (Reference Image center/left) */}
+        <div className="relative w-80 lg:w-96 hidden md:block">
+          <div className="relative flex items-center">
+            <Search className="w-4 h-4 text-[#64748B] absolute left-3 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setIsDropdownOpen(true);
+              }}
+              onFocus={() => setIsDropdownOpen(true)}
+              placeholder="Search location (e.g. Mumbai, Delhi, Guwahati...)"
+              className="w-full bg-[#F8FAFC] border border-[#D9E0E7] hover:border-[#CBD5E1] focus:border-[#1769AA] focus:bg-white text-xs text-[#0F172A] rounded-lg pl-9 pr-4 py-2 outline-none transition-all placeholder:text-[#94A3B8]"
+            />
+          </div>
+
+          {/* Autocomplete Dropdown */}
+          {isDropdownOpen && searchQuery.length > 0 && (
+            <div 
+              className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-[#D9E0E7] rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 p-1.5"
+              onMouseLeave={() => setIsDropdownOpen(false)}
+            >
+              {filteredLocations.slice(0, 8).map((loc) => (
+                <div
+                  key={loc.id}
+                  onClick={() => {
+                    onSelectLocation(loc);
+                    setSearchQuery("");
+                    setIsDropdownOpen(false);
+                  }}
+                  className="px-3 py-2 text-xs rounded-lg hover:bg-[#EEF2F6] cursor-pointer flex items-center justify-between text-[#0F172A]"
+                >
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-3.5 h-3.5 text-[#1769AA]" />
+                    <span className="font-semibold">{loc.name}</span>
+                    <span className="text-[11px] text-[#64748B]">· {loc.state}</span>
+                  </div>
+                  {loc.is_ner && (
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                      NER
+                    </span>
+                  )}
+                </div>
+              ))}
+              {filteredLocations.length === 0 && (
+                <div className="p-3 text-xs text-center text-[#64748B]">
+                  No matching station found
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 2. CENTER: Primary 5-Tab Navigation (Section 3 & 4) */}
-      <nav className="hidden md:flex items-center bg-[#0c1322] border border-[#1e2f4d] rounded-xl p-1 shadow-inner">
-        {navItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onSelectTab(item.id)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
-                isActive
-                  ? "bg-gradient-to-r from-blue-600/30 to-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
-                  : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
-              }`}
-            >
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* 3. RIGHT: Operational Telemetry & Actions (Section 4) */}
-      <div className="flex items-center space-x-2.5 shrink-0">
-        {/* Live Operational Status Badge */}
-        <div className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border transition-all ${
-          isBackendOnline === true
-            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-            : isBackendOnline === false
-            ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
-            : "bg-slate-800 border-slate-700 text-slate-400"
-        }`}>
-          <span className={`w-2 h-2 rounded-full ${isBackendOnline === true ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
-          <span className="font-bold">
-            {isBackendOnline === true ? "LIVE" : isBackendOnline === false ? "DEGRADED" : "SYNC"}
-          </span>
+      {/* 3. RIGHT: Operational Status Telemetry & Profile (Reference Image) */}
+      <div className="flex items-center space-x-6 shrink-0">
+        {/* Operational Status */}
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] shrink-0" />
+          <div className="text-left leading-tight hidden sm:block">
+            <div className="text-xs font-bold text-[#0F172A]">
+              Operational
+            </div>
+            <div className="text-[10px] text-[#64748B]">
+              All systems normal
+            </div>
+          </div>
         </div>
 
-        {/* Region & Time Tag */}
-        <div className="hidden lg:flex items-center space-x-2 text-xs font-mono text-slate-400 bg-[#0c1322] border border-[#1e2f4d] px-3 py-1 rounded-xl">
-          <span className="text-slate-300 font-semibold">
-            {selectedLocation?.is_ner ? "Northeast India (NER)" : "All India"}
-          </span>
-          <span className="text-slate-600">·</span>
-          <span className="text-cyan-400 flex items-center space-x-1">
-            <Clock className="w-3 h-3 text-slate-500" />
-            <span>{currentTime || "12:00 UTC"}</span>
-          </span>
+        {/* Divider */}
+        <div className="h-7 w-[1px] bg-[#D9E0E7] hidden md:block" />
+
+        {/* Last updated */}
+        <div className="hidden lg:flex items-center space-x-2">
+          <Clock className="w-4 h-4 text-[#64748B]" />
+          <div className="text-left leading-tight">
+            <div className="text-[10px] text-[#64748B]">
+              Last updated
+            </div>
+            <div className="text-xs font-bold text-[#0F172A] font-mono">
+              {lastUpdated}
+            </div>
+          </div>
         </div>
 
-        {/* Meteorological Copilot Button */}
+        {/* Divider */}
+        <div className="h-7 w-[1px] bg-[#D9E0E7] hidden lg:block" />
+
+        {/* Forecast initialized */}
+        <div className="hidden lg:flex items-center space-x-2">
+          <Calendar className="w-4 h-4 text-[#64748B]" />
+          <div className="text-left leading-tight">
+            <div className="text-[10px] text-[#64748B]">
+              Forecast initialized
+            </div>
+            <div className="text-xs font-bold text-[#0F172A] font-mono">
+              {currentTime}
+            </div>
+          </div>
+        </div>
+
+        {/* Meteorological Copilot Quick Button */}
         {onOpenChat && (
           <button
             onClick={onOpenChat}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#F1F5F9] hover:bg-[#E2E8F0] border border-[#CBD5E1] text-[#0F172A] text-xs font-semibold transition"
             title="Ask Meteorological Intelligence Copilot"
-            aria-label="Ask Meteorological Copilot"
           >
-            <Bot className="w-3.5 h-3.5" />
+            <Bot className="w-3.5 h-3.5 text-[#1769AA]" />
             <span className="hidden sm:inline">Copilot</span>
           </button>
         )}
 
-        {/* Global Help System Button mandated by Section 27 */}
+        {/* Global Help System Button */}
         <button
           onClick={onOpenHelp}
-          className="w-8 h-8 rounded-xl bg-[#0c1322] hover:bg-[#162238] border border-[#1e2f4d] hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 flex items-center justify-center text-xs font-bold font-mono transition-colors shadow-sm"
+          className="w-8 h-8 rounded-lg bg-[#F8FAFC] hover:bg-[#EEF2F6] border border-[#D9E0E7] text-[#475569] hover:text-[#0F172A] flex items-center justify-center transition-colors"
           title="MOSAIC System Guide & Glossary"
           aria-label="MOSAIC System Guide and Help"
         >
           <HelpCircle className="w-4 h-4" />
         </button>
-      </div>
 
-      {/* Mobile Tab Strip (Below on small screens) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#080d18]/95 border-t border-[#1e2f4d] p-2 flex items-center justify-around backdrop-blur-md">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onSelectTab(item.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-              activeTab === item.id ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-slate-400"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+        {/* User Profile Avatar (Reference Image) */}
+        <div 
+          className="w-9 h-9 rounded-full bg-[#0B1F33] text-white font-bold text-xs flex items-center justify-center shadow-sm cursor-pointer select-none"
+          title="Meteorological Operations Specialist"
+        >
+          SK
+        </div>
       </div>
     </header>
   );

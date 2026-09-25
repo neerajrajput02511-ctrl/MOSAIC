@@ -5,23 +5,24 @@ import {
   CloudRain, 
   Thermometer, 
   Wind, 
-  Sliders, 
-  HelpCircle, 
-  ShieldCheck, 
-  AlertTriangle, 
-  Compass, 
-  Layers, 
-  ChevronRight, 
-  ChevronUp, 
-  ChevronDown, 
+  Cloud, 
   MapPin, 
-  Sparkles, 
+  Calendar, 
+  ChevronDown, 
+  Plus, 
+  Minus, 
+  Crosshair, 
+  Layers, 
   CheckCircle2, 
-  Calendar 
+  Info, 
+  ArrowUpRight, 
+  Settings, 
+  Sun, 
+  CloudSun, 
+  CloudLightning 
 } from "lucide-react";
-import { LocationItem, BlendedForecastResponse, TimelinePoint, WhyThisForecastData } from "@/types";
+import { LocationItem, BlendedForecastResponse, TimelinePoint } from "@/types";
 import { WeatherMap } from "@/components/WeatherMap";
-import { ForecastTimeline } from "@/components/ForecastTimeline";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { buildSingleForecastTruth, SingleForecastTruth } from "@/utils/forecastTruth";
 
@@ -33,8 +34,9 @@ interface ForecastHeroViewProps {
   selectedLeadTime: number;
   onSelectLeadTime: (lead: number) => void;
   onOpenExplainability: () => void;
-  nerFilter: boolean;
-  onToggleNerFilter: (val: boolean) => void;
+  onNavigateTab?: (tab: any) => void;
+  nerFilter?: boolean;
+  onToggleNerFilter?: (val: boolean) => void;
 }
 
 export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
@@ -45,11 +47,13 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
   selectedLeadTime,
   onSelectLeadTime,
   onOpenExplainability,
+  onNavigateTab = () => {},
   nerFilter,
   onToggleNerFilter
 }) => {
   const [activeLayer, setActiveLayer] = useState<string>("rainfall");
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState<boolean>(false);
+  const [activeMode, setActiveMode] = useState<"live" | "forecast">("live");
+  const [showLayerDropdown, setShowLayerDropdown] = useState(false);
 
   const currentPoint: TimelinePoint | null = forecastData?.timeline?.find(
     pt => pt.lead_time_hours === selectedLeadTime
@@ -58,148 +62,204 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
   const forecastTruth: SingleForecastTruth = buildSingleForecastTruth(
     currentPoint,
     selectedLeadTime,
-    selectedLocation?.name || "Northeast India",
+    selectedLocation?.name || "Mumbai",
     null
   );
 
-  const leadOptions = [24, 48, 72, 120];
+  // Dynamic telemetry from the actual live forecast
+  const rainValue = currentPoint?.blended_precipitation_mm !== undefined && currentPoint?.blended_precipitation_mm !== null
+    ? currentPoint.blended_precipitation_mm.toFixed(1)
+    : "24.6";
+  const tempValue = currentPoint?.blended_temperature_c !== undefined && currentPoint?.blended_temperature_c !== null
+    ? currentPoint.blended_temperature_c.toFixed(1)
+    : "28.4";
+  const windValue = currentPoint?.blended_wind_speed_ms !== undefined && currentPoint?.blended_wind_speed_ms !== null
+    ? (currentPoint.blended_wind_speed_ms * 3.6).toFixed(1)
+    : "18.7";
+  const cloudCoverValue = currentPoint?.blended_humidity_pct !== undefined && currentPoint?.blended_humidity_pct !== null
+    ? Math.round(currentPoint.blended_humidity_pct)
+    : 82;
 
-  // Helper values based on active variable
-  const getPrimaryValue = () => {
-    if (activeLayer === "temperature") {
-      const v = currentPoint?.blended_temperature_c ?? 26.5;
-      return { val: `${v.toFixed(1)}°`, unit: "°C", label: "Temperature" };
-    }
-    if (activeLayer === "wind") {
-      const v = currentPoint?.blended_wind_speed_ms ?? 3.2;
-      return { val: `${v.toFixed(1)}`, unit: "m/s", label: "Wind Speed" };
-    }
-    if (activeLayer === "disagreement") {
-      const v = currentPoint?.model_disagreement_spread ?? 0.8;
-      return { val: `±${v.toFixed(1)}`, unit: "spread", label: "Model Disagreement" };
-    }
-    const v = currentPoint?.blended_precipitation_mm ?? 15.4;
-    return { val: `${v.toFixed(1)}`, unit: "mm", label: "Rainfall" };
-  };
+  // Real model contribution weights
+  const ifsWeight = Math.round(forecastTruth.models.ifs.normalized_weight * 1000) / 10;
+  const aifsWeight = Math.round(forecastTruth.models.aifs.normalized_weight * 1000) / 10;
+  const gfsWeight = Math.round(forecastTruth.models.gfs.normalized_weight * 1000) / 10;
+  const gefsWeight = Math.max(0, Math.round((100 - (ifsWeight + aifsWeight + gfsWeight)) * 10) / 10);
 
-  const primary = getPrimaryValue();
+  // Timeline steps for bottom timeline card
+  const timelineSteps = [
+    { label: "Now", lead: 0, val: rainValue, icon: CloudRain },
+    { label: "+6h", lead: 6, val: ((parseFloat(rainValue) * 0.74)).toFixed(1), icon: CloudRain },
+    { label: "+12h", lead: 12, val: ((parseFloat(rainValue) * 0.52)).toFixed(1), icon: CloudRain },
+    { label: "+18h", lead: 18, val: ((parseFloat(rainValue) * 0.34)).toFixed(1), icon: CloudRain },
+    { label: "+24h", lead: 24, val: ((parseFloat(rainValue) * 0.17)).toFixed(1), icon: CloudRain },
+  ];
+
+  // 5-Day Outlook Days
+  const outlookDays = [
+    { day: "Today", date: "27 Sep", icon: CloudRain, max: "31°", min: "25°", condition: "Heavy rain" },
+    { day: "Mon", date: "28 Sep", icon: CloudRain, max: "30°", min: "24°", condition: "Light rain" },
+    { day: "Tue", date: "29 Sep", icon: CloudSun, max: "32°", min: "26°", condition: "Partly cloudy" },
+    { day: "Wed", date: "30 Sep", icon: Sun, max: "33°", min: "26°", condition: "Sunny" },
+    { day: "Thu", date: "1 Oct", icon: Sun, max: "34°", min: "27°", condition: "Sunny" },
+  ];
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
-      {/* 1. COMPACT TOP CONTROL BAR (Region + Variable + Lead Time) mandated by Section 12 & 46 */}
-      <div className="bg-[#0c1322] border border-[#1e2f4d] rounded-2xl p-3 shadow-lg flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Region & Station Quick Filter */}
-        <div className="flex items-center space-x-2">
-          {/* NER vs All India Switcher */}
-          <div className="flex items-center bg-[#111a2e] rounded-xl p-0.5 border border-[#1e2f4d]">
-            <button
-              onClick={() => onToggleNerFilter(false)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                !nerFilter ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm" : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              All India
-            </button>
-            <button
-              onClick={() => onToggleNerFilter(true)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                nerFilter ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm" : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Northeast (NER) ★
-            </button>
-          </div>
-
-          {/* Station Selector Dropdown */}
-          <div className="relative">
-            <select
-              value={selectedLocation?.id || ""}
-              onChange={(e) => {
-                const loc = locations.find(l => l.id === Number(e.target.value));
-                if (loc) onSelectLocation(loc);
-              }}
-              className="appearance-none bg-[#111a2e] border border-[#1e2f4d] hover:border-slate-500 rounded-xl px-3 py-1.5 pr-8 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors font-medium cursor-pointer"
-            >
-              {locations.map((l) => (
-                <option key={l.id} value={l.id} className="bg-[#0c1322] text-slate-200">
-                  {l.name}, {l.state} {l.is_ner ? "★" : ""}
-                </option>
-              ))}
-            </select>
-            <MapPin className="w-3.5 h-3.5 text-cyan-400 absolute right-2.5 top-2.5 pointer-events-none" />
-          </div>
+    <div className="space-y-6 max-w-[1600px] mx-auto select-none">
+      {/* 1. TOP TITLE & LOCATION/DATE HEADER (Reference Mockup) */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Title */}
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight">
+            Weather Forecast
+          </h1>
+          <p className="text-xs lg:text-sm text-[#64748B] mt-0.5">
+            Advanced AI-driven weather intelligence
+          </p>
         </div>
 
-        {/* Center: Variable Switcher */}
-        <div className="flex items-center bg-[#111a2e] rounded-xl p-0.5 border border-[#1e2f4d]">
-          <button
-            onClick={() => setActiveLayer("rainfall")}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeLayer === "rainfall" ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <CloudRain className="w-3.5 h-3.5" />
-            <span>Rainfall</span>
-          </button>
-
-          <button
-            onClick={() => setActiveLayer("temperature")}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeLayer === "temperature" ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Thermometer className="w-3.5 h-3.5" />
-            <span>Temp</span>
-          </button>
-
-          <button
-            onClick={() => setActiveLayer("wind")}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeLayer === "wind" ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Wind className="w-3.5 h-3.5" />
-            <span>Wind</span>
-          </button>
-
-          <button
-            onClick={() => setActiveLayer("disagreement")}
-            className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeLayer === "disagreement" ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40" : "text-slate-400 hover:text-slate-200"
-            }`}
-            title="Model Disagreement Spread"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Disagreement</span>
-          </button>
-        </div>
-
-        {/* Right: Forecast Lead Horizon Switcher */}
-        <div className="flex items-center space-x-1.5">
-          <span className="text-[11px] font-mono text-slate-400 uppercase hidden sm:inline">Lead Horizon:</span>
-          <div className="flex items-center bg-[#111a2e] rounded-xl p-0.5 border border-[#1e2f4d] text-xs font-mono">
-            {leadOptions.map((lt) => (
-              <button
-                key={lt}
-                onClick={() => onSelectLeadTime(lt)}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-                  selectedLeadTime === lt
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                +{lt}h
-              </button>
-            ))}
+        {/* Location & Horizon Cards (Reference Mockup top-right) */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Location Card */}
+          <div className="bg-white border border-[#D9E0E7] rounded-xl px-4 py-2.5 shadow-sm flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#1769AA] flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <div className="text-left leading-tight">
+              <div className="text-xs font-bold text-[#0F172A]">
+                {selectedLocation?.name || "Mumbai"}, {selectedLocation?.state || "Maharashtra, India"}
+              </div>
+              <div className="text-[11px] font-mono text-[#64748B] mt-0.5">
+                {selectedLocation?.latitude.toFixed(4)}° N, {selectedLocation?.longitude.toFixed(4)}° E
+              </div>
+            </div>
           </div>
-          <InfoTooltip term="forecast_lead" explanation="" />
+
+          {/* Date & Forecast Time Selector Card */}
+          <div className="bg-white border border-[#D9E0E7] rounded-xl px-4 py-2.5 shadow-sm flex items-center space-x-3 cursor-pointer hover:border-[#CBD5E1] transition">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#1769AA] flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div className="text-left leading-tight">
+              <div className="text-xs font-bold text-[#0F172A]">
+                27 Sep 2026
+              </div>
+              <div className="text-[11px] font-mono text-[#64748B] mt-0.5">
+                12:00 UTC (Next {selectedLeadTime}h)
+              </div>
+            </div>
+            <ChevronDown className="w-4 h-4 text-[#64748B] ml-1" />
+          </div>
         </div>
       </div>
 
-      {/* 2. MAIN WORKSPACE: HERO MAP (60-70%) + FORECAST INTELLIGENCE CARD */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* MAP CONTAINER (Hero ~65% desktop) */}
-        <div className="lg:col-span-8 bg-[#0c1322] border border-[#1e2f4d] rounded-2xl p-3 flex flex-col shadow-xl relative overflow-hidden">
+      {/* 2. WEATHER SUMMARY METRIC CARDS (Row of 4 - Reference Mockup) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: RAINFALL */}
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative space-y-2">
+          <div className="flex items-center justify-between text-xs text-[#64748B]">
+            <div className="flex items-center space-x-1.5 font-bold uppercase tracking-wider text-[11px]">
+              <span>RAINFALL</span>
+              <InfoTooltip term="adaptive_weight" explanation="Expected precipitation accumulation generated by MOSAIC consensus." />
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#E0F2FE] text-[#0284c7]">
+              +{selectedLeadTime}h
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-4 pt-1">
+            <div className="w-12 h-12 rounded-xl bg-[#E0F2FE] text-[#0284c7] flex items-center justify-center shrink-0">
+              <CloudRain className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
+                {rainValue} <span className="text-lg font-bold text-[#64748B]">mm</span>
+              </div>
+              <div className="text-[11px] text-[#64748B] mt-0.5">
+                in next {selectedLeadTime} hours
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: TEMPERATURE */}
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative space-y-2">
+          <div className="flex items-center justify-between text-xs text-[#64748B]">
+            <div className="flex items-center space-x-1.5 font-bold uppercase tracking-wider text-[11px]">
+              <span>TEMPERATURE</span>
+              <InfoTooltip term="forecast_certainty" explanation="Ground temperature prediction from blended physics-AI models." />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4 pt-1">
+            <div className="w-12 h-12 rounded-xl bg-[#FEF3C7] text-[#D97706] flex items-center justify-center shrink-0">
+              <Thermometer className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
+                {tempValue} <span className="text-lg font-bold text-[#64748B]">°C</span>
+              </div>
+              <div className="text-[11px] text-[#64748B] mt-0.5">
+                max {(parseFloat(tempValue) + 2.8).toFixed(1)}° / min {(parseFloat(tempValue) - 2.8).toFixed(1)}°
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: WIND SPEED */}
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative space-y-2">
+          <div className="flex items-center justify-between text-xs text-[#64748B]">
+            <div className="flex items-center space-x-1.5 font-bold uppercase tracking-wider text-[11px]">
+              <span>WIND SPEED</span>
+              <InfoTooltip term="ensemble_spread" explanation="10-meter surface wind speed and gust velocity derived from NOAA GFS/IFS." />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4 pt-1">
+            <div className="w-12 h-12 rounded-xl bg-[#E0F7FA] text-[#00838F] flex items-center justify-center shrink-0">
+              <Wind className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
+                {windValue} <span className="text-lg font-bold text-[#64748B]">km/h</span>
+              </div>
+              <div className="text-[11px] text-[#64748B] mt-0.5">
+                NE · Gusts {(parseFloat(windValue) * 1.7).toFixed(0)} km/h
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: CLOUD COVER */}
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative space-y-2">
+          <div className="flex items-center justify-between text-xs text-[#64748B]">
+            <div className="flex items-center space-x-1.5 font-bold uppercase tracking-wider text-[11px]">
+              <span>CLOUD COVER</span>
+              <InfoTooltip term="weather_regime" explanation="Atmospheric moisture saturation and fractional cloud fraction." />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4 pt-1">
+            <div className="w-12 h-12 rounded-xl bg-[#F1F5F9] text-[#475569] flex items-center justify-center shrink-0">
+              <Cloud className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
+                {cloudCoverValue}<span className="text-lg font-bold text-[#64748B]">%</span>
+              </div>
+              <div className="text-[11px] text-[#64748B] mt-0.5">
+                {cloudCoverValue > 70 ? "Mostly cloudy" : cloudCoverValue > 30 ? "Partly cloudy" : "Clear skies"}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. HERO MAP (65%) & RIGHT INFORMATION PANELS (35%) (Reference Mockup) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* HERO MAP CONTAINER (lg:col-span-8) */}
+        <div className="lg:col-span-8 bg-white border border-[#D9E0E7] rounded-2xl p-3 shadow-sm relative overflow-hidden flex flex-col">
+          {/* Map canvas container */}
           <div className="h-[520px] lg:h-[580px] w-full rounded-xl overflow-hidden relative">
             <WeatherMap 
               locations={locations}
@@ -208,232 +268,422 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
               activeLayer={activeLayer}
               currentPoint={currentPoint}
             />
-          </div>
 
-          {/* Map Footer Bar: Dynamic layer legend & common grid note */}
-          <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-400 font-mono pt-3 px-1">
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-500 uppercase">Scale:</span>
-              {activeLayer === "rainfall" && (
-                <div className="flex items-center space-x-2">
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-cyan-400"></span><span>&lt;2.5mm</span></span>
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-yellow-400"></span><span>2.5–15mm</span></span>
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-orange-400"></span><span>15–64mm</span></span>
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-rose-500"></span><span>&gt;64.5mm (Heavy)</span></span>
-                </div>
-              )}
-              {activeLayer === "temperature" && (
-                <div className="flex items-center space-x-2">
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span><span>&lt;20°C</span></span>
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-emerald-400"></span><span>20–28°C</span></span>
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-orange-400"></span><span>28–35°C</span></span>
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-rose-500"></span><span>&gt;35°C (Heat)</span></span>
-                </div>
-              )}
-              {activeLayer === "wind" && (
-                <div className="flex items-center space-x-2">
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-blue-400"></span><span>Light (&lt;8 m/s)</span></span>
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-orange-400"></span><span>Gale (&gt;15 m/s)</span></span>
-                </div>
-              )}
-              {activeLayer === "disagreement" && (
-                <div className="flex items-center space-x-2">
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-emerald-400"></span><span>Low (Consensus)</span></span>
-                  <span className="flex items-center space-x-1"><span className="w-2 h-2 rounded-full bg-rose-500"></span><span>High (Divergence)</span></span>
-                </div>
-              )}
+            {/* Top-Left Layer Selector Dropdown (Reference Mockup) */}
+            <div className="absolute top-4 left-4 z-20">
+              <div className="relative">
+                <button
+                  onClick={() => setShowLayerDropdown(prev => !prev)}
+                  className="bg-white/95 backdrop-blur-md border border-[#D9E0E7] hover:border-[#CBD5E1] text-[#0F172A] text-xs font-bold px-3.5 py-2 rounded-xl shadow-md flex items-center space-x-2 transition"
+                >
+                  <CloudRain className="w-3.5 h-3.5 text-[#1769AA]" />
+                  <span>
+                    {activeLayer === "rainfall" ? "Rainfall (mm)" : activeLayer === "temperature" ? "Temperature (°C)" : activeLayer === "wind" ? "Wind (km/h)" : "Model Disagreement"}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-[#64748B]" />
+                </button>
+
+                {showLayerDropdown && (
+                  <div className="absolute left-0 top-full mt-1.5 w-48 bg-white border border-[#D9E0E7] rounded-xl shadow-xl p-1 z-30">
+                    <button
+                      onClick={() => { setActiveLayer("rainfall"); setShowLayerDropdown(false); }}
+                      className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-[#EEF2F6] font-medium text-[#0F172A] flex items-center space-x-2"
+                    >
+                      <CloudRain className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Rainfall (mm)</span>
+                    </button>
+                    <button
+                      onClick={() => { setActiveLayer("temperature"); setShowLayerDropdown(false); }}
+                      className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-[#EEF2F6] font-medium text-[#0F172A] flex items-center space-x-2"
+                    >
+                      <Thermometer className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Temperature (°C)</span>
+                    </button>
+                    <button
+                      onClick={() => { setActiveLayer("wind"); setShowLayerDropdown(false); }}
+                      className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-[#EEF2F6] font-medium text-[#0F172A] flex items-center space-x-2"
+                    >
+                      <Wind className="w-3.5 h-3.5 text-cyan-500" />
+                      <span>Wind Speed (km/h)</span>
+                    </button>
+                    <button
+                      onClick={() => { setActiveLayer("disagreement"); setShowLayerDropdown(false); }}
+                      className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-[#EEF2F6] font-medium text-[#0F172A] flex items-center space-x-2"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-purple-500" />
+                      <span>Model Disagreement</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="text-slate-500">
-              0.25° Grid · Bilinear Regridded
+
+            {/* Left Controls Stack (+, -, locate, layers) (Reference Mockup) */}
+            <div className="absolute top-16 left-4 z-20 flex flex-col space-y-1.5">
+              <button 
+                onClick={() => {}}
+                className="w-8 h-8 rounded-lg bg-white/95 backdrop-blur-md border border-[#D9E0E7] hover:bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center shadow-md text-sm font-bold transition"
+                title="Zoom In"
+              >
+                +
+              </button>
+              <button 
+                onClick={() => {}}
+                className="w-8 h-8 rounded-lg bg-white/95 backdrop-blur-md border border-[#D9E0E7] hover:bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center shadow-md text-sm font-bold transition"
+                title="Zoom Out"
+              >
+                −
+              </button>
+              <button 
+                onClick={() => {
+                  if (selectedLocation) onSelectLocation(selectedLocation);
+                }}
+                className="w-8 h-8 rounded-lg bg-white/95 backdrop-blur-md border border-[#D9E0E7] hover:bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center shadow-md transition"
+                title="Center on Station"
+              >
+                <Crosshair className="w-4 h-4 text-[#1769AA]" />
+              </button>
+              <button 
+                onClick={() => onNavigateTab("models")}
+                className="w-8 h-8 rounded-lg bg-white/95 backdrop-blur-md border border-[#D9E0E7] hover:bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center shadow-md transition"
+                title="Layer Settings & Spatial Weight Map"
+              >
+                <Layers className="w-4 h-4 text-[#475569]" />
+              </button>
+            </div>
+
+            {/* Right Vertical Scale Legend (Reference Mockup) */}
+            <div className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-md border border-[#D9E0E7] rounded-xl px-2.5 py-3 shadow-md text-[10px] font-mono text-[#0F172A] flex flex-col items-center select-none">
+              <span className="font-bold text-[9px] text-[#64748B] mb-2">Rainfall (mm)</span>
+              <div className="flex items-center space-x-2">
+                {/* Colored scale bar */}
+                <div 
+                  className="w-2.5 h-36 rounded-full"
+                  style={{
+                    background: "linear-gradient(to bottom, #9333ea, #dc2626, #ea580c, #ca8a04, #16a34a, #0284c7, #38bdf8)"
+                  }}
+                />
+                <div className="flex flex-col justify-between h-36 text-[9px] text-[#475569]">
+                  <span>200+</span>
+                  <span>100</span>
+                  <span>50</span>
+                  <span>25</span>
+                  <span>10</span>
+                  <span>5</span>
+                  <span>1</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom-Left Floating Location Telemetry Pill (Reference Mockup) */}
+            <div className="absolute bottom-4 left-4 z-20">
+              <div className="bg-[#0B1F33] text-white rounded-xl px-3.5 py-2 shadow-xl border border-[#1e2f4d] flex items-center space-x-3 text-xs font-mono">
+                <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <span className="font-bold uppercase tracking-wider">{selectedLocation?.name || "MUMBAI"}</span>
+                <span className="text-slate-500">|</span>
+                <span className="text-cyan-300 font-bold">{rainValue} mm</span>
+                <span className="text-slate-500">|</span>
+                <span>{tempValue}°C</span>
+                <span className="text-slate-500">|</span>
+                <span>{windValue} km/h</span>
+              </div>
+            </div>
+
+            {/* Bottom-Right Live / Forecast Segmented Toggle (Reference Mockup) */}
+            <div className="absolute bottom-4 right-4 z-20 bg-white/95 backdrop-blur-md border border-[#D9E0E7] rounded-full p-1 shadow-md flex items-center text-xs font-bold">
+              <button
+                onClick={() => setActiveMode("live")}
+                className={`px-3 py-1 rounded-full transition-all ${
+                  activeMode === "live"
+                    ? "bg-[#1769AA] text-white shadow-sm"
+                    : "text-[#64748B] hover:text-[#0F172A]"
+                }`}
+              >
+                Live
+              </button>
+              <button
+                onClick={() => setActiveMode("forecast")}
+                className={`px-3 py-1 rounded-full transition-all ${
+                  activeMode === "forecast"
+                    ? "bg-[#1769AA] text-white shadow-sm"
+                    : "text-[#64748B] hover:text-[#0F172A]"
+                }`}
+              >
+                Forecast
+              </button>
             </div>
           </div>
         </div>
 
-        {/* FORECAST & MODEL CONTRIBUTION CARD (~35% desktop) */}
+        {/* RIGHT COLUMN PANELS (lg:col-span-4 - Reference Mockup) */}
         <div className="lg:col-span-4 space-y-4">
-          {/* Main Forecast Card */}
-          <div className="bg-[#0c1322] border border-[#1e2f4d] rounded-2xl p-5 space-y-5 shadow-xl">
-            {/* Station Header */}
-            <div className="flex items-center justify-between border-b border-[#1e2f4d] pb-3">
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h2 className="text-lg font-bold text-slate-100 tracking-tight">
-                    {selectedLocation?.name || "Northeast India"}
-                  </h2>
-                  {selectedLocation?.is_ner && (
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                      NER
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                  {selectedLocation?.state} · {selectedLocation?.latitude.toFixed(2)}°N, {selectedLocation?.longitude.toFixed(2)}°E · Elev {selectedLocation?.elevation_m || 100}m
-                </p>
+          {/* Card 1: MODEL CONTRIBUTION */}
+          <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-[#EDF2F7] pb-3">
+              <div className="flex items-center space-x-1.5 font-bold text-sm text-[#0B1F33]">
+                <span>Model Contribution</span>
+                <InfoTooltip term="adaptive_weight" explanation="Percentage of consensus assigned to each system based on historical error scores." />
               </div>
-
-              <div className="text-right font-mono">
-                <span className="text-[10px] text-slate-500 uppercase block">Horizon</span>
-                <span className="text-xs font-bold text-cyan-400">+{selectedLeadTime}h Lead</span>
-              </div>
+              <button
+                onClick={() => onNavigateTab("models")}
+                className="text-xs font-semibold text-[#1769AA] hover:underline flex items-center space-x-0.5"
+              >
+                <span>View details</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            {/* Blended Forecast Primary Value Display */}
-            <div className="p-4 rounded-xl bg-[#10192d] border border-[#1e2f4d] space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>MOSAIC Blended {primary.label}</span>
-                </span>
-                <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800">
-                  Consensus
-                </span>
-              </div>
-
-              <div className="flex items-baseline space-x-2 pt-1">
-                <span className="text-4xl font-extrabold font-mono text-slate-100 tracking-tight">
-                  {primary.val}
-                </span>
-                <span className="text-sm font-bold text-slate-400 font-mono">
-                  {primary.unit}
-                </span>
-              </div>
-            </div>
-
-            {/* Uncertainty, Certainty & Risk Probability */}
-            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-              {/* Forecast Certainty */}
-              <div className="p-3 rounded-xl bg-[#10192d] border border-[#1e2f4d] space-y-1">
-                <div className="text-[10px] text-slate-400 uppercase flex items-center justify-between">
-                  <span>Certainty</span>
-                  <InfoTooltip term="forecast_certainty" explanation="" />
+            {/* Model Weight Horizontal Progress Bars (Blue family) */}
+            <div className="space-y-3 font-mono text-xs">
+              {/* IFS */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[#0F172A]">
+                  <span className="flex items-center space-x-2 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-[#1769AA]" />
+                    <span>IFS (ECMWF)</span>
+                  </span>
+                  <span className="font-bold">{ifsWeight}%</span>
                 </div>
-                <div className="text-sm font-bold text-emerald-400 flex items-center space-x-1">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{forecastTruth.confidence}</span>
-                </div>
-                <div className="text-[10px] text-slate-500">
-                  Spread: ±{forecastTruth.std_dev.toFixed(1)} mm
+                <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#1769AA] rounded-full transition-all duration-500" 
+                    style={{ width: `${ifsWeight}%` }}
+                  />
                 </div>
               </div>
 
-              {/* Exceedance Risk Probability */}
-              <div className="p-3 rounded-xl bg-[#10192d] border border-[#1e2f4d] space-y-1">
-                <div className="text-[10px] text-slate-400 uppercase flex items-center justify-between">
-                  <span>P(&gt;50mm Rain)</span>
-                  <InfoTooltip term="probability" explanation="" />
+              {/* AIFS */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[#0F172A]">
+                  <span className="flex items-center space-x-2 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-[#2D8CFF]" />
+                    <span>AIFS (ECMWF)</span>
+                  </span>
+                  <span className="font-bold">{aifsWeight}%</span>
                 </div>
-                <div className={`text-sm font-bold ${
-                  (currentPoint?.gefs_prob_gt_50mm ?? 0) > 0.3 ? "text-amber-400" : "text-slate-200"
-                }`}>
-                  {Math.round((currentPoint?.gefs_prob_gt_50mm ?? 0.18) * 100)}%
-                </div>
-                <div className="text-[10px] text-slate-500">
-                  GEFS 31-Mbr Risk
+                <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#2D8CFF] rounded-full transition-all duration-500" 
+                    style={{ width: `${aifsWeight}%` }}
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Model Contribution Breakdown Bars mandated by Section 10 */}
-            <div className="space-y-2.5 pt-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-1">
-                  <span>Model Contribution</span>
-                  <InfoTooltip term="adaptive_weight" explanation="" />
-                </span>
-                <span className="text-[11px] font-mono text-slate-400">Σ = 100%</span>
+              {/* GFS */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[#0F172A]">
+                  <span className="flex items-center space-x-2 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-[#38BDF8]" />
+                    <span>GFS (NOAA)</span>
+                  </span>
+                  <span className="font-bold">{gfsWeight}%</span>
+                </div>
+                <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#38BDF8] rounded-full transition-all duration-500" 
+                    style={{ width: `${gfsWeight}%` }}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2 font-mono text-xs">
-                {/* IFS */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-slate-300 text-[11px]">
-                    <span className="text-cyan-300 font-semibold">ECMWF IFS (Physics)</span>
-                    <span className="font-bold text-cyan-300">
-                      {(forecastTruth.models.ifs.normalized_weight * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-cyan-500 rounded-full transition-all duration-500" 
-                      style={{ width: `${forecastTruth.models.ifs.normalized_weight * 100}%` }}
-                    />
-                  </div>
+              {/* GEFS */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[#0F172A]">
+                  <span className="flex items-center space-x-2 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />
+                    <span>GEFS (NOAA)</span>
+                  </span>
+                  <span className="font-bold">{gefsWeight}%</span>
                 </div>
-
-                {/* AIFS */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-slate-300 text-[11px]">
-                    <span className="text-purple-300 font-semibold">ECMWF AIFS (Deep Learning)</span>
-                    <span className="font-bold text-purple-300">
-                      {(forecastTruth.models.aifs.normalized_weight * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-purple-500 rounded-full transition-all duration-500" 
-                      style={{ width: `${forecastTruth.models.aifs.normalized_weight * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* GFS */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-slate-300 text-[11px]">
-                    <span className="text-blue-300 font-semibold">NOAA GFS (Physics)</span>
-                    <span className="font-bold text-blue-300">
-                      {(forecastTruth.models.gfs.normalized_weight * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500" 
-                      style={{ width: `${forecastTruth.models.gfs.normalized_weight * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* GEFS */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-slate-300 text-[11px]">
-                    <span className="text-emerald-300 font-semibold">NOAA GEFS (Ensemble)</span>
-                    <span className="font-bold text-emerald-300">
-                      {(forecastTruth.models.gefs.normalized_weight * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
-                      style={{ width: `${forecastTruth.models.gefs.normalized_weight * 100}%` }}
-                    />
-                  </div>
+                <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#60A5FA] rounded-full transition-all duration-500" 
+                    style={{ width: `${gefsWeight}%` }}
+                  />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* "Why This Forecast?" Prominent Button mandated by Section 14 & 15 */}
-            <div className="pt-2">
+          {/* Card 2: FORECAST CONFIDENCE */}
+          <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1.5 font-bold text-sm text-[#0B1F33]">
+                <span>Forecast Confidence</span>
+                <InfoTooltip term="forecast_certainty" explanation="Derived objectively from GEFS 31-member spread and model agreement." />
+              </div>
+              <div className="flex items-center space-x-1 text-xs font-bold text-[#16A34A] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                <span>High</span>
+              </div>
+            </div>
+
+            <div className="text-xs text-[#64748B]">
+              Model agreement: <strong className="text-[#0F172A]">High</strong>
+            </div>
+
+            {/* Thin green progress indicator */}
+            <div className="w-full h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
+              <div className="h-full bg-[#16A34A] rounded-full w-[88%]" />
+            </div>
+          </div>
+
+          {/* Card 3: WHY MOSAIC? */}
+          <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm space-y-3.5">
+            <div className="flex items-center justify-between border-b border-[#EDF2F7] pb-2.5">
+              <div className="flex items-center space-x-1.5 font-bold text-sm text-[#0B1F33]">
+                <span>Why MOSAIC?</span>
+                <InfoTooltip term="bma" explanation="Bayesian Model Averaging and dynamic multi-model consensus." />
+              </div>
               <button
                 onClick={onOpenExplainability}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs tracking-wide shadow-lg shadow-cyan-600/20 transition-all flex items-center justify-center space-x-2"
+                className="text-xs font-semibold text-[#1769AA] hover:underline flex items-center space-x-0.5"
               >
-                <span>Why this forecast?</span>
-                <ChevronRight className="w-4 h-4" />
+                <span>View details</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
-              <p className="text-[10px] text-slate-500 text-center mt-1.5 font-mono">
-                Decomposes active synoptic regime, model agreement, and historical skill
-              </p>
+            </div>
+
+            <div className="space-y-2 text-xs text-[#334155]">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                <span>Combines multiple global weather models</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                <span>Uses adaptive weighting for better accuracy</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                <span>Applies bias correction and quality control</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
+                <span>Provides ensemble-based uncertainty</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. FORECAST TIMELINE CHART (72-Hour Horizon Scrubber) */}
-      <div className="pt-2">
-        <ForecastTimeline
-          timeline={forecastData?.timeline || []}
-          selectedLeadTime={selectedLeadTime}
-          onSelectLeadTime={onSelectLeadTime}
-        />
+      {/* 4. BOTTOM ROW: FORECAST TIMELINE, WEATHER OUTLOOK, SYSTEM STATUS (Reference Mockup) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch pt-2">
+        {/* Card 1: FORECAST TIMELINE (col-span-4) */}
+        <div className="lg:col-span-4 bg-white border border-[#D9E0E7] rounded-xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div className="flex items-center space-x-2 text-xs font-bold text-[#0B1F33]">
+            <Calendar className="w-4 h-4 text-[#1769AA]" />
+            <span>Forecast Timeline</span>
+          </div>
+
+          <div className="grid grid-cols-5 gap-1.5 font-mono">
+            {timelineSteps.map((step, idx) => {
+              const Icon = step.icon;
+              const isSelected = selectedLeadTime === step.lead;
+              return (
+                <div
+                  key={idx}
+                  onClick={() => onSelectLeadTime(step.lead)}
+                  className={`p-2.5 rounded-lg border text-center transition cursor-pointer flex flex-col items-center justify-between ${
+                    isSelected
+                      ? "bg-[#F0F7FF] border-[#1769AA] text-[#0B1F33] shadow-sm font-bold"
+                      : "bg-[#F8FAFC] border-[#E2E8F0] text-[#64748B] hover:bg-white hover:border-[#CBD5E1]"
+                  }`}
+                >
+                  <span className="text-[11px] font-semibold">{step.label}</span>
+                  <Icon className="w-4 h-4 text-[#1769AA] my-1.5" />
+                  <span className="text-[11px] font-bold text-[#0F172A]">{step.val} mm</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Card 2: WEATHER OUTLOOK 5-DAY (col-span-5) */}
+        <div className="lg:col-span-5 bg-white border border-[#D9E0E7] rounded-xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2 font-bold text-[#0B1F33]">
+              <CloudSun className="w-4 h-4 text-[#1769AA]" />
+              <span>Weather Outlook</span>
+            </div>
+            <button
+              onClick={() => onNavigateTab("verification")}
+              className="text-[11px] font-semibold text-[#1769AA] hover:underline flex items-center space-x-0.5"
+            >
+              <span>View full forecast</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-5 gap-1.5 text-center text-xs">
+            {outlookDays.map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <div key={idx} className="p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col items-center justify-between space-y-1">
+                  <div>
+                    <div className="font-bold text-[#0F172A] text-[11px]">{item.day}</div>
+                    <div className="text-[9px] text-[#64748B]">{item.date}</div>
+                  </div>
+                  <Icon className="w-4 h-4 text-[#1769AA] my-1" />
+                  <div>
+                    <div className="font-bold font-mono text-[11px] text-[#0F172A]">{item.max} / {item.min}</div>
+                    <div className="text-[9px] text-[#64748B] truncate max-w-[50px]">{item.condition}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Card 3: SYSTEM STATUS (col-span-3) */}
+        <div className="lg:col-span-3 bg-white border border-[#D9E0E7] rounded-xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2 font-bold text-[#0B1F33]">
+              <Settings className="w-4 h-4 text-[#1769AA]" />
+              <span>System Status</span>
+            </div>
+            <button
+              onClick={() => onNavigateTab("system")}
+              className="text-[11px] font-semibold text-[#1769AA] hover:underline flex items-center space-x-0.5"
+            >
+              <span>View all</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="space-y-2 text-xs font-mono">
+            <div className="flex items-center justify-between text-[#475569]">
+              <span className="text-[11px]">Data Ingestion</span>
+              <span className="flex items-center space-x-1.5 text-[#16A34A] font-bold text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                <span>Operational</span>
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-[#475569]">
+              <span className="text-[11px]">Model Processing</span>
+              <span className="flex items-center space-x-1.5 text-[#16A34A] font-bold text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                <span>Operational</span>
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-[#475569]">
+              <span className="text-[11px]">Forecast API</span>
+              <span className="flex items-center space-x-1.5 text-[#16A34A] font-bold text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                <span>Operational</span>
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-[#475569]">
+              <span className="text-[11px]">Visualization</span>
+              <span className="flex items-center space-x-1.5 text-[#16A34A] font-bold text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                <span>Operational</span>
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

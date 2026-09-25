@@ -13,7 +13,8 @@ import {
   BlendedForecastResponse, 
   WhyThisForecastData 
 } from "@/types";
-import { Navbar, PrimaryTab } from "@/components/Navbar";
+import { Navbar } from "@/components/Navbar";
+import { Sidebar, NavTab } from "@/components/Sidebar";
 import { ForecastHeroView } from "@/components/ForecastHeroView";
 import { ModelsView } from "@/components/ModelsView";
 import { VerificationView } from "@/components/VerificationView";
@@ -27,7 +28,7 @@ export default function Home() {
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<LocationItem | null>(null);
   const [nerFilter, setNerFilter] = useState<boolean>(true); // Default to NER focus as mandated by SIH26081
-  const [activeTab, setActiveTab] = useState<PrimaryTab>("forecast");
+  const [activeTab, setActiveTab] = useState<NavTab>("forecast");
   const [isBackendOnline, setIsBackendOnline] = useState<boolean | null>(true);
 
   // Modals & Drawers
@@ -151,62 +152,98 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#070b14] text-slate-100 font-sans pb-16 md:pb-0">
-      {/* 1. TOP NAVIGATION (Section 3 & 4) */}
+    <div className="min-h-screen flex flex-col bg-[#F5F7FA] text-[#0F172A] font-sans pb-16 md:pb-0">
+      {/* 1. TOP HEADER (72px) */}
       <Navbar
-        activeTab={activeTab}
-        onSelectTab={(tab) => setActiveTab(tab)}
+        locations={locations}
+        selectedLocation={selectedLocation}
+        onSelectLocation={handleSelectLocation}
         onOpenHelp={() => setHelpModalOpen(true)}
         onOpenChat={() => setChatModalOpen(true)}
         isBackendOnline={isBackendOnline}
-        selectedLocation={selectedLocation}
       />
 
-      {/* 2. MAIN OPERATIONAL WORKSPACE */}
-      <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
-        {/* TAB 1: FORECAST (PRIMARY HERO VIEW) */}
-        {activeTab === "forecast" && (
-          <ForecastHeroView
-            locations={locations}
-            selectedLocation={selectedLocation}
-            onSelectLocation={handleSelectLocation}
-            forecastData={forecastData}
-            selectedLeadTime={selectedLeadTime}
-            onSelectLeadTime={(lead) => setSelectedLeadTime(lead)}
-            onOpenExplainability={() => handleOpenExplainability(selectedLeadTime)}
-            nerFilter={nerFilter}
-            onToggleNerFilter={(val) => setNerFilter(val)}
+      {/* 2. BODY SHELL: Sidebar (240px) + Main Content */}
+      <div className="flex-1 flex overflow-hidden min-h-[calc(100vh-72px)]">
+        {/* DESKTOP SIDEBAR */}
+        <div className="hidden md:block">
+          <Sidebar
+            activeTab={activeTab}
+            onSelectTab={(tab) => setActiveTab(tab)}
+            extremeEventsCount={forecastData?.extreme_events?.length || 0}
           />
-        )}
+        </div>
 
-        {/* TAB 2: MODELS (MODEL PROFILES & SPATIAL WEIGHT MAP) */}
-        {activeTab === "models" && (
-          <ModelsView />
-        )}
+        {/* MAIN OPERATIONAL WORKSPACE */}
+        <main className="flex-1 bg-[#F5F7FA] p-4 lg:p-6 overflow-y-auto">
+          {/* TAB 1: FORECAST (PRIMARY HERO VIEW) */}
+          {activeTab === "forecast" && (
+            <ForecastHeroView
+              locations={locations}
+              selectedLocation={selectedLocation}
+              onSelectLocation={handleSelectLocation}
+              forecastData={forecastData}
+              selectedLeadTime={selectedLeadTime}
+              onSelectLeadTime={(lead) => setSelectedLeadTime(lead)}
+              onOpenExplainability={() => handleOpenExplainability(selectedLeadTime)}
+              nerFilter={nerFilter}
+              onToggleNerFilter={(val: boolean) => setNerFilter(val)}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
 
-        {/* TAB 3: VERIFICATION (SKILL CURVES, BASELINES & REPLAY) */}
-        {activeTab === "verification" && (
-          <VerificationView
-            timeline={forecastData?.timeline || []}
-            selectedLocation={selectedLocation}
-            selectedLeadTime={selectedLeadTime}
-            onSelectLeadTime={(lead) => setSelectedLeadTime(lead)}
-          />
-        )}
+          {/* TAB 2: MODELS (MODEL PROFILES & SPATIAL WEIGHT MAP) */}
+          {activeTab === "models" && (
+            <ModelsView />
+          )}
 
-        {/* TAB 4: EVENTS (EXTREME WEATHER GUIDANCE & EARLY WARNINGS) */}
-        {activeTab === "events" && (
-          <EventsView
-            events={forecastData?.extreme_events || []}
-            selectedLocation={selectedLocation}
-          />
-        )}
+          {/* TAB 3: VERIFICATION (SKILL CURVES, BASELINES & REPLAY) */}
+          {activeTab === "verification" && (
+            <VerificationView
+              timeline={forecastData?.timeline || []}
+              selectedLocation={selectedLocation}
+              selectedLeadTime={selectedLeadTime}
+              onSelectLeadTime={(lead) => setSelectedLeadTime(lead)}
+            />
+          )}
 
-        {/* TAB 5: SYSTEM (HEALTH, PIPELINE, DATA SOURCES & MATH AUDIT) */}
-        {activeTab === "system" && (
-          <SystemView />
-        )}
-      </main>
+          {/* TAB 4: EVENTS (EXTREME WEATHER GUIDANCE & EARLY WARNINGS) */}
+          {activeTab === "events" && (
+            <EventsView
+              events={forecastData?.extreme_events || []}
+              selectedLocation={selectedLocation}
+            />
+          )}
+
+          {/* TAB 5: SYSTEM (HEALTH, PIPELINE, DATA SOURCES & MATH AUDIT) */}
+          {activeTab === "system" && (
+            <SystemView />
+          )}
+        </main>
+      </div>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-[#D9E0E7] flex items-center justify-around z-40 px-2 shadow-lg">
+        {[
+          { id: "forecast", label: "Forecast" },
+          { id: "models", label: "Models" },
+          { id: "verification", label: "Verify" },
+          { id: "events", label: "Events" },
+          { id: "system", label: "System" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id as NavTab)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+              activeTab === t.id
+                ? "bg-[#0B1F33] text-white"
+                : "text-[#64748B] hover:text-[#0F172A]"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {/* "Why This Forecast?" Transparent Explainability Drawer */}
       <ExplainabilityDrawer
