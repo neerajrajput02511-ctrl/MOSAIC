@@ -18,7 +18,11 @@ services:
       - key: DEMO_MODE
         value: "false"
       - key: DATABASE_URL
-        value: "sqlite:///./weatherfusion.db"
+        value: "postgresql://postgres.lroblsuasujlarmbexct:Neeraj9917436315%23%40@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres"
+      - key: SUPABASE_URL
+        value: "https://lroblsuasujlarmbexct.supabase.co"
+      - key: SUPABASE_KEY
+        value: "sb_publishable_LvQCbOCeSQ9179fB54jXNw_CtI9h-Pj"
       - key: ECMWF_API_KEY
         sync: false
       - key: ECMWF_API_EMAIL
