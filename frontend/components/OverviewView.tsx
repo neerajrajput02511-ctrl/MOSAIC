@@ -118,41 +118,63 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
       {/* 1. TOP CARDS (Answers the core 5 operational questions) */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {/* Card 1: SYSTEM STATUS */}
+        {/* Card 1: SYSTEM STATUS (Dynamic Real Pipeline Health - Requirement 5 & 6) */}
         <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-3.5 space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-xs">
             <span className="font-mono text-[10px] uppercase">SYSTEM STATUS</span>
-            <span className={`w-2 h-2 rounded-full ${simulatedFailureModel ? "bg-amber-400" : "bg-emerald-400"} animate-pulse`} />
+            <span className={`w-2 h-2 rounded-full ${
+              forecastTruth.system_status === "ERROR"
+                ? "bg-rose-500 animate-ping"
+                : forecastTruth.system_status === "DEGRADED"
+                ? "bg-amber-400 animate-pulse"
+                : "bg-emerald-400 animate-pulse"
+            }`} />
           </div>
           <div className="text-sm font-bold text-slate-100 flex items-center space-x-1.5 font-mono">
-            {simulatedFailureModel ? (
+            {forecastTruth.system_status === "ERROR" ? (
               <>
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <span className="text-amber-300">FALLBACK ACTIVE</span>
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span className="text-rose-300">INTEGRITY ERROR</span>
+              </>
+            ) : forecastTruth.system_status === "DEGRADED" ? (
+              <>
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="text-amber-300">{forecastTruth.system_status_label}</span>
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>OPERATIONAL</span>
               </>
             )}
           </div>
-          <div className="text-[10px] text-slate-400 font-mono truncate">
-            {simulatedFailureModel ? "1 Fallback Active (AIFS Degraded)" : (pipelineState?.active_fallbacks ? `${pipelineState.active_fallbacks} Fallbacks Active` : "Zero Fallbacks Active")}
+          <div className="text-[10px] text-slate-400 font-mono truncate" title={forecastTruth.system_status_reason}>
+            {forecastTruth.system_status === "ERROR"
+              ? (forecastTruth.validation_error || "Integrity Check Failed")
+              : forecastTruth.fallback_label}
           </div>
         </div>
 
-        {/* Card 2: ACTIVE MODELS */}
+        {/* Card 2: ACTIVE MODELS (Dynamic from provider ingestion - Requirement 7) */}
         <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-3.5 space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-xs">
             <span className="font-mono text-[10px] uppercase">ACTIVE MODELS</span>
             <Layers className="w-3.5 h-3.5 text-blue-400" />
           </div>
           <div className="text-sm font-bold text-slate-100 font-mono">
-            {forecastTruth.available_models_count} / {forecastTruth.total_models_count} INGESTED
+            {forecastTruth.ingested_label}
           </div>
           <div className="text-[10px] text-slate-400 font-mono">
-            GFS · IFS · {simulatedFailureModel === "ECMWF_AIFS" ? <span className="line-through text-rose-400">AIFS</span> : "AIFS"} · GEFS
+            {forecastTruth.model_list.map((m, idx) => (
+              <span key={m.code}>
+                {idx > 0 && " · "}
+                {m.status === "HEALTHY" ? (
+                  m.code.replace(/^(NOAA_|ECMWF_)/, "")
+                ) : (
+                  <span className="line-through text-rose-400 font-semibold">{m.code.replace(/^(NOAA_|ECMWF_)/, "")}</span>
+                )}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -170,7 +192,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
         </div>
 
-        {/* Card 4: FORECAST CONFIDENCE (Traceable - Requirement 5) */}
+        {/* Card 4: FORECAST CONFIDENCE (Traceable Provisional - Requirement 10) */}
         <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-3.5 space-y-1">
           <div className="flex items-center justify-between text-slate-400 text-xs">
             <span className="font-mono text-[10px] uppercase">CONFIDENCE</span>
@@ -179,8 +201,8 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           <div className="text-sm font-bold text-cyan-300 font-mono">
             {forecastTruth.confidence} ({forecastTruth.confidence_score}%)
           </div>
-          <div className="text-[10px] text-slate-400 font-mono">
-            Spread &sigma;: {forecastTruth.std_dev.toFixed(1)} mm
+          <div className="text-[10px] text-slate-400 font-mono" title={forecastTruth.confidence_method}>
+            Provisional &middot; Spread &sigma;: {forecastTruth.std_dev.toFixed(1)} mm
           </div>
         </div>
 
@@ -279,7 +301,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <div className="flex items-center space-x-2">
                 <Zap className="w-4 h-4 text-purple-400" />
                 <h3 className="text-sm font-bold text-slate-100 uppercase tracking-tight font-mono">
-                  Adaptive BMA Weights (+{selectedLeadTime}h)
+                  Adaptive Skill-Based Model Weighting (+{selectedLeadTime}h)
                 </h3>
               </div>
               <button
@@ -291,8 +313,30 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </button>
             </div>
 
-            {/* Weights Breakdown Bars (Sourced strictly from forecastTruth) */}
+            {/* Weights Breakdown Bars (Sourced strictly from forecastTruth with normalized weights) */}
             <div className="space-y-3 font-mono text-xs">
+              {/* ECMWF IFS */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-slate-300">
+                  <span className="flex items-center space-x-1 text-cyan-300 font-semibold">
+                    <span>ECMWF IFS (0.25&deg; Physics)</span>
+                    {forecastTruth.models.ifs.status === "DEGRADED" && (
+                      <span className="text-[9px] bg-rose-900/60 text-rose-300 px-1.5 py-0.2 rounded border border-rose-500/40">DEGRADED</span>
+                    )}
+                  </span>
+                  <div className="text-right">
+                    <span className="font-bold text-cyan-300">{(forecastTruth.models.ifs.normalized_weight * 100).toFixed(1)}%</span>
+                    <span className="text-[10px] text-slate-500 ml-1.5">(raw {(forecastTruth.models.ifs.raw_weight * 100).toFixed(0)}%)</span>
+                  </div>
+                </div>
+                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-cyan-500 rounded-full transition-all duration-500" 
+                    style={{ width: `${forecastTruth.models.ifs.normalized_weight * 100}%` }}
+                  />
+                </div>
+              </div>
+
               {/* ECMWF AIFS */}
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-300">
@@ -302,26 +346,15 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                       <span className="text-[9px] bg-rose-900/60 text-rose-300 px-1.5 py-0.2 rounded border border-rose-500/40">DEGRADED</span>
                     )}
                   </span>
-                  <span className="font-bold text-purple-300">{Math.round(forecastTruth.models.aifs.weight * 100)}%</span>
+                  <div className="text-right">
+                    <span className="font-bold text-purple-300">{(forecastTruth.models.aifs.normalized_weight * 100).toFixed(1)}%</span>
+                    <span className="text-[10px] text-slate-500 ml-1.5">(raw {(forecastTruth.models.aifs.raw_weight * 100).toFixed(0)}%)</span>
+                  </div>
                 </div>
                 <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-purple-500 rounded-full transition-all duration-500" 
-                    style={{ width: `${forecastTruth.models.aifs.weight * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* ECMWF IFS */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-slate-300">
-                  <span className="text-cyan-300 font-semibold">ECMWF IFS (0.25&deg; Physics)</span>
-                  <span className="font-bold text-cyan-300">{Math.round(forecastTruth.models.ifs.weight * 100)}%</span>
-                </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-cyan-500 rounded-full transition-all duration-500" 
-                    style={{ width: `${forecastTruth.models.ifs.weight * 100}%` }}
+                    style={{ width: `${forecastTruth.models.aifs.normalized_weight * 100}%` }}
                   />
                 </div>
               </div>
@@ -330,12 +363,15 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-300">
                   <span className="text-blue-300 font-semibold">NOAA GFS (0.25&deg; Physics)</span>
-                  <span className="font-bold text-blue-300">{Math.round(forecastTruth.models.gfs.weight * 100)}%</span>
+                  <div className="text-right">
+                    <span className="font-bold text-blue-300">{(forecastTruth.models.gfs.normalized_weight * 100).toFixed(1)}%</span>
+                    <span className="text-[10px] text-slate-500 ml-1.5">(raw {(forecastTruth.models.gfs.raw_weight * 100).toFixed(0)}%)</span>
+                  </div>
                 </div>
                 <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-blue-500 rounded-full transition-all duration-500" 
-                    style={{ width: `${forecastTruth.models.gfs.weight * 100}%` }}
+                    style={{ width: `${forecastTruth.models.gfs.normalized_weight * 100}%` }}
                   />
                 </div>
               </div>
@@ -344,18 +380,27 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-300">
                   <span className="text-amber-300 font-semibold">NOAA GEFS (31-M Spread)</span>
-                  <span className="font-bold text-amber-300">{Math.round(forecastTruth.models.gefs.weight * 100)}%</span>
+                  <div className="text-right">
+                    <span className="font-bold text-amber-300">{(forecastTruth.models.gefs.normalized_weight * 100).toFixed(1)}%</span>
+                    <span className="text-[10px] text-slate-500 ml-1.5">(raw {(forecastTruth.models.gefs.raw_weight * 100).toFixed(0)}%)</span>
+                  </div>
                 </div>
                 <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-amber-500 rounded-full transition-all duration-500" 
-                    style={{ width: `${forecastTruth.models.gefs.weight * 100}%` }}
+                    style={{ width: `${forecastTruth.models.gefs.normalized_weight * 100}%` }}
                   />
                 </div>
               </div>
+
+              {/* Weight normalization audit bar */}
+              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800">
+                <span>&Sigma; Normalized Weights = <strong className="text-emerald-400">{(forecastTruth.normalized_weight_sum * 100).toFixed(1)}%</strong></span>
+                <span className="text-slate-500">Raw Sum: {(forecastTruth.raw_weight_sum * 100).toFixed(0)}%</span>
+              </div>
             </div>
 
-            {/* Generated Why Explanation (Calculated from Data - Requirement 7) */}
+            {/* Generated Why Explanation (Calculated from Data - Requirement 8) */}
             <div className="bg-[#10192d] p-3 rounded-lg border border-[#1e2c47] text-xs space-y-1 font-sans">
               <span className="font-bold text-slate-200 block text-[11px] font-mono uppercase text-purple-300">
                 WHY {forecastTruth.dominant_model.shortName.toUpperCase()} DOMINATES:
@@ -454,7 +499,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <div className="text-lg font-bold text-blue-300">
               {forecastTruth.models.gfs.value.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-slate-500 block">Weight: {Math.round(forecastTruth.models.gfs.weight * 100)}%</span>
+            <span className="text-[10px] text-slate-400 block">Weight: {(forecastTruth.models.gfs.normalized_weight * 100).toFixed(1)}%</span>
           </div>
 
           {/* ECMWF IFS */}
@@ -470,7 +515,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <div className="text-lg font-bold text-cyan-300">
               {forecastTruth.models.ifs.value.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-slate-500 block">Weight: {Math.round(forecastTruth.models.ifs.weight * 100)}%</span>
+            <span className="text-[10px] text-slate-400 block">Weight: {(forecastTruth.models.ifs.normalized_weight * 100).toFixed(1)}%</span>
           </div>
 
           {/* ECMWF AIFS */}
@@ -494,7 +539,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <span className="text-[10px] text-purple-300 block">
               {forecastTruth.models.aifs.status === "DEGRADED" 
                 ? "DEGRADED (0% Weight)" 
-                : `Dominant (${Math.round(forecastTruth.models.aifs.weight * 100)}%)`}
+                : `Weight: ${(forecastTruth.models.aifs.normalized_weight * 100).toFixed(1)}%`}
             </span>
           </div>
 
@@ -511,19 +556,19 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <div className="text-lg font-bold text-amber-300">
               {forecastTruth.models.gefs.value.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-slate-500 block">Weight: {Math.round(forecastTruth.models.gefs.weight * 100)}%</span>
+            <span className="text-[10px] text-slate-400 block">Weight: {(forecastTruth.models.gefs.normalized_weight * 100).toFixed(1)}%</span>
           </div>
 
-          {/* EQUAL MEAN BASELINE (Requirement 9) */}
+          {/* EQUAL MEAN BASELINE (Requirement 9 & 13) */}
           <div className="bg-[#10192d] border border-slate-700 rounded-lg p-3 space-y-1">
             <span className="text-[10px] text-slate-400 block uppercase">EQUAL MEAN</span>
             <div className="text-lg font-bold text-slate-200">
               {forecastTruth.equal_mean.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-slate-500 block">{forecastTruth.availability_label}</span>
+            <span className="text-[10px] text-slate-500 block">{forecastTruth.ingested_label}</span>
           </div>
 
-          {/* MOSAIC BLEND (Guaranteed exact match with Σ w_i * x_i) */}
+          {/* MOSAIC BLEND (Guaranteed exact match with Σ w_i_norm * x_i) */}
           <div className="bg-emerald-950/30 border border-emerald-500/50 rounded-lg p-3 space-y-1 shadow-md shadow-emerald-950/40">
             <span className="text-[10px] text-emerald-300 block uppercase font-bold flex items-center space-x-1">
               <ShieldCheck className="w-3 h-3 text-emerald-400" />
@@ -540,18 +585,25 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
         </div>
 
-        {/* Mathematical Consistency Verification Footnote (Requirement 1 & 4) */}
-        <div className="bg-[#080d18] border border-[#172338] rounded-lg p-2.5 flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-400">
-          <div className="flex items-center space-x-2">
+        {/* Mathematical Consistency Verification Footnote (Requirement 1, 3, & 4) */}
+        <div className="bg-[#080d18] border border-[#172338] rounded-lg p-2.5 flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-400 gap-2">
+          <div className="flex items-center space-x-2 flex-wrap">
             <span className="text-cyan-400 font-bold uppercase text-[10px]">MATHEMATICAL AUDIT:</span>
             <span>
-              &Sigma;(w<sub>i</sub> &times; x<sub>i</sub>) = {forecastTruth.models.gfs.value.toFixed(1)} &times; {forecastTruth.models.gfs.weight.toFixed(2)} + {forecastTruth.models.ifs.value.toFixed(1)} &times; {forecastTruth.models.ifs.weight.toFixed(2)} + {forecastTruth.models.aifs.value.toFixed(1)} &times; {forecastTruth.models.aifs.weight.toFixed(2)} + {forecastTruth.models.gefs.value.toFixed(1)} &times; {forecastTruth.models.gefs.weight.toFixed(2)} = <strong className="text-emerald-300">{forecastTruth.weighted_sum.toFixed(2)} mm</strong>
+              &Sigma;(w<sub>i</sub> &times; x<sub>i</sub>) = {forecastTruth.active_models.map(m => `${m.value.toFixed(1)} × ${(m.normalized_weight * 100).toFixed(1)}%`).join(" + ")} = <strong className="text-emerald-300">{forecastTruth.weighted_sum.toFixed(2)} mm</strong>
             </span>
           </div>
-          <span className="text-emerald-400 font-semibold flex items-center space-x-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Strict Identity Match: MOSAIC Blend = {forecastTruth.mosaic_blend.toFixed(1)} mm</span>
-          </span>
+          {forecastTruth.is_identity_match ? (
+            <span className="text-emerald-400 font-semibold flex items-center space-x-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>✓ Strict Identity Match: MOSAIC Blend = {forecastTruth.mosaic_blend.toFixed(1)} mm</span>
+            </span>
+          ) : (
+            <span className="text-rose-400 font-semibold flex items-center space-x-1">
+              <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+              <span>Identity Mismatch: &Delta; = {Math.abs(forecastTruth.weighted_sum - forecastTruth.mosaic_blend).toFixed(3)} mm</span>
+            </span>
+          )}
         </div>
       </div>
 

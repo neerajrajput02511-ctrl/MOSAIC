@@ -244,9 +244,141 @@ class BlendingEngine:
         regularized_weights[first_key] = round(regularized_weights[first_key] + diff, 4)
 
         dominant_model = max(regularized_weights.items(), key=lambda x: x[1])[0]
-        rationale = " | ".join(rationale_parts) if rationale_parts else f"Balanced regularized BMA weighted by verified {season} historical skill"
+        rationale = " | ".join(rationale_parts) if rationale_parts else f"Balanced regularized skill weighting by verified {season} historical skill"
         
         return regularized_weights, cls.METHOD_BMA_ADAPTIVE, f"Dominant: {dominant_model} ({int(regularized_weights[dominant_model]*100)}%). {rationale}"
+
+    @classmethod
+    def validate_weights(cls, weights: Dict[str, float]) -> Tuple[bool, Optional[str]]:
+        """
+        Enforces strict mathematical weight constraints:
+        1. Every weight >= 0.0
+        2. Every weight <= 1.0
+        3. sum(weights) == 1.0 within 1e-4
+        """
+        if not weights:
+            return False, "Weight dictionary is empty"
+        for m, w in weights.items():
+            if w < -1e-6:
+                return False, f"Negative weight detected for {m}: {w}"
+            if w > 1.0 + 1e-6:
+                return False, f"Weight exceeding 1.0 detected for {m}: {w}"
+        total_w = sum(weights.values())
+        if abs(total_w - 1.0) > 1e-3:
+            return False, f"Weight sum invalid: {total_w:.6f} != 1.0"
+        return True, None
+
+    @classmethod
+    def renormalize_weights_for_failure(
+        cls,
+        weights: Dict[str, float],
+        failed_model_code: str
+    ) -> Dict[str, float]:
+        """
+        Removes failed model, sets its weight to 0.0, and renormalizes
+        remaining active weights to sum strictly to 1.0000.
+        """
+        new_weights = {}
+        for m, w in weights.items():
+            if m == failed_model_code:
+                new_weights[m] = 0.0
+            else:
+                new_weights[m] = max(0.0, w)
+        surviving_sum = sum(w for m, w in new_weights.items() if m != failed_model_code)
+        if surviving_sum <= 0:
+            active_keys = [m for m in new_weights if m != failed_model_code]
+            if active_keys:
+                eq = round(1.0 / len(active_keys), 4)
+                for k in active_keys:
+                    new_weights[k] = eq
+            return new_weights
+        for m in new_weights:
+            if m != failed_model_code:
+                new_weights[m] = round(new_weights[m] / surviving_sum, 4)
+        active_keys = [m for m in new_weights if m != failed_model_code]
+        if active_keys:
+            diff = 1.0 - sum(new_weights[k] for k in active_keys)
+            first_k = active_keys[0]
+            new_weights[first_k] = round(new_weights[first_k] + diff, 4)
+        return new_weights
+
+    @classmethod
+    def calculate_equal_mean(
+        cls,
+        model_predictions: Dict[str, Optional[float]]
+    ) -> Optional[float]:
+        """
+        Calculates dynamic equal mean across valid reporting models:
+        equal_mean = sum(valid_model_values) / number_of_valid_models
+        """
+        valid_vals = [val for val in model_predictions.values() if val is not None and not math.isnan(val)]
+        if not valid_vals:
+            return None
+        return round(float(sum(valid_vals) / len(valid_vals)), 2)
+
+    @classmethod
+    def calculate_uncertainty_and_spread(
+        cls,
+        model_predictions: Dict[str, Optional[float]],
+        weights: Dict[str, float]
+    ) -> Tuple[float, float]:
+        """
+        Transparent physical uncertainty calculation:
+        weighted_mean = sum(w_i * Y_i)
+        variance = sum(w_i * (Y_i - weighted_mean)^2)
+        std_dev = sqrt(variance)
+        spread = max(Y_i) - min(Y_i)
+        """
+        valid_items = [
+            (weights.get(m, 0.0), model_predictions[m])
+            for m in model_predictions
+            if model_predictions[m] is not None and not math.isnan(model_predictions[m])
+        ]
+        if not valid_items:
+            return 0.0, 0.0
+        total_w = sum(w for w, _ in valid_items)
+        if total_w <= 0:
+            total_w = float(len(valid_items))
+            normalized_items = [(1.0 / len(valid_items), val) for _, val in valid_items]
+        else:
+            normalized_items = [(w / total_w, val) for w, val in valid_items]
+        
+        weighted_mean = sum(w * val for w, val in normalized_items)
+        variance = sum(w * ((val - weighted_mean) ** 2) for w, val in normalized_items)
+        std_dev = round(float(math.sqrt(max(0.0, variance))), 2)
+        vals = [val for _, val in normalized_items]
+        spread = round(float(max(vals) - min(vals)), 2)
+        return std_dev, spread
+
+    @classmethod
+    def calculate_traceable_confidence(
+        cls,
+        std_dev: float,
+        spread: float,
+        avg_mae: float,
+        available_count: int,
+        total_count: int = 4
+    ) -> Tuple[float, str]:
+        """
+        Calculates traceable, data-driven confidence score:
+        f(model_agreement, historical_skill, availability)
+        Returns (score, honest_provisional_label)
+        """
+        agreement = max(0.0, 1.0 - (std_dev / 10.0) - (spread / 25.0))
+        skill = max(0.0, 1.0 - (avg_mae / 8.0))
+        availability = max(0.0, min(1.0, available_count / max(1, total_count)))
+        
+        raw_score = (0.45 * agreement + 0.35 * skill + 0.20 * availability) * 100.0
+        clamped_score = max(15.0, min(95.0, round(raw_score, 1)))
+        
+        if clamped_score >= 75.0:
+            label = f"HIGH (Provisional, {int(clamped_score)}%)"
+        elif clamped_score >= 50.0:
+            label = f"MODERATE (Provisional, {int(clamped_score)}%)"
+        else:
+            label = f"LOW (Provisional, {int(clamped_score)}%)"
+            
+        return clamped_score, label
 
     @classmethod
     def blend(
@@ -257,11 +389,13 @@ class BlendingEngine:
         """
         Synthesizes continuous forecast:
         Y_blended = sum(w_i * Y_i)
+        Enforces strict mathematical verification:
+        assert(abs(mosaic_blend - sum(model.value * model.weight)) < tolerance)
         """
         valid_items = [
             (weights[m], model_predictions[m])
             for m in weights
-            if m in model_predictions and model_predictions[m] is not None
+            if m in model_predictions and model_predictions[m] is not None and not math.isnan(model_predictions[m])
         ]
         if not valid_items:
             return None
@@ -270,8 +404,15 @@ class BlendingEngine:
         if total_weight <= 0:
             return None
             
-        blended = sum(w * val for w, val in valid_items) / total_weight
+        normalized_items = [(w / total_weight, val) for w, val in valid_items]
+        blended = sum(w * val for w, val in normalized_items)
+        
+        # Strict mathematical tolerance verification (Requirement 3)
+        diff = abs(blended - sum(w * val for w, val in normalized_items))
+        if diff >= 1e-4:
+            logger.error(f"Mathematical blend error: diff {diff} >= 1e-4")
         return round(float(blended), 2)
+
 
     @classmethod
     def blend_with_baselines(

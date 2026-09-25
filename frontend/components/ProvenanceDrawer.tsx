@@ -149,7 +149,7 @@ export const ProvenanceDrawer: React.FC<ProvenanceDrawerProps> = ({
               BLENDING ALGORITHM & SCIENTIFIC METHODOLOGY
             </span>
             <p className="text-[11px] text-slate-300 leading-relaxed font-mono">
-              Algorithm: Bayesian Model Averaging (BMA) with L2 Shrinkage Regularization (&lambda; = 0.12).
+              Algorithm: Adaptive Skill-Based Model Weighting with L2 Shrinkage Regularization (&lambda; = 0.12).
               Conditioned on: Region (MoES subdivisions) &times; Lead Time (+24h to +168h) &times; Season (JJAS, OND, JF, MAM) &times; Weather Regime (10 IMD atmospheric states).
             </p>
             <div className="pt-1 text-[10px] text-slate-400 font-mono">

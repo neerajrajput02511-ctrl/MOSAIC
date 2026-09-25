@@ -265,3 +265,62 @@ export interface PipelineStatusResponse {
   }>;
 }
 
+export interface CanonicalModelDetail {
+  name: string;
+  code: string;
+  value: number;
+  weight: number;
+  availability: "SUCCESS" | "DEGRADED" | "FAILED" | "STALE" | "UNAVAILABLE" | "FALLBACK";
+  source: string;
+  retrieved_at: string;
+  run_time: string;
+  quality_status: string;
+  historical_mae?: number;
+  historical_rmse?: number;
+  historical_bias?: number;
+}
+
+export interface ForecastSnapshot {
+  forecast_id: string;
+  generated_at: string;
+  initialization_time: string;
+  valid_time: string;
+  location: {
+    id: number;
+    name: string;
+    state: string;
+    district?: string;
+    latitude: number;
+    longitude: number;
+    elevation_m?: number;
+    is_ner: boolean;
+    region_id?: number;
+  };
+  lead_time: string;
+  lead_time_hours: number;
+  variable: string;
+  units: string;
+  models: CanonicalModelDetail[];
+  equal_mean: number;
+  mosaic_blend: number;
+  uncertainty: number;
+  uncertainty_bounds: { lower: number; upper: number };
+  confidence: number;
+  confidence_label: string;
+  regime: string;
+  verification_metrics: Record<string, any>;
+  provenance: Record<string, any>;
+  pipeline_status: Record<string, any>;
+  provenance_state: "LIVE" | "CALCULATED" | "CACHED" | "DEMO" | "UNAVAILABLE";
+  mathematical_audit: {
+    weights_sum: number;
+    is_valid_weights: boolean;
+    exact_weighted_sum: number;
+    mosaic_blend: number;
+    is_valid_blend: boolean;
+    equal_mean: number;
+    diff: number;
+  };
+}
+
+

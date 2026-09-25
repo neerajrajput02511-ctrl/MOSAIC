@@ -57,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: "blending_engine" as NavTab, 
       label: "BLENDING ENGINE", 
       icon: Layers, 
-      badge: "BMA MATH", 
+      badge: "SKILL MATH", 
       badgeColor: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" 
     },
     { 

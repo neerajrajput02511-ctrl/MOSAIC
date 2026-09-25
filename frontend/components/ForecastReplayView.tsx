@@ -143,7 +143,7 @@ export const ForecastReplayView: React.FC = () => {
             </div>
             <p className="text-xs text-slate-400 mt-1 max-w-3xl">
               Evaluate MOSAIC multi-model hindcast performance against official IMD AWS / ERA5 ground-truth observations.
-              Scrub through lead times (+24h to +120h) to observe dynamic BMA weight shifts between traditional physics NWP and AI neural operators.
+              Scrub through lead times (+24h to +120h) to observe dynamic adaptive weight shifts between traditional physics NWP and AI neural operators.
             </p>
           </div>
 
@@ -289,7 +289,7 @@ export const ForecastReplayView: React.FC = () => {
                       <th className="py-2.5 px-3">MODEL TYPE</th>
                       <th className="py-2.5 px-3">PREDICTED VALUE</th>
                       <th className="py-2.5 px-3">ABSOLUTE ERROR</th>
-                      <th className="py-2.5 px-3">BMA WEIGHT</th>
+                      <th className="py-2.5 px-3">ADAPTIVE WEIGHT</th>
                       <th className="py-2.5 px-3">PERFORMANCE ASSESSMENT</th>
                     </tr>
                   </thead>
@@ -361,7 +361,7 @@ export const ForecastReplayView: React.FC = () => {
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                         <span>MOSAIC HYBRID BLEND</span>
                       </td>
-                      <td className="py-3 px-3 text-emerald-400 font-mono">Dynamic Regularized BMA</td>
+                      <td className="py-3 px-3 text-emerald-400 font-mono">Dynamic Adaptive Skill Blend</td>
                       <td className="py-3 px-3 text-emerald-300 text-sm">{currentStep.MOSAIC_BLEND}</td>
                       <td className="py-3 px-3 text-emerald-400 text-sm">±{currentStep.mosaic_error}</td>
                       <td className="py-3 px-3 text-emerald-300">100.0% (Adaptive)</td>

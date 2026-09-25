@@ -563,12 +563,12 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                   <h1 className="text-lg font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
                     SPATIAL MULTI-MODEL WEIGHT MAP
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                      BMA &times; REGIME &times; OROGRAPHY
+                      SKILL &times; REGIME &times; OROGRAPHY
                     </span>
                   </h1>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Dynamic Bayesian Model Averaging (BMA) conditioned on <span className="text-cyan-300 font-semibold">Climate Division &times; Lead Time (+{leadTime}h) &times; Season ({season})</span> across 26 real stations in India.
+                  Dynamic Adaptive Skill-Based Model Weighting conditioned on <span className="text-cyan-300 font-semibold">Climate Division &times; Lead Time (+{leadTime}h) &times; Season ({season})</span> across 26 real stations in India.
                 </p>
               </div>
             </div>
@@ -627,7 +627,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             </div>
             <div>
               <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
-                <span>AI DOMINANCE COVERAGE</span>
+                <span>ADAPTIVE AI WEIGHT DOMINANCE</span>
                 <button
                   onClick={() => setShowAiProofModal(true)}
                   title="View reproducible definition and grid cell evaluation"
@@ -925,7 +925,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               {/* Exact BMA Weights Breakdown Rows */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-                  <span>BMA WEIGHT VECTOR (&Sigma;w = 1.0000)</span>
+                  <span>ADAPTIVE WEIGHT VECTOR (&Sigma;w = 1.0000)</span>
                   <span className="text-[10px] text-cyan-400">Entropy H={selectedRegion.bma_entropy}</span>
                 </div>
 
@@ -1268,7 +1268,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               </div>
 
               <p className="text-[10px] text-slate-400 italic">
-                Scientific Guarantee: This explanation is dynamically synthesized from the mathematical BMA calculation. Zero hardcoded rationale values are used.
+                Scientific Guarantee: This explanation is dynamically synthesized from the mathematical adaptive weighting calculation. Zero hardcoded rationale values are used.
               </p>
             </div>
 

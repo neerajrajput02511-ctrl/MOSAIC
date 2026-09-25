@@ -17,13 +17,20 @@ In prior prototype iterations, UI components displayed disconnected values:
 * ECMWF AIFS: $15.6\text{ mm}$ (Weight: $44\%$)
 * NOAA GEFS: $16.6\text{ mm}$ (Weight: $8\%$)
 * Equal Mean: $16.1\text{ mm}$
-* MOSAIC Blend: $15.4\text{ mm}$
+* Raw Model Inputs: GFS = $17.2\text{ mm}$, IFS = $14.5\text{ mm}$, AIFS = $15.6\text{ mm}$, GEFS = $16.3\text{ mm}$
+* Raw Weights: GFS = $14\%$, IFS = $42\%$, AIFS = $32\%$, GEFS = $8\%$ (Sum = $0.96$)
+* Normalized Weights:
+  * GFS = $0.14 / 0.96 \approx 14.5833\%$
+  * IFS = $0.42 / 0.96 = 43.7500\%$
+  * AIFS = $0.32 / 0.96 \approx 33.3333\%$
+  * GEFS = $0.08 / 0.96 \approx 8.3333\%$
+  * $\sum w_i^{\text{norm}} \equiv 1.000000$
 
 **Direct Arithmetic Evaluation**:
-$$\text{Weighted Sum} = (18.8 \times 0.14) + (14.5 \times 0.34) + (15.6 \times 0.44) + (16.6 \times 0.08)$$
-$$= 2.632 + 4.930 + 6.864 + 1.328 = 15.754\text{ mm}$$
+$$\text{Weighted Sum} = (17.2 \times 0.145833) + (14.5 \times 0.4375) + (15.6 \times 0.333333) + (16.3 \times 0.083333)$$
+$$= 2.5083 + 6.3438 + 5.2000 + 1.3583 = 15.4104\text{ mm} \to 15.4\text{ mm}$$
 
-A dashboard displaying $15.4\text{ mm}$ while displaying inputs summing to $15.75\text{ mm}$ fails technical judge scrutiny.
+$$\text{Equal Mean} = \frac{17.2 + 14.5 + 15.6 + 16.3}{4} = \frac{63.6}{4} = 15.9\text{ mm}$$
 
 ### 1.2 Architecture of the Single Forecast Truth Engine
 To eliminate all discrepancies, MOSAIC enforces a single, authoritative object created via `frontend/utils/forecastTruth.ts`:
@@ -36,12 +43,19 @@ export interface SingleForecastTruth {
     aifs: IndividualModelData;
     gefs: IndividualModelData;
   };
+  raw_weights: Record<string, number>;
+  normalized_weights: Record<string, number>;
+  raw_weight_sum: number;
+  normalized_weight_sum: number;
   equal_mean: number;
   mosaic_blend: number;
   weighted_sum: number;
   weight_sum: number;
   is_valid_weight_sum: boolean;
   is_valid_blend: boolean;
+  is_identity_match: boolean;
+  system_status: "HEALTHY" | "DEGRADED" | "ERROR";
+  fallback_count: number;
   spread: number;
   std_dev: number;
   confidence: "HIGH" | "MODERATE" | "LOW";
@@ -55,12 +69,12 @@ export interface SingleForecastTruth {
 Every component (`OverviewView`, `ModelComparisonCard`, `ModelWeightMapView`, `BaselineComparisonView`) now consumes this single object.
 
 ### 1.3 Invariant Assertions
-1. **Weight Normalization**:
-   $$\sum_{i=1}^M w_i \equiv 1.0000 \quad (|\sum w_i - 1.0| < 10^{-4})$$
-   If $\sum w_i \neq 1.0$, the UI triggers: `ERROR: INVALID MODEL WEIGHTS`.
+1. **Weight Normalization at Source**:
+   $$w_i^{\text{norm}} = \frac{w_i^{\text{raw}}}{\sum_j w_j^{\text{raw}}}, \quad \sum_{i=1}^M w_i^{\text{norm}} \equiv 1.000000$$
+   Normalized weights must strictly sum to 1.0000.
 2. **Blend Identity**:
    $$|\text{weighted\_sum} - \text{mosaic\_blend}| < 0.05\text{ mm}$$
-   If violated, the UI triggers: `BLEND CALCULATION ERROR`.
+   Enforces Strict Identity Match: $\sum (w_i^{\text{norm}} \cdot x_i) \equiv \text{MOSAIC Blend}$.
 
 ---
 

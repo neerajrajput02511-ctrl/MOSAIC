@@ -9,7 +9,8 @@ from backend.app.database.session import get_db
 from backend.app.database.models import Location, Region, ModelMetadata, ModelPerformance, DataSourceStatus
 from backend.app.services.weather_service import WeatherService
 from backend.app.schemas.weather import (
-    LocationSchema, WhyThisForecastResponse, DataSourceStatusSchema
+    LocationSchema, WhyThisForecastResponse, DataSourceStatusSchema,
+    ForecastSnapshot, IntegrityCheckResponse
 )
 from backend.app.data_sources.imd import IMD_STATE_IDS
 
@@ -84,6 +85,33 @@ async def get_blended_forecast(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Blending pipeline failure: {str(e)}")
+
+@router.get("/forecast/snapshot", response_model=ForecastSnapshot, summary="Single Source of Truth Forecast Snapshot (Requirement 2)")
+async def get_forecast_snapshot(
+    location_id: int = Query(1, description="Target Location ID"),
+    lead_time_hours: int = Query(24, description="Forecast Lead Time (+24h, +48h, etc.)"),
+    variable: str = Query("precipitation_mm", description="Target Variable (precipitation_mm or temperature_c)"),
+    disabled_model: Optional[str] = Query(None, description="Simulate provider outage (e.g. ECMWF_AIFS)"),
+    db: Session = Depends(get_db)
+):
+    service = WeatherService(db)
+    try:
+        return await service.get_forecast_snapshot(
+            location_id=location_id,
+            lead_time_hours=lead_time_hours,
+            variable=variable,
+            disabled_model_code=disabled_model
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Forecast snapshot generation error: {str(e)}")
+
+@router.get("/integrity-check", response_model=IntegrityCheckResponse, summary="Automated Scientific & Mathematical Integrity Check (Requirement 21)")
+async def get_integrity_check(db: Session = Depends(get_db)):
+    service = WeatherService(db)
+    return await service.get_integrity_check()
+
 
 @router.get("/explainability/why", response_model=WhyThisForecastResponse, summary="Why This Forecast? Complete Provenance & Weight Breakdown")
 async def get_why_this_forecast(

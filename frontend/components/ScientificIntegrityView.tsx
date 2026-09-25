@@ -78,7 +78,7 @@ export const ScientificIntegrityView: React.FC = () => {
     },
     {
       id: "REQ-07",
-      requirement: "Adaptive BMA Weighting Engine with L2 Shrinkage Regularization",
+      requirement: "Adaptive Skill-Based Model Weighting Engine with L2 Shrinkage Regularization",
       sih_section: "Section 5: Adaptive Weight Engine",
       implementation_module: "backend/app/ml/blending.py (calculate_adaptive_weights)",
       evidence_endpoint_or_ui: "Conditioned on Region x Lead x Season x Regime with lambda=0.12 shrinkage",

@@ -72,7 +72,7 @@ export const BaselineComparisonView: React.FC<BaselineComparisonViewProps> = ({
     return {
       lead: `+${pt.lead_time_hours}h`,
       lead_hours: pt.lead_time_hours,
-      "Smart Blend (BMA)": bVal,
+      "MOSAIC Adaptive Blend": bVal,
       "Equal-Weighted Mean (Baseline)": eVal,
       "Best Single Model": sVal
     };
@@ -140,7 +140,7 @@ export const BaselineComparisonView: React.FC<BaselineComparisonViewProps> = ({
         <div className="p-3 bg-amber-950/20 rounded-lg border border-amber-500/30 text-xs text-amber-300 flex items-start space-x-2.5">
           <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div className="text-[11px] leading-relaxed">
-            <strong>MoES Evaluation Criterion:</strong> The equal-weighted multi-model mean is a notoriously resilient baseline. We never hide this baseline: our BMA smart blend uses verified regional skill and weather regime conditioning to mathematically beat simple averaging by 12–23% RMSE across multi-day horizons.
+            <strong>MoES Evaluation Criterion:</strong> The equal-weighted multi-model mean is a notoriously resilient baseline. We never hide this baseline: our adaptive skill-based blend uses verified regional skill and weather regime conditioning to mathematically beat simple averaging by 12–23% RMSE across multi-day horizons.
           </div>
         </div>
       </div>
@@ -151,7 +151,7 @@ export const BaselineComparisonView: React.FC<BaselineComparisonViewProps> = ({
         <div className="bg-gradient-to-br from-[#0c1322] to-[#121c33] border-2 border-cyan-500/40 rounded-xl p-5 space-y-2 shadow-lg relative overflow-hidden">
           <div className="flex items-center justify-between text-xs">
             <span className="font-mono text-cyan-400 font-bold uppercase tracking-wider">
-              1. SMART BMA BLEND
+              1. MOSAIC ADAPTIVE BLEND
             </span>
             <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
               WEATHERFUSION AI
@@ -267,7 +267,7 @@ export const BaselineComparisonView: React.FC<BaselineComparisonViewProps> = ({
               <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
               <Line 
                 type="monotone" 
-                dataKey="Smart Blend (BMA)" 
+                dataKey="MOSAIC Adaptive Blend" 
                 stroke="#06b6d4" 
                 strokeWidth={3} 
                 dot={{ r: 4 }}

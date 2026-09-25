@@ -34,7 +34,7 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
             </h4>
           </div>
           <p className="text-[11px] text-slate-400 mt-0.5">
-            Weights dynamically synthesized via regularized BMA conditioned on Region &times; Season &times; Regime.
+            Weights dynamically synthesized via Adaptive Skill-Based Model Weighting conditioned on Region &times; Season &times; Regime.
           </p>
         </div>
         
@@ -63,7 +63,7 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
               ? "bg-amber-500/20 text-amber-300 border-amber-500/40" 
               : "bg-rose-500/20 text-rose-300 border-rose-500/40"
           }`}>
-            CONFIDENCE: {truth.confidence} ({truth.confidence_score}%)
+            PROVISIONAL CONFIDENCE: {truth.confidence} ({truth.confidence_score}%)
           </span>
         </div>
 
@@ -125,7 +125,7 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
         {truth.model_list.map((m) => {
           const isAI = m.code.includes("AIFS");
           const isEnsemble = m.code.includes("GEFS");
-          const weightPct = Math.round(m.weight * 100);
+          const weightPct = (m.normalized_weight * 100).toFixed(1);
 
           return (
             <div key={m.code} className="bg-[#111a2e] rounded-xl p-3 border border-[#1e2c47]/80 space-y-1.5 font-mono">
@@ -145,7 +145,7 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
                 
                 <div className="flex items-center space-x-4 text-xs">
                   <span className="text-slate-400">Pred: <strong className="text-slate-200">{m.value.toFixed(1)} mm</strong></span>
-                  <span className="text-cyan-400 font-bold">Weight: {weightPct}%</span>
+                  <span className="text-cyan-400 font-bold">Weight: {weightPct}% <span className="text-slate-500 text-[10px]">(raw {(m.raw_weight * 100).toFixed(0)}%)</span></span>
                 </div>
               </div>
 
@@ -153,13 +153,13 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
               <div className="w-full h-1.5 bg-[#0c1322] rounded-full overflow-hidden flex">
                 <div 
                   className={`h-full transition-all duration-500 ${isAI ? "bg-purple-500" : isEnsemble ? "bg-amber-400" : "bg-cyan-400"}`}
-                  style={{ width: `${weightPct}%` }}
+                  style={{ width: `${m.normalized_weight * 100}%` }}
                 />
               </div>
 
               <div className="flex justify-between text-[10px] text-slate-400 pt-0.5">
                 <span>Verified Historical MAE: {m.historical_mae} mm</span>
-                <span>Weighted Contribution: {(m.value * m.weight).toFixed(2)} mm</span>
+                <span>Weighted Contribution: {(m.value * m.normalized_weight).toFixed(2)} mm</span>
               </div>
             </div>
           );

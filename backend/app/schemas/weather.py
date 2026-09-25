@@ -113,3 +113,62 @@ class SystemHealthResponse(BaseModel):
     data_sources: List[DataSourceStatusSchema]
     active_models_count: int
     cached_runs_count: int
+
+class ModelDetail(BaseModel):
+    name: str
+    code: str
+    value: float
+    weight: float
+    availability: str
+    source: str
+    retrieved_at: str
+    run_time: str
+    quality_status: str
+    historical_mae: Optional[float] = None
+    historical_rmse: Optional[float] = None
+    historical_bias: Optional[float] = None
+
+class PipelineStageItem(BaseModel):
+    stage_name: str
+    status: str
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    duration_ms: Optional[float] = None
+    records_processed: Optional[int] = None
+    error: Optional[str] = None
+
+class ForecastSnapshot(BaseModel):
+    forecast_id: str
+    generated_at: str
+    initialization_time: str
+    valid_time: str
+    location: Dict[str, Any]
+    lead_time: str
+    lead_time_hours: int
+    variable: str
+    units: str
+    models: List[ModelDetail]
+    equal_mean: float
+    mosaic_blend: float
+    uncertainty: float
+    uncertainty_bounds: Dict[str, float]
+    confidence: float
+    confidence_label: str
+    regime: str
+    verification_metrics: Dict[str, Any]
+    provenance: Dict[str, Any]
+    pipeline_status: Dict[str, Any]
+    provenance_state: str
+    mathematical_audit: Dict[str, Any]
+
+class IntegrityCheckResponse(BaseModel):
+    weights_valid: bool
+    blend_valid: bool
+    equal_mean_valid: bool
+    uncertainty_valid: bool
+    provenance_valid: bool
+    pipeline_valid: bool
+    data_freshness_valid: bool
+    errors: List[str]
+    details: Dict[str, Any]
+

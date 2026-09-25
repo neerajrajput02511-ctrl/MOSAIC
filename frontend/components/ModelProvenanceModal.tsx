@@ -73,7 +73,7 @@ export const ModelProvenanceModal: React.FC<ModelProvenanceModalProps> = ({
             </div>
           </div>
           <div className="text-right">
-            <span className="text-[10px] text-slate-400 uppercase block">BMA WEIGHT</span>
+            <span className="text-[10px] text-slate-400 uppercase block">NORMALIZED WEIGHT</span>
             <div className="text-xl font-bold text-purple-300">
               {Math.round(model.weight * 100)}% <span className="text-xs text-slate-500 font-normal">({model.weight.toFixed(4)})</span>
             </div>
