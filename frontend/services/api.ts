@@ -7,7 +7,7 @@ import {
   ForecastSnapshot
 } from "@/types";
 
-const DEFAULT_PUBLIC_BACKEND = "https://trends-flyer-vat-engineering.trycloudflare.com/api/v1";
+const DEFAULT_PUBLIC_BACKEND = "https://odd-pugs-fetch.loca.lt/api/v1";
 
 export function getApiBase(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
