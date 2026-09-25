@@ -557,9 +557,31 @@ async def configure_data_source(
 
 
 
-# ==========================================
-# GEOSPATIAL MAP LAYERS & GEOCODING
-# ==========================================
+@router.get("/debug/map-fetch")
+async def debug_map_fetch(db: Session = Depends(get_db)):
+    import httpx
+    service = WeatherService(db)
+    locations = service.get_locations()
+    lats = ",".join(f"{loc.latitude:.4f}" for loc in locations)
+    lons = ",".join(f"{loc.longitude:.4f}" for loc in locations)
+    url = (
+        f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}"
+        f"&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_direction_10m,surface_pressure,weather_code"
+        f"&timezone=auto"
+    )
+    headers = {
+        "User-Agent": "WeatherFusionAI/1.0 (sih26081@mosaic.gov.in)",
+        "Accept": "application/json"
+    }
+    result = {"url_len": len(url), "loc_count": len(locations)}
+    try:
+        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True, headers=headers) as client:
+            resp = await client.get(url)
+            result["status"] = resp.status_code
+            result["body_preview"] = resp.text[:400]
+    except Exception as e:
+        result["exception"] = str(e)
+    return result
 
 @router.get("/map/layers/{layer_type}", summary="GeoJSON Layer (rainfall, temperature, wind, blended, disagreement)")
 async def get_map_layer_by_type(
