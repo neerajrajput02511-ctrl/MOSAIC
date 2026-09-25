@@ -10,8 +10,13 @@ import {
 const DEFAULT_PUBLIC_BACKEND = "https://mosaic-mgbt.onrender.com/api/v1";
 
 export function getApiBase(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+  let url = process.env.NEXT_PUBLIC_API_URL;
+  if (url && url.trim().length > 0) {
+    url = url.trim().replace(/\/$/, "");
+    if (!url.endsWith("/api/v1") && !url.endsWith("/api")) {
+      url = `${url}/api/v1`;
+    }
+    return url;
   }
   if (typeof window !== "undefined") {
     // If the page is running on HTTPS (like GitHub Pages or production domain)

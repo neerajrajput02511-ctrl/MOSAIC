@@ -33,6 +33,7 @@ async def startup_event():
 # Mount API routes
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(api_router, prefix="/api") # convenience alias
+app.include_router(api_router) # root alias for direct /ping, /health, /locations
 
 @app.get("/")
 def root():
