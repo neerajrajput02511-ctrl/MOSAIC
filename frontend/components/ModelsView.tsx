@@ -18,7 +18,11 @@ import {
 import { ModelWeightMapView } from "./ModelWeightMapView";
 import { InfoTooltip } from "./InfoTooltip";
 
-export const ModelsView: React.FC = () => {
+interface ModelsViewProps {
+  monitoringScope?: "NER" | "INDIA";
+}
+
+export const ModelsView: React.FC<ModelsViewProps> = ({ monitoringScope = "NER" }) => {
   const [selectedModel, setSelectedModel] = useState<string>("ECMWF_IFS");
   const [viewMode, setViewMode] = useState<"cards" | "weights">("cards");
 
@@ -144,7 +148,7 @@ export const ModelsView: React.FC = () => {
             </span>
             <InfoTooltip term="adaptive_weight" explanation="Dynamic model weight distribution computed per grid point and lead time based on recent rolling verification skill." />
           </div>
-          <ModelWeightMapView />
+          <ModelWeightMapView monitoringScope={monitoringScope} />
         </div>
       ) : (
         <div className="space-y-6">

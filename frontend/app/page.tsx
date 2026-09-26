@@ -27,7 +27,7 @@ import { MeteorologicalChatModal } from "@/components/MeteorologicalChatModal";
 export default function Home() {
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<LocationItem | null>(null);
-  const [nerFilter, setNerFilter] = useState<boolean>(true); // Default to NER focus as mandated by SIH26081
+  const [monitoringScope, setMonitoringScope] = useState<"NER" | "INDIA">("NER");
   const [activeTab, setActiveTab] = useState<NavTab>("forecast");
   const [isBackendOnline, setIsBackendOnline] = useState<boolean | null>(true);
 
@@ -62,10 +62,34 @@ export default function Home() {
     };
   }, []);
 
-  // 2. Initial locations load
+  // 2. Read initial scope from URL query parameter (Requirement 29)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const scopeParam = params.get("scope");
+      if (scopeParam?.toLowerCase() === "india" || scopeParam?.toLowerCase() === "all_india") {
+        setMonitoringScope("INDIA");
+      } else if (scopeParam?.toLowerCase() === "ner") {
+        setMonitoringScope("NER");
+      }
+    }
+  }, []);
+
+  // 3. Scope toggle handler with URL update without page reload
+  const handleToggleScope = (scope: "NER" | "INDIA") => {
+    setMonitoringScope(scope);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("scope", scope.toLowerCase());
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
+
+  // 4. Locations load respecting monitoringScope
   useEffect(() => {
     async function init() {
-      const locs = await fetchLocations(nerFilter);
+      const isNer = monitoringScope === "NER";
+      const locs = await fetchLocations(isNer, monitoringScope);
 
       // Guarantee strictly at most ONE user location in frontend state
       const cleanedLocs: LocationItem[] = [];
@@ -88,20 +112,21 @@ export default function Home() {
       }
       setLocations(cleanedLocs);
 
-      if (cleanedLocs.length > 0 && !selectedLocation) {
-        const userLoc = cleanedLocs.find(l => l.name.includes("📍") || l.name.toLowerCase().includes("my location"));
-        if (userLoc) {
-          setSelectedLocation(userLoc);
-        } else {
-          const guwahati = cleanedLocs.find(l => l.name === "Guwahati") || cleanedLocs[0];
-          setSelectedLocation(guwahati);
-        }
+      // If switching scope and current station does not match scope domain
+      if (isNer && selectedLocation && !selectedLocation.is_ner) {
+        const guwahati = cleanedLocs.find(l => l.name === "Guwahati") || cleanedLocs[0];
+        if (guwahati) setSelectedLocation(guwahati);
+      } else if (!selectedLocation && cleanedLocs.length > 0) {
+        const defaultLoc = isNer 
+          ? (cleanedLocs.find(l => l.name === "Guwahati") || cleanedLocs[0])
+          : (cleanedLocs.find(l => l.name === "New Delhi") || cleanedLocs[0]);
+        setSelectedLocation(defaultLoc);
       }
     }
     init();
-  }, [nerFilter]);
+  }, [monitoringScope]);
 
-  // 3. Fetch blended forecast when location changes
+  // 5. Fetch blended forecast when location changes
   useEffect(() => {
     async function loadForecast() {
       if (!selectedLocation) return;
@@ -113,7 +138,7 @@ export default function Home() {
     loadForecast();
   }, [selectedLocation]);
 
-  // 4. Handler for Explainability Drawer
+  // 6. Handler for Explainability Drawer
   const handleOpenExplainability = async (leadTime?: number) => {
     if (!selectedLocation) return;
     const targetLead = leadTime ?? selectedLeadTime;
@@ -124,7 +149,7 @@ export default function Home() {
     setLoadingExplain(false);
   };
 
-  // 5. Clean Location Selection
+  // 7. Clean Location Selection
   const handleSelectLocation = (loc: LocationItem) => {
     const isUser = (
       loc.name.includes("📍") ||
@@ -161,6 +186,8 @@ export default function Home() {
         onOpenHelp={() => setHelpModalOpen(true)}
         onOpenChat={() => setChatModalOpen(true)}
         isBackendOnline={isBackendOnline}
+        monitoringScope={monitoringScope}
+        onToggleScope={handleToggleScope}
       />
 
       {/* 2. BODY SHELL: Sidebar (240px) + Main Content */}
@@ -186,15 +213,17 @@ export default function Home() {
               selectedLeadTime={selectedLeadTime}
               onSelectLeadTime={(lead) => setSelectedLeadTime(lead)}
               onOpenExplainability={() => handleOpenExplainability(selectedLeadTime)}
-              nerFilter={nerFilter}
-              onToggleNerFilter={(val: boolean) => setNerFilter(val)}
+              nerFilter={monitoringScope === "NER"}
+              onToggleNerFilter={(val: boolean) => handleToggleScope(val ? "NER" : "INDIA")}
+              monitoringScope={monitoringScope}
+              onToggleScope={handleToggleScope}
               onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
 
           {/* TAB 2: MODELS (MODEL PROFILES & SPATIAL WEIGHT MAP) */}
           {activeTab === "models" && (
-            <ModelsView />
+            <ModelsView monitoringScope={monitoringScope} />
           )}
 
           {/* TAB 3: VERIFICATION (SKILL CURVES, BASELINES & REPLAY) */}
@@ -204,6 +233,7 @@ export default function Home() {
               selectedLocation={selectedLocation}
               selectedLeadTime={selectedLeadTime}
               onSelectLeadTime={(lead) => setSelectedLeadTime(lead)}
+              monitoringScope={monitoringScope}
             />
           )}
 
@@ -212,6 +242,7 @@ export default function Home() {
             <EventsView
               events={forecastData?.extreme_events || []}
               selectedLocation={selectedLocation}
+              monitoringScope={monitoringScope}
             />
           )}
 

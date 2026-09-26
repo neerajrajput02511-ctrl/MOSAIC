@@ -13,6 +13,7 @@ interface WeatherMapProps {
   onSelectLocation: (loc: LocationItem) => void;
   activeLayer: string;
   currentPoint?: any;
+  monitoringScope?: "NER" | "INDIA";
 }
 
 // Clean light enterprise loading placeholder

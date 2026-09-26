@@ -45,6 +45,7 @@ import {
 interface ModelWeightMapViewProps {
   onSelectRegion?: (regionCode: string) => void;
   onOpenCopilot?: (initialQuery?: string) => void;
+  monitoringScope?: "NER" | "INDIA";
 }
 
 const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
@@ -109,7 +110,8 @@ const MAP_STYLES = {
 
 export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({ 
   onSelectRegion,
-  onOpenCopilot 
+  onOpenCopilot,
+  monitoringScope = "NER"
 }) => {
   const [leadTime, setLeadTime] = useState<number>(120); // Default to Day 5 (+120h)
   const [season, setSeason] = useState<string>("Monsoon");
@@ -151,14 +153,14 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     let isCancelled = false;
     async function loadWeights() {
       setLoading(true);
-      const data = await fetchSpatialWeightMap(leadTime, season, regime);
+      const data = await fetchSpatialWeightMap(leadTime, season, regime, monitoringScope);
       if (!isCancelled && data) {
         setMapData(data);
         if (data.regions && data.regions.length > 0) {
           const matched = selectedRegionRef.current 
             ? data.regions.find((r: SpatialRegionCell) => r.region_code === selectedRegionRef.current?.region_code)
             : null;
-          const target = matched || data.regions.find((r: SpatialRegionCell) => r.region_code === "NER") || data.regions[0];
+          const target = matched || (monitoringScope === "NER" ? data.regions.find((r: SpatialRegionCell) => r.region_code === "NER") : data.regions[0]) || data.regions[0];
           setSelectedRegion(target);
           if (target.stations && target.stations.length > 0) {
             setSelectedStation(target.stations[0]);
@@ -169,7 +171,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     }
     loadWeights();
     return () => { isCancelled = true; };
-  }, [leadTime, season, regime]);
+  }, [leadTime, season, regime, monitoringScope]);
 
   // 2. Automated Simulation Time-Lapse Player
   useEffect(() => {
@@ -894,7 +896,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                   </div>
                   <div>
                     <span className="text-[11px] font-bold tracking-wider text-[#1677FF] uppercase flex items-center gap-1.5 font-sans">
-                      ZONE DEEP DIVE <span className="text-[#9FB3C8]">•</span> LEAD TIME +{leadTime}H
+                      {monitoringScope === "INDIA" ? "NATIONAL FORECAST OVERVIEW" : "ZONE DEEP DIVE"} <span className="text-[#9FB3C8]">•</span> LEAD TIME +{leadTime}H
                     </span>
                   </div>
                 </div>

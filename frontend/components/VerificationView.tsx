@@ -21,13 +21,15 @@ interface VerificationViewProps {
   selectedLocation?: LocationItem | null;
   selectedLeadTime?: number;
   onSelectLeadTime?: (lead: number) => void;
+  monitoringScope?: "NER" | "INDIA";
 }
 
 export const VerificationView: React.FC<VerificationViewProps> = ({
   timeline = [],
   selectedLocation = null,
   selectedLeadTime = 24,
-  onSelectLeadTime
+  onSelectLeadTime,
+  monitoringScope = "NER"
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<"skill" | "replay" | "baselines">("skill");
 
@@ -91,7 +93,7 @@ export const VerificationView: React.FC<VerificationViewProps> = ({
 
       {/* Render Sub-View */}
       <div>
-        {activeSubTab === "skill" && <ScientificValidationView />}
+        {activeSubTab === "skill" && <ScientificValidationView monitoringScope={monitoringScope} />}
         {activeSubTab === "baselines" && (
           <BaselineComparisonView
             timeline={timeline}

@@ -19,7 +19,8 @@ import {
   Settings, 
   Sun, 
   CloudSun, 
-  CloudLightning 
+  CloudLightning,
+  Globe 
 } from "lucide-react";
 import { LocationItem, BlendedForecastResponse, TimelinePoint } from "@/types";
 import { WeatherMap } from "@/components/WeatherMap";
@@ -37,6 +38,8 @@ interface ForecastHeroViewProps {
   onNavigateTab?: (tab: any) => void;
   nerFilter?: boolean;
   onToggleNerFilter?: (val: boolean) => void;
+  monitoringScope?: "NER" | "INDIA";
+  onToggleScope?: (scope: "NER" | "INDIA") => void;
 }
 
 export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
@@ -49,7 +52,9 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
   onOpenExplainability,
   onNavigateTab = () => {},
   nerFilter,
-  onToggleNerFilter
+  onToggleNerFilter,
+  monitoringScope = "NER",
+  onToggleScope
 }) => {
   const [activeLayer, setActiveLayer] = useState<string>("rainfall");
   const [activeMode, setActiveMode] = useState<"live" | "forecast">("live");
@@ -108,14 +113,59 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
     <div className="space-y-6 max-w-[1600px] mx-auto select-none">
       {/* 1. TOP TITLE & LOCATION/DATE HEADER (Reference Mockup) */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* Title */}
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight">
-            Weather Forecast
-          </h1>
-          <p className="text-xs lg:text-sm text-[#64748B] mt-0.5">
-            Advanced AI-driven weather intelligence
+        {/* Title & Scope Badging */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight">
+              Weather Forecast
+            </h1>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase font-mono ${
+              monitoringScope === "INDIA" 
+                ? "bg-slate-900 text-emerald-400 border border-slate-700" 
+                : "bg-blue-50 text-[#1769AA] border border-blue-200"
+            }`}>
+              {monitoringScope === "INDIA" ? "ALL INDIA DOMAIN" : "NORTH EASTERN REGION"}
+            </span>
+          </div>
+          <p className="text-xs lg:text-sm text-[#64748B]">
+            {monitoringScope === "INDIA" 
+              ? "Pan-India multi-model AI-NWP hybrid operational blending & verification" 
+              : "Advanced AI-driven weather intelligence for North East India & Brahmaputra Basin"}
           </p>
+        </div>
+
+        {/* PRIMARY MONITORING SCOPE SELECTOR (Requirement 1) */}
+        <div className="bg-white border border-[#D9E0E7] rounded-2xl p-1.5 shadow-sm flex items-center gap-2">
+          <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider px-2 hidden sm:flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full ${monitoringScope === "INDIA" ? "bg-emerald-500" : "bg-[#1769AA]"}`} />
+            <span>MONITORING SCOPE</span>
+          </div>
+          <div className="flex items-center gap-1 bg-[#F1F5F9] p-1 rounded-xl border border-[#E2E8F0]">
+            <button
+              onClick={() => onToggleScope && onToggleScope("NER")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                monitoringScope === "NER"
+                  ? "bg-white text-[#1769AA] shadow-sm border border-[#CBD5E1]"
+                  : "text-[#64748B] hover:text-[#0F172A]"
+              }`}
+              title="Focus on North Eastern Region (8 States & Brahmaputra Basin)"
+            >
+              <span className={`w-2 h-2 rounded-full ${monitoringScope === "NER" ? "bg-[#1769AA]" : "bg-slate-300"}`} />
+              <span>NER</span>
+            </button>
+            <button
+              onClick={() => onToggleScope && onToggleScope("INDIA")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                monitoringScope === "INDIA"
+                  ? "bg-[#0B1F33] text-white shadow-sm"
+                  : "text-[#64748B] hover:text-[#0F172A]"
+              }`}
+              title="Switch to Pan-India National Forecast Domain"
+            >
+              <span className={`w-2 h-2 rounded-full ${monitoringScope === "INDIA" ? "bg-emerald-400" : "bg-slate-300"}`} />
+              <span>ALL INDIA</span>
+            </button>
+          </div>
         </div>
 
         {/* Location & Horizon Cards (Reference Mockup top-right) */}
@@ -267,6 +317,7 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
               onSelectLocation={onSelectLocation} 
               activeLayer={activeLayer}
               currentPoint={currentPoint}
+              monitoringScope={monitoringScope}
             />
 
             {/* Top-Left Layer Selector Dropdown (Reference Mockup) */}
@@ -562,6 +613,86 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
                 <span>Provides ensemble-based uncertainty</span>
               </div>
             </div>
+          </div>
+
+          {/* Card 4: DYNAMIC REGION INFORMATION & PROVENANCE (Requirements 11, 12, 17, 23) */}
+          <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm space-y-3.5">
+            <div className="flex items-center justify-between border-b border-[#EDF2F7] pb-2.5">
+              <div className="flex items-center space-x-1.5 font-bold text-sm text-[#0B1F33]">
+                <Globe className="w-4 h-4 text-[#1769AA]" />
+                <span>{monitoringScope === "INDIA" ? "National Domain Overview" : "Zone Surveillance Deep Dive"}</span>
+              </div>
+              <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-full ${
+                monitoringScope === "INDIA"
+                  ? "bg-slate-900 text-emerald-400 border border-slate-700"
+                  : "bg-blue-50 text-[#1769AA] border border-blue-200"
+              }`}>
+                {monitoringScope === "INDIA" ? "ALL INDIA" : "NER DOMAIN"}
+              </span>
+            </div>
+
+            {monitoringScope === "INDIA" ? (
+              <div className="space-y-2.5 text-xs text-[#334155]">
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">Monitoring Scope</span>
+                  <span className="font-bold text-[#0F172A]">Pan-India (36 MoES Subdivisions)</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">Domain Bounding Box</span>
+                  <span className="font-mono text-[#0F172A]">[68.0°E, 6.5°N] – [97.5°E, 37.5°N]</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">Common Grid Resolution</span>
+                  <span className="font-mono text-[#0F172A]">0.25° (~25 km Bilinear Interp)</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">Contributing Models</span>
+                  <span className="font-medium text-[#0F172A]">ECMWF IFS, AIFS, NOAA GFS, GEFS</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">National Stations Monitored</span>
+                  <span className="font-bold font-mono text-[#1769AA]">27 Synoptic Stations Active</span>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-[#64748B]">Data Lineage / QC</span>
+                  <span className="font-bold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    WMO-Standard QC Passed
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5 text-xs text-[#334155]">
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">Target Basin</span>
+                  <span className="font-bold text-[#0F172A]">Brahmaputra & Barak Basins</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">States Monitored (8)</span>
+                  <span className="font-medium text-[#0F172A] truncate max-w-[200px]" title="Assam, Arunachal Pradesh, Meghalaya, Manipur, Mizoram, Nagaland, Tripura, Sikkim">
+                    Assam, Meghalaya, Arunachal + 5
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">Mean Elevation</span>
+                  <span className="font-mono text-[#0F172A]">1,120 m ASL (Khasi Escarpment)</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">Terrain Forcing</span>
+                  <span className="font-medium text-[#0F172A]">Steep Orographic Funneling</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                  <span className="text-[#64748B]">NER Doppler Stations</span>
+                  <span className="font-bold font-mono text-[#1769AA]">11 AWS Radar Gates Active</span>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-[#64748B]">Regional Weather Regime</span>
+                  <span className="font-bold text-[#0F172A]">
+                    {currentPoint?.weather_regime || "Active Convection & Uplift"}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

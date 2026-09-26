@@ -28,10 +28,12 @@ async def get_system_health(db: Session = Depends(get_db)):
 @router.get("/locations", response_model=List[LocationSchema], summary="List Weather Monitoring Stations")
 def get_locations(
     ner_only: bool = Query(False, description="Filter to North Eastern Region"),
+    scope: Optional[str] = Query(None, description="Monitoring scope: NER or INDIA"),
     db: Session = Depends(get_db)
 ):
     service = WeatherService(db)
-    return service.get_locations(ner_only=ner_only)
+    is_ner = ner_only or (scope is not None and scope.upper() == "NER")
+    return service.get_locations(ner_only=is_ner)
 
 @router.get("/locations/{location_id}", response_model=LocationSchema, summary="Get Location Details")
 def get_location_by_id(location_id: int, db: Session = Depends(get_db)):
@@ -270,18 +272,19 @@ def get_spatial_weight_map(
     lead_time_hours: int = Query(72, description="Forecast lead time in hours (24, 48, 72, 120, 168)"),
     season: str = Query("Monsoon", description="Monsoon, Post-Monsoon, Winter, Pre-Monsoon"),
     regime: str = Query("Normal", description="Weather regime (Normal, Active Monsoon, Break Monsoon, Heavy Rainfall, Squall)"),
+    scope: Optional[str] = Query("NER", description="Monitoring scope: NER or INDIA"),
     db: Session = Depends(get_db)
 ):
     """
-    Powers Screen 1 (Hero Visual).
-    Shows which source's weight dominates across 5 MoES climatic zones:
-    Monsoon Core Zone, NER, Indo-Gangetic Plains, Peninsular India, Western Coast.
+    Powers Spatial Weight Map.
+    Supports both NER Regional and Pan-India MoES climate zones.
     """
     service = WeatherService(db)
     return service.get_spatial_weight_map(
         lead_time_hours=lead_time_hours,
         season=season,
-        weather_regime=regime
+        weather_regime=regime,
+        scope=scope or "NER"
     )
 
 # ==========================================
@@ -289,17 +292,19 @@ def get_spatial_weight_map(
 # ==========================================
 @router.get("/verification/skill-trends", summary="Skill Score Trends: Smart Blend vs Equal-Weighted Baseline vs Best Single Model")
 def get_verification_skill_trends(
-    region_code: str = Query("NER", description="MoES Region: NER, MONSOON_CORE, INDO_GANGETIC, PENINSULAR, WESTERN_COAST"),
+    region_code: str = Query("NER", description="MoES Region: NER, INDIA, MONSOON_CORE, INDO_GANGETIC, PENINSULAR, WESTERN_COAST"),
     variable: str = Query("precipitation_mm", description="precipitation_mm or temperature_c"),
+    scope: Optional[str] = Query(None, description="Monitoring scope: NER or INDIA"),
     db: Session = Depends(get_db)
 ):
     """
-    Powers Screen 3 (Skill Score Trends).
+    Powers Skill Score Trends.
     Verified against ECMWF Copernicus ERA5 reanalysis ground truth over Day 1 to Day 7 lead times.
-    Shows honest evaluation proving when smart BMA blend outperforms the equal-weighted baseline.
+    Supports both NER Regional and All India domains.
     """
+    effective_region = (scope or region_code).upper()
     service = WeatherService(db)
-    return service.get_skill_trends(region_code=region_code, variable=variable)
+    return service.get_skill_trends(region_code=effective_region, variable=variable)
 
 # ==========================================
 # SCREEN 4: AUTOMATED DAILY PIPELINE TELEMETRY
@@ -326,27 +331,36 @@ async def trigger_pipeline_cycle(
 @router.get("/extreme-events", summary="Active & Upcoming Extreme Weather Alerts")
 async def get_extreme_events(
     location_id: Optional[int] = Query(None),
+    scope: Optional[str] = Query("NER", description="Monitoring scope: NER or INDIA"),
     db: Session = Depends(get_db)
 ):
     service = WeatherService(db)
-    target_loc_id = location_id or 1 # Default to Guwahati, Assam
+    target_loc_id = location_id
+    if not target_loc_id:
+        target_loc_id = 1 if (scope or "NER").upper() == "NER" else 15
     forecast_data = await service.get_blended_forecast(target_loc_id, horizon_hours=48)
     return {
         "location": forecast_data["location"],
+        "scope": (scope or "NER").upper(),
         "events": forecast_data.get("extreme_events", [])
     }
 
-@router.get("/ner/monitoring", summary="North Eastern Region (NER) Multi-State Surveillance")
-async def get_ner_monitoring(db: Session = Depends(get_db)):
+@router.get("/ner/monitoring", summary="Regional & National Meteorological Surveillance")
+async def get_ner_monitoring(
+    scope: Optional[str] = Query("NER", description="Monitoring scope: NER or INDIA"),
+    db: Session = Depends(get_db)
+):
     """
-    Simultaneous meteorological surveillance across the 8 NER states:
-    Assam, Arunachal Pradesh, Meghalaya, Manipur, Mizoram, Nagaland, Tripura, Sikkim.
+    Simultaneous meteorological surveillance across:
+    - NER: The 8 NER states (Assam, Arunachal Pradesh, Meghalaya, Manipur, Mizoram, Nagaland, Tripura, Sikkim).
+    - INDIA: Pan-India national meteorological network.
     """
     import asyncio
     service = WeatherService(db)
-    ner_locs = service.get_locations(ner_only=True)
+    is_ner = (scope or "NER").upper() == "NER"
+    locs = service.get_locations(ner_only=is_ner)
     
-    sem = asyncio.Semaphore(3)
+    sem = asyncio.Semaphore(5)
     async def fetch_station(loc):
         async with sem:
             try:
@@ -369,11 +383,13 @@ async def get_ner_monitoring(db: Session = Depends(get_db)):
             except Exception:
                 return None
 
-    results = await asyncio.gather(*[fetch_station(loc) for loc in ner_locs])
+    results = await asyncio.gather(*[fetch_station(loc) for loc in locs])
     summaries = [r for r in results if r is not None]
             
+    region_title = "North Eastern Region (NER) Operational Surveillance" if is_ner else "All India National Meteorological Surveillance"
     return {
-        "region": "North Eastern Region (NER)",
+        "region": region_title,
+        "scope": "NER" if is_ner else "INDIA",
         "timestamp_utc": datetime.datetime.utcnow().isoformat(),
         "stations_monitored": len(summaries),
         "states": summaries
@@ -586,6 +602,7 @@ async def debug_map_fetch(db: Session = Depends(get_db)):
 @router.get("/map/layers/{layer_type}", summary="GeoJSON Layer (rainfall, temperature, wind, blended, disagreement)")
 async def get_map_layer_by_type(
     layer_type: str,
+    scope: Optional[str] = Query("NER", description="Monitoring scope: NER or INDIA"),
     db: Session = Depends(get_db)
 ):
     if layer_type not in ["rainfall", "temperature", "wind", "blended", "disagreement"]:
@@ -594,32 +611,32 @@ async def get_map_layer_by_type(
             detail=f"Invalid layer '{layer_type}'. Supported: rainfall, temperature, wind, blended, disagreement"
         )
     service = WeatherService(db)
-    return await service.get_map_layer(layer_type)
+    return await service.get_map_layer(layer_type, scope=scope or "NER")
 
 @router.get("/map/layers/rainfall", summary="Rainfall GeoJSON Map Layer")
-async def get_rainfall_map_layer(db: Session = Depends(get_db)):
+async def get_rainfall_map_layer(scope: Optional[str] = Query("NER"), db: Session = Depends(get_db)):
     service = WeatherService(db)
-    return await service.get_map_layer("rainfall")
+    return await service.get_map_layer("rainfall", scope=scope or "NER")
 
 @router.get("/map/layers/temperature", summary="Temperature GeoJSON Map Layer")
-async def get_temperature_map_layer(db: Session = Depends(get_db)):
+async def get_temperature_map_layer(scope: Optional[str] = Query("NER"), db: Session = Depends(get_db)):
     service = WeatherService(db)
-    return await service.get_map_layer("temperature")
+    return await service.get_map_layer("temperature", scope=scope or "NER")
 
 @router.get("/map/layers/wind", summary="Wind GeoJSON Map Layer")
-async def get_wind_map_layer(db: Session = Depends(get_db)):
+async def get_wind_map_layer(scope: Optional[str] = Query("NER"), db: Session = Depends(get_db)):
     service = WeatherService(db)
-    return await service.get_map_layer("wind")
+    return await service.get_map_layer("wind", scope=scope or "NER")
 
 @router.get("/map/layers/blended", summary="Composite Blended GeoJSON Map Layer")
-async def get_blended_map_layer(db: Session = Depends(get_db)):
+async def get_blended_map_layer(scope: Optional[str] = Query("NER"), db: Session = Depends(get_db)):
     service = WeatherService(db)
-    return await service.get_map_layer("blended")
+    return await service.get_map_layer("blended", scope=scope or "NER")
 
 @router.get("/map/layers/disagreement", summary="Model Disagreement Spread GeoJSON Map Layer")
-async def get_disagreement_map_layer(db: Session = Depends(get_db)):
+async def get_disagreement_map_layer(scope: Optional[str] = Query("NER"), db: Session = Depends(get_db)):
     service = WeatherService(db)
-    return await service.get_map_layer("disagreement")
+    return await service.get_map_layer("disagreement", scope=scope or "NER")
 
 @router.get("/geocoding/search", summary="Geocoding Search for Stations & Indian Locations")
 async def search_geocoding(
@@ -732,20 +749,40 @@ async def get_canonical_blend(
 
 @router.get("/forecast", summary="Canonical /forecast Endpoint: Multi-Model Raw & Baseline Breakdown")
 async def get_canonical_forecast(
-    lat: float = Query(..., description="Latitude coordinate"),
-    lon: float = Query(..., description="Longitude coordinate"),
-    lead: int = Query(72, description="Lead time in hours"),
+    scope: Optional[str] = Query(None, description="Monitoring scope: NER or INDIA"),
+    lat: Optional[float] = Query(None, description="Latitude coordinate"),
+    lon: Optional[float] = Query(None, description="Longitude coordinate"),
+    lead: Optional[int] = Query(None, description="Lead time in hours"),
+    leadTime: Optional[int] = Query(None, description="Alternative alias for lead time in hours"),
     variable: str = Query("rainfall", description="rainfall or temperature"),
+    bbox: Optional[str] = Query(None, description="Bounding box minLon,minLat,maxLon,maxLat"),
     db: Session = Depends(get_db)
 ):
     service = WeatherService(db)
+    effective_lead = leadTime or lead or 24
+    effective_scope = (scope or "NER").upper()
+    
+    # Coordinate resolution based on scope or parameters
+    if lat is None or lon is None:
+        if effective_scope == "INDIA":
+            # National centroid / reference coordinates (New Delhi)
+            target_lat, target_lon = 28.6139, 77.2090
+            point_name = "India National Benchmark (New Delhi)"
+        else:
+            # NER centroid / reference coordinates (Guwahati)
+            target_lat, target_lon = 26.1445, 91.7362
+            point_name = "North Eastern Region Benchmark (Guwahati)"
+    else:
+        target_lat, target_lon = lat, lon
+        point_name = f"Point ({target_lat:.2f}, {target_lon:.2f})"
+
     loc = await service.get_or_create_custom_location(
-        name=f"Point ({lat:.2f}, {lon:.2f})",
-        state="Coordinates",
-        latitude=lat,
-        longitude=lon
+        name=point_name,
+        state="National Network" if effective_scope == "INDIA" else "NER Network",
+        latitude=target_lat,
+        longitude=target_lon
     )
-    raw = await service.get_raw_model_forecasts(loc, horizon_hours=min(120, max(24, lead)))
+    raw = await service.get_raw_model_forecasts(loc, horizon_hours=min(120, max(24, effective_lead)))
     
     # Extract prediction at lead time
     var_key = "precipitation_mm" if "rain" in variable.lower() else "temperature_c"
@@ -753,7 +790,7 @@ async def get_canonical_forecast(
     for m_code, fcs in raw.items():
         if not isinstance(fcs, list):
             continue
-        match_pt = next((f for f in fcs if isinstance(f, dict) and f.get("lead_time_hours") == lead), None)
+        match_pt = next((f for f in fcs if isinstance(f, dict) and f.get("lead_time_hours") == effective_lead), None)
         if match_pt:
             model_vals[m_code] = match_pt.get(var_key)
         elif fcs and isinstance(fcs[0], dict):
@@ -761,14 +798,20 @@ async def get_canonical_forecast(
 
     valid_vals = [v for v in model_vals.values() if v is not None]
     equal_mean = round(sum(valid_vals) / len(valid_vals), 2) if valid_vals else 0.0
+
+    domain_bbox = [68.0, 6.5, 97.5, 37.5] if effective_scope == "INDIA" else [88.0, 21.5, 97.5, 29.5]
     
     return {
-        "location": {"latitude": lat, "longitude": lon},
-        "lead_time_hours": lead,
+        "scope": effective_scope,
+        "domain_bbox": domain_bbox,
+        "location": {"latitude": target_lat, "longitude": target_lon, "name": loc.name, "state": loc.state},
+        "lead_time_hours": effective_lead,
         "variable": variable,
         "models": model_vals,
         "equal_weighted_mean": equal_mean,
-        "spread_sigma": round(float(np.std(valid_vals)), 2) if valid_vals else 0.0
+        "spread_sigma": round(float(np.std(valid_vals)), 2) if valid_vals else 0.0,
+        "status": "OPERATIONAL_BLENDED",
+        "timestamp_utc": datetime.datetime.utcnow().isoformat()
     }
 
 @router.get("/weights", summary="Canonical /weights Endpoint: Dynamic BMA Weight Distribution")

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { LocationItem } from "@/types";
 import { addAndFetchMyLocation } from "@/services/locationService";
-import { apiFetch } from "@/services/api";
+import { apiFetch, createCustomLocation } from "@/services/api";
 
 // Basemap definitions (Zero Watermarks, 100% Free & Operational GIS tiles)
 const BASEMAPS = {
@@ -139,6 +139,27 @@ function MapRecenter({ lat, lng, zoom = 7 }: { lat: number; lng: number; zoom?: 
   return null;
 }
 
+function MapScopeRecenter({ scope }: { scope: "NER" | "INDIA" }) {
+  const map = useMap();
+  useEffect(() => {
+    if (scope === "INDIA") {
+      map.setView([22.5, 82.0], 5, { animate: true });
+    } else {
+      map.setView([26.1445, 91.7362], 7, { animate: true });
+    }
+  }, [scope, map]);
+  return null;
+}
+
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    }
+  });
+  return null;
+}
+
 function MapCoordinateTracker({ onMouseMove }: { onMouseMove: (lat: number, lng: number, zoom: number) => void }) {
   const map = useMapEvents({
     mousemove: (e) => {
@@ -160,6 +181,7 @@ interface WeatherMapInnerProps {
   engine?: "google" | "maplibre" | "leaflet";
   onToggleEngine?: (engine: "google" | "maplibre" | "leaflet") => void;
   currentPoint?: any;
+  monitoringScope?: "NER" | "INDIA";
 }
 
 export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
@@ -168,7 +190,8 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
   onSelectLocation,
   activeLayer: propActiveLayer,
   engine,
-  onToggleEngine
+  onToggleEngine,
+  monitoringScope = "NER"
 }) => {
   const [activeBasemap, setActiveBasemap] = useState<BasemapKey>("google");
   const [activeLayer, setActiveLayer] = useState<string>(propActiveLayer || "rainfall");
@@ -179,9 +202,9 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [coordsHud, setCoordsHud] = useState<{ lat: number; lng: number; zoom: number }>({
-    lat: 26.14,
-    lng: 91.73,
-    zoom: 6
+    lat: monitoringScope === "INDIA" ? 22.5 : 26.14,
+    lng: monitoringScope === "INDIA" ? 82.0 : 91.73,
+    zoom: monitoringScope === "INDIA" ? 5 : 6
   });
 
   const [gisData, setGisData] = useState<any>(null);
@@ -203,11 +226,29 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
     }
   };
 
+  const handleMapClick = async (lat: number, lng: number) => {
+    try {
+      const isNer = (lng >= 88.0 && lng <= 97.5 && lat >= 21.5 && lat <= 29.5);
+      const customLoc = await createCustomLocation(
+        lat,
+        lng,
+        `Point (${lat.toFixed(2)}°N, ${lng.toFixed(2)}°E)`,
+        isNer ? "Northeast India (NER)" : "All India Network"
+      );
+      if (customLoc) {
+        onSelectLocation(customLoc);
+      }
+    } catch (e) {
+      console.warn("Map click location registration failed:", e);
+    }
+  };
+
   // Fetch real GIS layer data from backend
   const fetchGisLayer = async (layerName: string) => {
     setLayerLoading(true);
     try {
-      const res = await apiFetch(`/map/layers/${layerName}`);
+      const scopeParam = monitoringScope ? `?scope=${monitoringScope}` : "";
+      const res = await apiFetch(`/map/layers/${layerName}${scopeParam}`);
       if (res.ok) {
         const data = await res.json();
         setGisData(data);
@@ -221,7 +262,7 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
 
   useEffect(() => {
     fetchGisLayer(activeLayer);
-  }, [activeLayer]);
+  }, [activeLayer, monitoringScope]);
 
   // Geocoding search handler
   const handleSearch = async (query: string) => {
@@ -527,9 +568,11 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
             opacity={activeBasemap === "satellite" ? 0.95 : 1.0}
           />
 
-          {/* Center Tracker */}
-          {selectedLocation && (
+          {/* Scope-based Recenter & Center Tracker */}
+          {selectedLocation ? (
             <MapRecenter lat={selectedLocation.latitude} lng={selectedLocation.longitude} />
+          ) : (
+            <MapScopeRecenter scope={monitoringScope} />
           )}
 
           {/* Coordinate HUD Event Tracker */}
@@ -537,32 +580,62 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
             onMouseMove={(lat, lng, zoom) => setCoordsHud({ lat, lng, zoom })}
           />
 
-          {/* Highlight NER Surveillance Envelope (Assam / NER Basin) */}
+          {/* Click Anywhere on Map to Inspect Location (Requirement 14) */}
+          <MapClickHandler onMapClick={handleMapClick} />
+
+          {/* Highlight Surveillance Envelope */}
           {showRadius && (
-            <>
-              <Circle
-                center={[26.14, 91.73]}
-                radius={240000} // 240km Doppler radar radius
-                pathOptions={{
-                  color: "#06b6d4",
-                  fillColor: "#06b6d4",
-                  fillOpacity: 0.03,
-                  dashArray: "4, 8",
-                  weight: 1.5,
-                }}
-              />
-              <Circle
-                center={[26.14, 91.73]}
-                radius={120000}
-                pathOptions={{
-                  color: "#3b82f6",
-                  fillColor: "#3b82f6",
-                  fillOpacity: 0.02,
-                  dashArray: "2, 6",
-                  weight: 1.0,
-                }}
-              />
-            </>
+            monitoringScope === "INDIA" ? (
+              <>
+                <Circle
+                  center={[28.61, 77.20]} // Northern National Hub
+                  radius={350000}
+                  pathOptions={{
+                    color: "#10b981",
+                    fillColor: "#10b981",
+                    fillOpacity: 0.02,
+                    dashArray: "4, 8",
+                    weight: 1.2,
+                  }}
+                />
+                <Circle
+                  center={[19.07, 72.87]} // Western Maritime Hub
+                  radius={300000}
+                  pathOptions={{
+                    color: "#06b6d4",
+                    fillColor: "#06b6d4",
+                    fillOpacity: 0.02,
+                    dashArray: "4, 8",
+                    weight: 1.2,
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <Circle
+                  center={[26.14, 91.73]}
+                  radius={240000} // 240km Doppler radar radius
+                  pathOptions={{
+                    color: "#06b6d4",
+                    fillColor: "#06b6d4",
+                    fillOpacity: 0.03,
+                    dashArray: "4, 8",
+                    weight: 1.5,
+                  }}
+                />
+                <Circle
+                  center={[26.14, 91.73]}
+                  radius={120000}
+                  pathOptions={{
+                    color: "#3b82f6",
+                    fillColor: "#3b82f6",
+                    fillOpacity: 0.02,
+                    dashArray: "2, 6",
+                    weight: 1.0,
+                  }}
+                />
+              </>
+            )
           )}
 
           {/* Render GIS Stations & Data Layers (Deduplicated so at most ONE user location exists) */}

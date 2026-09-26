@@ -470,11 +470,13 @@ class BlendingEngine:
         lead_time_hours: int = 72,
         season: str = "Monsoon",
         weather_regime: str = "Normal",
+        scope: str = "NER",
         db: Any = None
     ) -> Dict[str, Any]:
         """
         Generates authentic spatial Bayesian Model Averaging (BMA) weight distribution
         across India's 7 key MoES climatic subdivisions and 26 real meteorological stations.
+        Filtered dynamically by scope ('NER' for North Eastern Region or 'INDIA' for Pan-India).
         Includes real GeoJSON polygon boundaries, terrain elevation modulation,
         Shannon information entropy, and tactical disaster advisories.
         """
@@ -581,6 +583,9 @@ class BlendingEngine:
                 "convective_bias_penalty": 0.22
             }
         ]
+
+        if (scope or "NER").upper() == "NER":
+            subdivisions = [s for s in subdivisions if s["code"] == "NER"]
 
         models = ["NOAA_GFS", "ECMWF_IFS", "ECMWF_AIFS", "NOAA_GEFS"]
         lead_bucket = cls.get_lead_time_bucket(lead_time_hours)
@@ -773,6 +778,7 @@ class BlendingEngine:
         frontier_cross = "+72h (Day 3)" if lead_time_hours < 72 else "+72h Crossover Passed (AI Dominating)"
 
         return {
+            "scope": "NER" if (scope or "NER").upper() == "NER" else "INDIA",
             "lead_time_hours": lead_time_hours,
             "season": season,
             "weather_regime": weather_regime,

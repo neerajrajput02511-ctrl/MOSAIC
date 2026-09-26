@@ -164,9 +164,9 @@ export async function fetchProvenance(): Promise<any> {
   }
 }
 
-export async function fetchNerMonitoring(): Promise<any> {
+export async function fetchNerMonitoring(scope: "NER" | "INDIA" = "NER"): Promise<any> {
   try {
-    const res = await apiFetch("/ner/monitoring");
+    const res = await apiFetch(`/ner/monitoring?scope=${scope}`);
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -199,17 +199,20 @@ export const FALLBACK_LOCATIONS: LocationItem[] = [
   { id: 20, name: "Kochi", state: "Kerala", country: "India", latitude: 9.9312, longitude: 76.2673, elevation_m: 3.0, is_ner: false },
 ];
 
-export async function fetchLocations(nerOnly: boolean = false): Promise<LocationItem[]> {
+export async function fetchLocations(nerOnly: boolean = false, scope?: "NER" | "INDIA"): Promise<LocationItem[]> {
   try {
-    const res = await apiFetch(`/locations?ner_only=${nerOnly}`, { cache: "no-store", signal: AbortSignal.timeout(6000) });
+    const effectiveScope = scope || (nerOnly ? "NER" : "INDIA");
+    const isNer = effectiveScope === "NER";
+    const res = await apiFetch(`/locations?ner_only=${isNer}&scope=${effectiveScope}`, { cache: "no-store", signal: AbortSignal.timeout(6000) });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const data = await res.json();
     _isBackendHealthy = true;
-    return data && data.length > 0 ? data : (nerOnly ? FALLBACK_LOCATIONS.filter(l => l.is_ner) : FALLBACK_LOCATIONS);
+    return data && data.length > 0 ? data : (isNer ? FALLBACK_LOCATIONS.filter(l => l.is_ner) : FALLBACK_LOCATIONS);
   } catch (err) {
     _isBackendHealthy = false;
     console.warn("Backend API unavailable, using offline station catalog (DEMO MODE):", err);
-    return nerOnly ? FALLBACK_LOCATIONS.filter(l => l.is_ner) : FALLBACK_LOCATIONS;
+    const isNer = scope ? scope === "NER" : nerOnly;
+    return isNer ? FALLBACK_LOCATIONS.filter(l => l.is_ner) : FALLBACK_LOCATIONS;
   }
 }
 
@@ -578,11 +581,12 @@ export async function fetchSystemHealth(): Promise<any> {
 export async function fetchSpatialWeightMap(
   leadTimeHours: number = 72,
   season: string = "Monsoon",
-  regime: string = "Normal"
+  regime: string = "Normal",
+  scope: "NER" | "INDIA" = "NER"
 ): Promise<any> {
   try {
     const res = await apiFetch(
-      `/spatial/weight-map?lead_time_hours=${leadTimeHours}&season=${season}&regime=${regime}`,
+      `/spatial/weight-map?lead_time_hours=${leadTimeHours}&season=${season}&regime=${regime}&scope=${scope}`,
       { cache: "no-store" }
     );
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -595,17 +599,44 @@ export async function fetchSpatialWeightMap(
 
 export async function fetchSkillTrends(
   regionCode: string = "NER",
-  variable: string = "precipitation_mm"
+  variable: string = "precipitation_mm",
+  scope?: "NER" | "INDIA"
 ): Promise<any> {
   try {
+    const effectiveScope = scope || (regionCode === "INDIA" ? "INDIA" : "NER");
     const res = await apiFetch(
-      `/verification/skill-trends?region_code=${regionCode}&variable=${variable}`,
+      `/verification/skill-trends?region_code=${effectiveScope}&variable=${variable}&scope=${effectiveScope}`,
       { cache: "no-store" }
     );
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     return await res.json();
   } catch (err) {
     console.error("Failed to fetch skill trends:", err);
+    return null;
+  }
+}
+
+export async function fetchMapLayer(layerType: string = "blended", scope: "NER" | "INDIA" = "NER"): Promise<any> {
+  try {
+    const res = await apiFetch(`/map/layers/${layerType}?scope=${scope}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchMapLayer error:", err);
+    return null;
+  }
+}
+
+export async function fetchExtremeEvents(locationId?: number, scope: "NER" | "INDIA" = "NER"): Promise<any> {
+  try {
+    const path = locationId 
+      ? `/extreme-events?location_id=${locationId}&scope=${scope}`
+      : `/extreme-events?scope=${scope}`;
+    const res = await apiFetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchExtremeEvents error:", err);
     return null;
   }
 }

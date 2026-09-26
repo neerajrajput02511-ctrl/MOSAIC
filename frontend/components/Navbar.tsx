@@ -22,6 +22,8 @@ interface NavbarProps {
   onOpenChat?: () => void;
   isBackendOnline?: boolean | null;
   lastUpdated?: string;
+  monitoringScope?: "NER" | "INDIA";
+  onToggleScope?: (scope: "NER" | "INDIA") => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -31,7 +33,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHelp,
   onOpenChat,
   isBackendOnline = true,
-  lastUpdated = "4 min ago"
+  lastUpdated = "4 min ago",
+  monitoringScope = "NER",
+  onToggleScope
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -127,6 +131,37 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
           )}
+        </div>
+
+        {/* PRIMARY MONITORING SCOPE CONTROL (Requirement 1 & 28) */}
+        <div className="flex items-center gap-1 bg-[#F1F5F9] p-1 rounded-xl border border-[#D9E0E7] shadow-inner shrink-0">
+          <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider px-2 hidden xl:inline">
+            Scope
+          </span>
+          <button
+            onClick={() => onToggleScope && onToggleScope("NER")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              monitoringScope === "NER"
+                ? "bg-white text-[#1769AA] shadow-xs border border-[#CBD5E1]"
+                : "text-[#64748B] hover:text-[#0F172A]"
+            }`}
+            title="North Eastern Region & Brahmaputra Basin"
+          >
+            <span className={`w-2 h-2 rounded-full ${monitoringScope === "NER" ? "bg-[#1769AA]" : "bg-slate-300"}`} />
+            <span>NER</span>
+          </button>
+          <button
+            onClick={() => onToggleScope && onToggleScope("INDIA")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              monitoringScope === "INDIA"
+                ? "bg-[#0B1F33] text-white shadow-xs"
+                : "text-[#64748B] hover:text-[#0F172A]"
+            }`}
+            title="All India National Meteorological Domain"
+          >
+            <span className={`w-2 h-2 rounded-full ${monitoringScope === "INDIA" ? "bg-emerald-400" : "bg-slate-300"}`} />
+            <span>ALL INDIA</span>
+          </button>
         </div>
       </div>
 

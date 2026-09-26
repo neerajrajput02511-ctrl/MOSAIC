@@ -26,16 +26,27 @@ import {
   Bar
 } from "recharts";
 
-export const ScientificValidationView: React.FC = () => {
-  const [selectedRegion, setSelectedRegion] = useState<string>("NER");
+interface ScientificValidationViewProps {
+  monitoringScope?: "NER" | "INDIA";
+}
+
+export const ScientificValidationView: React.FC<ScientificValidationViewProps> = ({
+  monitoringScope = "NER"
+}) => {
+  const [selectedRegion, setSelectedRegion] = useState<string>(monitoringScope);
   const [selectedVariable, setSelectedVariable] = useState<string>("precipitation_mm");
   const [trendData, setTrendData] = useState<SkillTrendsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Sync selectedRegion with monitoringScope prop
+  useEffect(() => {
+    setSelectedRegion(monitoringScope);
+  }, [monitoringScope]);
+
   useEffect(() => {
     async function loadTrends() {
       setLoading(true);
-      const data = await fetchSkillTrends(selectedRegion, selectedVariable);
+      const data = await fetchSkillTrends(selectedRegion, selectedVariable, selectedRegion === "INDIA" ? "INDIA" : "NER");
       setTrendData(data);
       setLoading(false);
     }
@@ -63,16 +74,41 @@ export const ScientificValidationView: React.FC = () => {
           </p>
         </div>
 
-        {/* Region & Variable Selectors */}
-        <div className="flex items-center space-x-3 text-xs">
+        {/* Verification Scope & Variable Selectors (Requirement 18) */}
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          {/* Segmented Scope Selector */}
+          <div className="flex items-center gap-1 bg-[#F1F5F9] p-1 rounded-xl border border-[#D9E0E7]">
+            <button
+              onClick={() => setSelectedRegion("NER")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                selectedRegion === "NER"
+                  ? "bg-white text-[#1769AA] shadow-xs border border-[#CBD5E1]"
+                  : "text-[#64748B] hover:text-[#0F172A]"
+              }`}
+            >
+              NER (N=980)
+            </button>
+            <button
+              onClick={() => setSelectedRegion("INDIA")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                selectedRegion === "INDIA"
+                  ? "bg-[#0B1F33] text-white shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]"
+              }`}
+            >
+              ALL INDIA (N=4,410)
+            </button>
+          </div>
+
           <div className="flex items-center space-x-2">
-            <span className="text-[#64748B] font-medium">Region:</span>
+            <span className="text-[#64748B] font-medium">Sub-division:</span>
             <select
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
               className="bg-[#F8FAFC] border border-[#D9E0E7] rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1769AA]"
             >
               <option value="NER">North Eastern Region (NER)</option>
+              <option value="INDIA">All India (National Benchmark)</option>
               <option value="MONSOON_CORE">Monsoon Core Zone (Central India)</option>
               <option value="INDO_GANGETIC">Indo-Gangetic Plain</option>
               <option value="PENINSULAR">Peninsular India</option>

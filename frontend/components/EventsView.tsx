@@ -21,13 +21,15 @@ interface EventsViewProps {
   selectedLocation: LocationItem | null;
   probHeavyRain?: number;
   probVeryHeavyRain?: number;
+  monitoringScope?: "NER" | "INDIA";
 }
 
 export const EventsView: React.FC<EventsViewProps> = ({
   events,
   selectedLocation,
   probHeavyRain = 0.42,
-  probVeryHeavyRain = 0.18
+  probVeryHeavyRain = 0.18,
+  monitoringScope = "NER"
 }) => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -39,11 +41,13 @@ export const EventsView: React.FC<EventsViewProps> = ({
               <ShieldAlert className="w-4 h-4" />
             </div>
             <h1 className="text-xl font-bold text-[#0B1F33] tracking-tight">
-              Extreme Weather Guidance & Early Warning
+              {monitoringScope === "INDIA" ? "India Extreme Weather Guidance" : "NER Extreme Weather Guidance"} & Early Warning
             </h1>
           </div>
           <p className="text-xs text-[#64748B] mt-1">
-            Automated model-derived guidance for deep convection, extreme precipitation, high winds, and temperature anomalies.
+            {monitoringScope === "INDIA"
+              ? "Pan-India automated model-derived guidance for severe convection, heavy monsoonal depressions, heatwaves, and coastal squalls."
+              : "Localized automated model-derived guidance for Brahmaputra flash floods, cloudbursts, and Khasi-Garo steep orographic precipitation."}
           </p>
         </div>
 
@@ -51,9 +55,12 @@ export const EventsView: React.FC<EventsViewProps> = ({
           <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#EFF6FF] text-[#1769AA] border border-[#BFDBFE]">
             MOSAIC MODEL GUIDANCE
           </span>
+          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200 hidden sm:inline">
+            CROSS-REF: OFFICIAL IMD BULLETINS
+          </span>
           <InfoTooltip 
             term="forecast_certainty" 
-            explanation="Guidance derived from multi-model ensemble exceedance thresholds. Always cross-reference with official statutory warnings from the India Meteorological Department (IMD)." 
+            explanation="Guidance derived from multi-model ensemble exceedance thresholds. Clearly separated from official statutory warnings from the India Meteorological Department (IMD)." 
           />
         </div>
       </div>
