@@ -36,7 +36,10 @@ import {
   X,
   Scale,
   FileText,
-  Check
+  Check,
+  Trophy,
+  Mountain,
+  Wind
 } from "lucide-react";
 
 interface ModelWeightMapViewProps {
@@ -617,7 +620,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
         {/* Real-Time National Frontier HUD Strip */}
         <div className="mt-4 pt-3.5 border-t border-[#EDF2F7] grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#D9E0E7] flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-[#7C3AED] shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#EAF3FF] border border-[#BFD9FF] flex items-center justify-center text-[#1677FF] shrink-0">
               <Cpu className="w-4 h-4" />
             </div>
             <div>
@@ -626,12 +629,12 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                 <button
                   onClick={() => setShowAiProofModal(true)}
                   title="View reproducible definition and grid cell evaluation"
-                  className="text-[#1769AA] hover:text-[#155d97] transition"
+                  className="text-[#1677FF] hover:text-[#0958D9] transition"
                 >
                   <Info className="w-3 h-3" />
                 </button>
               </div>
-              <div className="font-extrabold text-[#7C3AED] font-mono text-sm flex items-center gap-1">
+              <div className="font-extrabold text-[#1677FF] font-mono text-sm flex items-center gap-1">
                 {nationalSummary.ai_coverage_pct !== null && nationalSummary.ai_coverage_pct !== undefined ? (
                   <>
                     {nationalSummary.ai_coverage_pct}%
@@ -882,47 +885,108 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
         {/* Right Column: Deep-Dive Zone Inspector (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
           {selectedRegion && (
-            <div className="bg-[#0a101d] border border-cyan-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
+            <div className="bg-white border border-[#D9E2EC] rounded-2xl p-6 space-y-5 shadow-xs">
               {/* Header */}
-              <div className="border-b border-[#EDF2F7] pb-3 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#1769AA] font-bold flex items-center gap-1">
-                    <Radio className="w-3 h-3 text-[#1769AA]" />
-                    ZONE DEEP DIVE · LEAD TIME +{leadTime}h
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-[#0B1F33] border border-[#D9E0E7]">
-                    {selectedRegion.weather_regime}
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-[#0B1F33] flex items-center justify-between">
-                  <span>{selectedRegion.region_name}</span>
-                  <span 
-                    className="text-xs px-2 py-0.5 rounded font-mono border"
-                    style={{ 
-                      backgroundColor: `${selectedRegion.color}15`, 
-                      color: selectedRegion.color, 
-                      borderColor: `${selectedRegion.color}40` 
-                    }}
-                  >
-                    Dominant: {selectedRegion.dominant_model} ({selectedRegion.dominant_weight_pct}%)
-                  </span>
-                </h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">
-                  {selectedRegion.states.join(", ")} · Mean Elevation: <strong>{selectedRegion.elevation_m}m ASL</strong>
-                </p>
-                {selectedRegion.orographic_feature && (
-                  <div className="text-[11px] font-mono text-[#1769AA] pt-1 flex items-center gap-1">
-                    <span>Terrain Forcing:</span>
-                    <span className="text-[#334155]">{selectedRegion.orographic_feature}</span>
+              <div className="flex items-center justify-between pb-3.5 border-b border-[#D9E2EC]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#EAF3FF] border border-[#BFD9FF] flex items-center justify-center text-[#1677FF] shrink-0">
+                    <MapPin className="w-4 h-4 text-[#1677FF]" />
                   </div>
-                )}
+                  <div>
+                    <span className="text-[11px] font-bold tracking-wider text-[#1677FF] uppercase flex items-center gap-1.5 font-sans">
+                      ZONE DEEP DIVE <span className="text-[#9FB3C8]">•</span> LEAD TIME +{leadTime}H
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF3FF] border border-[#BFD9FF] text-[#102A43] text-xs font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-[#15966B]" />
+                  <span>{selectedRegion.weather_regime || "Normal"}</span>
+                </div>
               </div>
 
-              {/* Exact BMA Weights Breakdown Rows */}
+              {/* Region Information */}
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-[#102A43] tracking-tight leading-snug">
+                  {selectedRegion.region_name}
+                </h3>
+                <p className="text-xs text-[#52667A] leading-relaxed">
+                  {selectedRegion.states.join(", ")}
+                </p>
+
+                {/* Compact Info Blocks */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <div className="p-3 rounded-xl bg-[#F4F7FA] border border-[#D9E2EC] flex items-center space-x-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-white border border-[#D9E2EC] flex items-center justify-center text-[#1677FF] shrink-0 shadow-xs">
+                      <Mountain className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[#52667A] block">Mean Elevation</span>
+                      <span className="text-xs font-semibold text-[#102A43] font-mono">{selectedRegion.elevation_m}m ASL</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-[#F4F7FA] border border-[#D9E2EC] flex items-center space-x-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-white border border-[#D9E2EC] flex items-center justify-center text-[#1677FF] shrink-0 shadow-xs">
+                      <Wind className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] uppercase font-bold text-[#52667A] block">Terrain Forcing</span>
+                      <span className="text-xs font-semibold text-[#102A43] truncate block" title={selectedRegion.orographic_feature}>
+                        {selectedRegion.orographic_feature || "Orographic slope & synoptic trough"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dominant Model Highlight Panel */}
+              <div className="p-4 rounded-xl bg-[#EAF3FF] border border-[#BFD9FF] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-[#BFD9FF] flex items-center justify-center text-[#1677FF] shadow-xs shrink-0">
+                    <Trophy className="w-5 h-5 text-[#1677FF]" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#52667A] block">DOMINANT MODEL</span>
+                    <span className="text-base font-bold text-[#102A43]">{selectedRegion.dominant_model}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-bold text-[#1677FF] font-mono leading-none">
+                    {selectedRegion.dominant_weight_pct}%
+                  </span>
+                  <span className="text-[10px] text-[#52667A] block pt-1 font-medium">Highest Ensemble Skill</span>
+                </div>
+              </div>
+
+              {/* Adaptive Weight Vector Horizontal Strip */}
+              <div className="p-3.5 rounded-xl bg-[#F4F7FA] border border-[#D9E2EC] flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#102A43] block">
+                    ADAPTIVE WEIGHT VECTOR
+                  </span>
+                  <span className="text-xs font-mono text-[#52667A] font-semibold">
+                    {Object.keys(selectedRegion.weights).length > 0 ? (
+                      <>&Sigma;W = {Object.values(selectedRegion.weights).reduce((a, b) => (a as number) + (b as number), 0).toFixed(4)}</>
+                    ) : (
+                      "Weight calculation unavailable"
+                    )}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#52667A] block">
+                    ENTROPY
+                  </span>
+                  <span className="font-mono text-xs font-bold text-[#1677FF]">
+                    {selectedRegion.bma_entropy !== undefined ? `H = ${selectedRegion.bma_entropy}` : "H = N/A"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Model Contribution Rows */}
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-[11px] font-mono text-[#64748B] uppercase tracking-wider">
-                  <span>ADAPTIVE WEIGHT VECTOR (&Sigma;w = 1.0000)</span>
-                  <span className="text-[10px] text-[#1769AA]">Entropy H={selectedRegion.bma_entropy}</span>
+                <div className="flex items-center justify-between text-[11px] font-bold text-[#52667A] uppercase tracking-wider">
+                  <span>MODEL CONTRIBUTIONS</span>
+                  <span className="text-[10px] text-[#1677FF]">Regularized BMA &middot; &lambda;=0.12</span>
                 </div>
 
                 {Object.entries(selectedRegion.weights).map(([modelCode, weightVal]) => {
@@ -930,43 +994,84 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                   const isDom = modelCode === selectedRegion.dominant_model;
                   const isAI = modelCode.includes("AIFS");
                   const isEnsemble = modelCode.includes("GEFS");
+                  const isIFS = modelCode.includes("IFS") && !isAI;
+
+                  const ModelIcon = isAI ? Cpu : isEnsemble ? Layers : isIFS ? Activity : Globe;
 
                   return (
                     <div 
                       key={modelCode} 
                       onClick={() => setSelectedModelForWhy(modelCode)}
-                      title={`Click to view scientific attribution: Why ${modelCode} = ${pct}%`}
-                      className={`cursor-pointer p-2.5 rounded-xl border transition-all ${
+                      title={`Click to view attribution: Why ${modelCode} = ${pct}%`}
+                      className={`cursor-pointer p-3.5 rounded-xl border transition-all ${
                         isDom 
-                          ? "bg-blue-50/50 border-[#1769AA]/40 shadow-sm" 
-                          : "bg-[#F8FAFC] border-[#D9E0E7] hover:border-[#1769AA]/30"
+                          ? "bg-white border-[#1677FF] shadow-xs ring-1 ring-[#1677FF]/20" 
+                          : "bg-white border-[#D9E2EC] hover:border-[#1677FF]/50 hover:bg-[#F4F7FA]/40"
                       }`}
                     >
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-[#0B1F33]">{modelCode}</span>
-                          <span className={`text-[8.5px] font-mono px-1.5 py-0.5 rounded border ${
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <div className="flex items-center space-x-2.5">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
                             isAI 
-                              ? "bg-purple-50 text-[#7C3AED] border-purple-200" 
+                              ? "bg-[#F2F6FF] border-[#C8D9FF] text-[#356AE6]"
                               : isEnsemble 
-                              ? "bg-amber-50 text-amber-800 border-amber-200" 
-                              : "bg-blue-50 text-[#1769AA] border-blue-200"
+                              ? "bg-[#FFF8E8] border-[#F4D58D] text-[#9A6700]"
+                              : "bg-[#EEF6FF] border-[#BFD9FF] text-[#1677FF]"
                           }`}>
-                            {isAI ? "DEEP LEARNING AI" : isEnsemble ? "31-M ENSEMBLE" : "PHYSICS NWP"}
-                          </span>
+                            <ModelIcon className="w-3.5 h-3.5" />
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[#102A43] text-xs">{modelCode}</span>
+                              <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+                                isAI 
+                                  ? "bg-[#F2F6FF] text-[#356AE6] border-[#C8D9FF]" 
+                                  : isEnsemble 
+                                  ? "bg-[#FFF8E8] text-[#9A6700] border-[#F4D58D]" 
+                                  : "bg-[#EEF6FF] text-[#1677FF] border-[#BFD9FF]"
+                              }`}>
+                                {isAI ? "DEEP LEARNING AI" : isEnsemble ? "31-M ENSEMBLE" : "PHYSICS NWP"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-[#1769AA] font-mono hidden sm:inline">Why?</span>
-                          <span className="font-mono font-bold text-sm text-[#0B1F33]">
-                            {pct}% <span className="text-[10px] text-[#64748B] font-normal">({Number(weightVal).toFixed(4)})</span>
-                          </span>
+
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedModelForWhy(modelCode);
+                            }}
+                            className="text-xs font-semibold text-[#1677FF] hover:text-[#0958D9] flex items-center gap-0.5 px-2 py-0.5 rounded-md hover:bg-[#EAF3FF] transition"
+                          >
+                            <span>Why?</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+
+                          <div className="text-right">
+                            <span className="font-mono font-bold text-sm text-[#102A43]">
+                              {pct}%
+                            </span>
+                            <span className="font-mono text-[10px] text-[#52667A] ml-1.5">
+                              ({Number(weightVal).toFixed(4)})
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="w-full h-1.5 bg-[#EDF2F7] rounded-full overflow-hidden">
+                      {/* Progress Track & Bar */}
+                      <div className="w-full h-2 bg-[#E2E8F0] rounded-full overflow-hidden">
                         <div
-                          className={`h-full transition-all duration-700 ${
-                            isAI ? "bg-[#7C3AED]" : isEnsemble ? "bg-amber-500" : "bg-[#1769AA]"
+                          className={`h-full transition-all duration-700 rounded-full ${
+                            isAI 
+                              ? "bg-[#1677FF]" 
+                              : isEnsemble 
+                              ? "bg-[#B7791F]" 
+                              : isIFS 
+                              ? "bg-[#0284C7]" 
+                              : "bg-[#2563EB]"
                           }`}
                           style={{ width: `${pct}%` }}
                         />
@@ -976,60 +1081,64 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                 })}
               </div>
 
-              {/* Scientific Rationale & Physical Grounding */}
-              <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#D9E0E7] space-y-1.5">
-                <div className="flex items-center space-x-1.5 text-xs font-semibold text-[#1769AA]">
-                  <Sparkles className="w-3.5 h-3.5 text-[#1769AA]" />
+              {/* Physical & Scientific Rationale */}
+              <div className="p-4 rounded-xl bg-[#F4F7FA] border border-[#D9E2EC] space-y-1.5">
+                <div className="flex items-center space-x-2 text-xs font-bold text-[#1677FF]">
+                  <Sparkles className="w-4 h-4 text-[#1677FF]" />
                   <span>Physical & Scientific Rationale:</span>
                 </div>
-                <p className="text-xs text-[#334155] leading-relaxed">
+                <p className="text-xs text-[#52667A] leading-relaxed">
                   {selectedRegion.rationale}
                 </p>
               </div>
 
-              {/* Tactical Disaster Advisory for NDRF / SDMA */}
+              {/* Tactical Early Warning Advisory for NDRF / SDMA */}
               {selectedRegion.tactical_advisory && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-1">
-                  <div className="flex items-center space-x-1.5 text-[10px] font-mono font-bold text-amber-800 uppercase tracking-wide">
-                    <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                <div className="p-3.5 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-xs space-y-1">
+                  <div className="flex items-center space-x-1.5 text-[10px] font-bold text-[#B7791F] uppercase tracking-wide">
+                    <ShieldAlert className="w-4 h-4 text-[#B7791F]" />
                     <span>Tactical Early Warning Advisory (NDRF/SDMA):</span>
                   </div>
-                  <p className="text-xs text-amber-900">
+                  <p className="text-xs text-[#92400E] leading-relaxed">
                     {selectedRegion.tactical_advisory}
                   </p>
                 </div>
               )}
 
-              {/* Real Weather Stations inside this Climate Subdivision */}
+              {/* Authentic Reporting Stations */}
               {selectedRegion.stations && selectedRegion.stations.length > 0 && (
-                <div className="space-y-2 pt-1 border-t border-[#EDF2F7]">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-[#64748B]">
+                <div className="space-y-2.5 pt-3 border-t border-[#D9E2EC]">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-[#52667A]">
                     <span>AUTHENTIC REPORTING STATIONS ({selectedRegion.stations.length})</span>
-                    <span className="text-[10px] text-emerald-700 font-semibold">Verified Feeds</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E6F4EA] text-[#15966B] font-semibold border border-[#CEEAD6]">
+                      Verified Feeds
+                    </span>
                   </div>
 
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+                  <div className="max-h-40 overflow-y-auto space-y-2 custom-scrollbar pr-1">
                     {selectedRegion.stations.map((st) => (
                       <div
                         key={st.id}
                         onClick={() => handleSelectStationPin(st)}
-                        className={`cursor-pointer p-2 rounded-lg border transition text-xs flex items-center justify-between ${
+                        className={`cursor-pointer p-2.5 rounded-xl border transition text-xs flex items-center justify-between ${
                           selectedStation?.id === st.id
-                            ? "bg-blue-50 border-[#1769AA] text-[#0B1F33]"
-                            : "bg-[#F8FAFC] border-[#D9E0E7] text-[#334155] hover:bg-white"
+                            ? "bg-[#EAF3FF] border-[#1677FF] text-[#102A43] shadow-xs"
+                            : "bg-white border-[#D9E2EC] text-[#52667A] hover:border-[#1677FF]/40 hover:bg-[#F4F7FA]"
                         }`}
                       >
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-3.5 h-3.5 text-[#1769AA] shrink-0" />
+                        <div className="flex items-center space-x-2.5">
+                          <div className="w-6 h-6 rounded-md bg-[#EAF3FF] text-[#1677FF] flex items-center justify-center shrink-0">
+                            <MapPin className="w-3.5 h-3.5 text-[#1677FF]" />
+                          </div>
                           <div>
-                            <span className="font-bold">{st.name}</span>
-                            <span className="text-[10px] text-[#64748B] ml-1.5">({st.state} · {st.elevation_m}m)</span>
+                            <span className="font-bold text-[#102A43]">{st.name}</span>
+                            <span className="text-[10px] text-[#52667A] ml-1.5">({st.state} &middot; {st.elevation_m}m)</span>
                           </div>
                         </div>
 
                         <div className="text-right font-mono text-[11px] flex items-center gap-2">
-                          <span className="text-[#7C3AED]">AIFS: {st.predictions?.ECMWF_AIFS}mm</span>
-                          <span className="text-[#1769AA]">IFS: {st.predictions?.ECMWF_IFS}mm</span>
+                          <span className="text-[#1677FF] font-medium">AIFS: {st.predictions?.ECMWF_AIFS}mm</span>
+                          <span className="text-[#0284C7] font-medium">IFS: {st.predictions?.ECMWF_IFS}mm</span>
                         </div>
                       </div>
                     ))}
@@ -1037,12 +1146,12 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                 </div>
               )}
 
-              {/* Ask Gemini 3.6 Flash Copilot Tactical Trigger */}
+              {/* Ask Meteorological Copilot Trigger */}
               <button
                 onClick={handleTriggerCopilotForZone}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#0B1F33] hover:bg-[#17253a] text-white font-semibold text-xs tracking-wide transition shadow-sm flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl bg-[#102A43] hover:bg-[#1A365D] text-white font-semibold text-xs tracking-wide transition shadow-sm flex items-center justify-center gap-2"
               >
-                <Bot className="w-4 h-4 text-cyan-300" />
+                <Bot className="w-4 h-4 text-[#85B9FF]" />
                 <span>Ask Meteorological Copilot About This Zone</span>
               </button>
             </div>
@@ -1066,7 +1175,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             </button>
 
             <div className="flex items-center space-x-2.5 border-b border-[#EDF2F7] pb-3">
-              <Cpu className="w-5 h-5 text-[#7C3AED]" />
+              <Cpu className="w-5 h-5 text-[#1677FF]" />
               <div>
                 <h3 className="text-sm font-bold text-[#0B1F33] uppercase tracking-wide">
                   AI DOMINANCE COVERAGE — SCIENTIFIC PROOF
@@ -1080,7 +1189,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             <div className="space-y-3 text-xs">
               <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#D9E0E7] space-y-1">
                 <span className="text-[10px] font-mono text-[#64748B] uppercase block">MATHEMATICAL DEFINITION</span>
-                <p className="font-mono text-[#7C3AED] font-bold">
+                <p className="font-mono text-[#1677FF] font-bold">
                   AI Dominance &equiv; w(ECMWF_AIFS) &gt; max( w(GFS), w(IFS), w(GEFS) )
                 </p>
                 <p className="text-xs text-[#64748B] leading-relaxed pt-1">
@@ -1095,7 +1204,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                 </div>
                 <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
                   <span className="text-[#64748B] block text-[10px] uppercase">AI-DOMINANT ZONES</span>
-                  <span className="text-[#7C3AED] font-bold text-sm">{nationalSummary.grid_cells_ai_dominant} Dominant</span>
+                  <span className="text-[#1677FF] font-bold text-sm">{nationalSummary.grid_cells_ai_dominant} Dominant</span>
                 </div>
                 <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
                   <span className="text-[#64748B] block text-[10px] uppercase">TERRITORY PERCENTAGE</span>
@@ -1252,7 +1361,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                 </div>
                 <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
                   <span className="text-[#64748B] block text-[10px] uppercase">HISTORICAL SKILL (MAE)</span>
-                  <span className="text-[#7C3AED] font-bold text-xs">
+                  <span className="text-[#1677FF] font-bold text-xs">
                     {selectedRegion.historical_era5_mae?.[selectedModelForWhy] ?? (selectedModelForWhy.includes("IFS") ? 2.1 : selectedModelForWhy.includes("AIFS") ? 2.4 : 2.8)} mm
                   </span>
                 </div>
