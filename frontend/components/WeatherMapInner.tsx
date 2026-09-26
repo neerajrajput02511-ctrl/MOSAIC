@@ -335,9 +335,9 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
           )}
 
           {/* GIS Layer Switcher */}
-          <div className="flex items-center gap-1 bg-[#0c1322]/95 backdrop-blur-md border border-[#1e2c47] rounded-lg p-1 shadow-2xl">
-            <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-cyan-400 border-r border-[#1e2c47]">
-              <Compass className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md border border-[#D9E0E7] rounded-lg p-1 shadow-sm">
+            <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-[#1769AA] border-r border-[#EDF2F7]">
+              <Compass className="w-3.5 h-3.5 text-[#1769AA]" />
               <span className="hidden sm:inline">GIS LAYER</span>
             </div>
 
@@ -345,11 +345,11 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
               onClick={() => setActiveLayer("rainfall")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition ${
                 activeLayer === "rainfall"
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#1769AA]/10 text-[#1769AA] border border-[#1769AA]/30"
+                  : "text-[#64748B] hover:text-[#0B1F33]"
               }`}
             >
-              <Droplets className="w-3 h-3 text-cyan-400" />
+              <Droplets className="w-3 h-3 text-[#1769AA]" />
               <span>Rainfall</span>
             </button>
 
@@ -357,11 +357,11 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
               onClick={() => setActiveLayer("temperature")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition ${
                 activeLayer === "temperature"
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-amber-50 text-amber-800 border border-amber-200"
+                  : "text-[#64748B] hover:text-[#0B1F33]"
               }`}
             >
-              <Thermometer className="w-3 h-3 text-amber-400" />
+              <Thermometer className="w-3 h-3 text-amber-600" />
               <span>Thermal</span>
             </button>
 
@@ -369,11 +369,11 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
               onClick={() => setActiveLayer("wind")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition ${
                 activeLayer === "wind"
-                  ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                  : "text-[#64748B] hover:text-[#0B1F33]"
               }`}
             >
-              <Wind className="w-3 h-3 text-blue-400" />
+              <Wind className="w-3 h-3 text-blue-600" />
               <span>Wind</span>
             </button>
 
@@ -381,16 +381,16 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
               onClick={() => setActiveLayer("disagreement")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold transition ${
                 activeLayer === "disagreement"
-                  ? "bg-red-500/20 text-red-300 border border-red-500/40"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-red-50 text-red-700 border border-red-200"
+                  : "text-[#64748B] hover:text-[#0B1F33]"
               }`}
             >
-              <AlertTriangle className="w-3 h-3 text-red-400" />
+              <AlertTriangle className="w-3 h-3 text-red-600" />
               <span>Uncertainty</span>
             </button>
 
             {layerLoading && (
-              <RefreshCw className="w-3 h-3 text-cyan-400 animate-spin ml-1" />
+              <RefreshCw className="w-3 h-3 text-[#1769AA] animate-spin ml-1" />
             )}
           </div>
         </div>
@@ -401,48 +401,48 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
           <button
             onClick={handleLocateMe}
             disabled={isLocating}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-[#0c1322]/95 hover:bg-emerald-950/40 backdrop-blur-md border border-emerald-500/40 hover:border-emerald-400 text-emerald-300 rounded-lg text-xs font-semibold shadow-xl transition active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-white/95 hover:bg-emerald-50 backdrop-blur-md border border-emerald-200 text-emerald-700 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95 disabled:opacity-50"
             title="Auto-detect current location (GPS / High Precision) & Pan Map"
           >
             {isLocating ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
             ) : (
-              <Crosshair className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <Crosshair className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
             )}
             <span className="hidden sm:inline">{isLocating ? "Locating..." : "My Location"}</span>
           </button>
           
           {/* Geocoding Search */}
           <div className="relative">
-            <div className="flex items-center bg-[#0c1322]/95 backdrop-blur-md border border-[#1e2c47] rounded-lg px-2.5 py-1 text-xs shadow-xl">
-              <Search className="w-3.5 h-3.5 text-slate-400 mr-1.5" />
+            <div className="flex items-center bg-white/95 backdrop-blur-md border border-[#D9E0E7] rounded-lg px-2.5 py-1 text-xs shadow-sm">
+              <Search className="w-3.5 h-3.5 text-[#64748B] mr-1.5" />
               <input
                 type="text"
                 placeholder="Search city/station..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="bg-transparent text-slate-200 placeholder-slate-500 focus:outline-none w-28 sm:w-36 text-xs"
+                className="bg-transparent text-[#0B1F33] placeholder-[#94A3B8] focus:outline-none w-28 sm:w-36 text-xs"
               />
-              {isSearching && <RefreshCw className="w-3 h-3 text-cyan-400 animate-spin ml-1" />}
+              {isSearching && <RefreshCw className="w-3 h-3 text-[#1769AA] animate-spin ml-1" />}
             </div>
 
             {/* Search Dropdown Results */}
             {searchResults.length > 0 && (
-              <div className="absolute top-full mt-1.5 left-0 right-0 bg-[#0c1322] border border-[#1e2c47] rounded-lg shadow-2xl overflow-hidden z-[1100] max-h-56 overflow-y-auto">
+              <div className="absolute top-full mt-1.5 left-0 right-0 bg-white border border-[#D9E0E7] rounded-lg shadow-xl overflow-hidden z-[1100] max-h-56 overflow-y-auto">
                 {searchResults.map((item, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSelectSearchResult(item)}
-                    className="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-cyan-950/60 border-b border-[#1e2c47]/50 flex items-center justify-between group"
+                    className="w-full text-left px-3 py-2 text-xs text-[#0B1F33] hover:bg-blue-50 border-b border-[#EDF2F7] flex items-center justify-between group"
                   >
                     <div>
-                      <span className="font-semibold text-slate-100">{item.name}</span>
-                      <span className="block text-[10px] text-slate-400">
+                      <span className="font-semibold text-[#0B1F33]">{item.name}</span>
+                      <span className="block text-[10px] text-[#64748B]">
                         {item.latitude.toFixed(2)}°N, {item.longitude.toFixed(2)}°E
                       </span>
                     </div>
                     {item.is_ner && (
-                      <span className="text-[9px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-1.5 py-0.5 rounded">
+                      <span className="text-[9px] bg-blue-50 text-[#1769AA] border border-blue-200 px-1.5 py-0.5 rounded">
                         NER
                       </span>
                     )}
@@ -453,61 +453,62 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
           </div>
 
           {/* Basemap Switcher (Google Default, MapTiler Selectable) */}
-          <div className="bg-[#0c1322]/95 backdrop-blur-md border border-[#1e2c47] rounded-lg p-0.5 flex items-center gap-1 shadow-xl">
+          <div className="bg-white/95 backdrop-blur-md border border-[#D9E0E7] rounded-lg p-0.5 flex items-center gap-1 shadow-sm">
             <button
               onClick={() => setActiveBasemap("google")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition ${
                 activeBasemap === "google"
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[#1769AA] text-white shadow-sm"
+                  : "text-[#64748B] hover:text-[#0B1F33]"
               }`}
               title="Google Satellite (Default)"
             >
-              <Globe className="w-3 h-3 text-emerald-300" />
+              <Globe className="w-3 h-3" />
               <span>Google 3D</span>
             </button>
             <button
               onClick={() => setActiveBasemap("maptiler")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition ${
                 activeBasemap === "maptiler"
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[#1769AA] text-white shadow-sm"
+                  : "text-[#64748B] hover:text-[#0B1F33]"
               }`}
               title="MapTiler Satellite Imagery (Selectable)"
             >
-              <Layers className="w-3 h-3 text-cyan-300" />
+              <Layers className="w-3 h-3" />
               <span>MapTiler</span>
             </button>
             <button
               onClick={() => setActiveBasemap("satellite")}
               className={`p-1.5 rounded transition ${
-                activeBasemap === "satellite" ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40" : "text-slate-400 hover:text-white"
+                activeBasemap === "satellite" ? "bg-blue-50 text-[#1769AA] border border-blue-200" : "text-[#64748B] hover:text-[#0B1F33]"
               }`}
               title="High-Resolution Satellite Imagery (ESRI)"
             >
               <Satellite className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={() => setActiveBasemap("dark")}
-              className={`p-1.5 rounded text-[10px] font-mono transition ${
-                activeBasemap === "dark" ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/40" : "text-slate-400 hover:text-white"
+              onClick={() => setActiveBasemap("osm")}
+              className={`p-1.5 rounded text-[10px] font-medium transition ${
+                activeBasemap === "osm" ? "bg-blue-50 text-[#1769AA] border border-blue-200" : "text-[#64748B] hover:text-[#0B1F33]"
               }`}
-              title="Dark Tactical Basemap"
+              title="Standard Street / Administrative Map"
             >
-              Dark
+              Street
             </button>
           </div>
 
           {/* Fullscreen Button */}
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 bg-[#0c1322]/95 backdrop-blur-md border border-[#1e2c47] rounded-lg text-slate-300 hover:text-white transition shadow-xl"
+            className="p-1.5 bg-white/95 backdrop-blur-md border border-[#D9E0E7] rounded-lg text-[#64748B] hover:text-[#0B1F33] transition shadow-sm"
             title={isFullscreen ? "Exit Fullscreen" : "Fullscreen GIS View"}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
+
 
       {/* LEAFLET MAP CONTAINER */}
       <div className="w-full h-full flex-1">
@@ -609,59 +610,59 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
                 }}
               >
                 <Popup className="gis-custom-popup">
-                  <div className="bg-[#0c1322] text-slate-100 p-2 rounded-lg space-y-2 text-xs border border-[#1e2c47] min-w-[200px]">
-                    <div className="border-b border-[#1e2c47] pb-1.5">
-                      <div className="font-bold text-sm text-cyan-300 flex items-center justify-between">
+                  <div className="bg-white text-[#0B1F33] p-2 rounded-lg space-y-2 text-xs border border-[#D9E0E7] min-w-[200px] shadow-lg">
+                    <div className="border-b border-[#EDF2F7] pb-1.5">
+                      <div className="font-bold text-sm text-[#1769AA] flex items-center justify-between">
                         <span>{loc.name}</span>
                         {loc.is_ner && (
-                          <span className="text-[9px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-1 rounded">
+                          <span className="text-[9px] bg-blue-50 text-[#1769AA] border border-blue-200 px-1 rounded">
                             NER
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-400">{loc.state} • Elev: {loc.elevation_m}m</div>
-                      <div className="text-[10px] font-mono text-slate-500">
+                      <div className="text-[11px] text-[#64748B]">{loc.state} • Elev: {loc.elevation_m}m</div>
+                      <div className="text-[10px] font-mono text-[#94A3B8]">
                         {loc.latitude.toFixed(4)}°N, {loc.longitude.toFixed(4)}°E
                       </div>
                     </div>
 
                     {/* Meteorological Variables */}
-                    <div className="grid grid-cols-2 gap-1.5 text-[11px] bg-[#111a2e] p-2 rounded border border-[#1e2c47]">
+                    <div className="grid grid-cols-2 gap-1.5 text-[11px] bg-[#F8FAFC] p-2 rounded border border-[#D9E0E7]">
                       <div>
-                        <span className="text-slate-400 text-[10px] block">BLENDED RAIN</span>
-                        <span className="font-mono font-bold text-cyan-300">
+                        <span className="text-[#64748B] text-[10px] block">BLENDED RAIN</span>
+                        <span className="font-mono font-bold text-[#1769AA]">
                           {props.rainfall_mm != null ? `${props.rainfall_mm.toFixed(1)} mm` : "N/A"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 text-[10px] block">TEMPERATURE</span>
-                        <span className="font-mono font-bold text-amber-300">
+                        <span className="text-[#64748B] text-[10px] block">TEMPERATURE</span>
+                        <span className="font-mono font-bold text-amber-700">
                           {props.temperature_c != null ? `${props.temperature_c.toFixed(1)} °C` : "N/A"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 text-[10px] block">WIND SPEED</span>
-                        <span className="font-mono font-bold text-blue-300">
+                        <span className="text-[#64748B] text-[10px] block">WIND SPEED</span>
+                        <span className="font-mono font-bold text-blue-700">
                           {props.wind_speed_ms != null ? `${props.wind_speed_ms.toFixed(1)} m/s` : "N/A"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 text-[10px] block">SPREAD (±σ)</span>
-                        <span className="font-mono font-bold text-red-300">
+                        <span className="text-[#64748B] text-[10px] block">SPREAD (±σ)</span>
+                        <span className="font-mono font-bold text-red-600">
                           {props.disagreement_std != null ? `±${props.disagreement_std.toFixed(1)}` : "N/A"}
                         </span>
                       </div>
                     </div>
 
                     {props.weather_regime && (
-                      <div className="text-[10px] text-slate-300 bg-cyan-950/40 p-1.5 rounded border border-cyan-800/40">
-                        <span className="font-semibold text-cyan-300">Regime:</span> {props.weather_regime}
+                      <div className="text-[10px] text-[#0B1F33] bg-blue-50 p-1.5 rounded border border-blue-200">
+                        <span className="font-semibold text-[#1769AA]">Regime:</span> {props.weather_regime}
                       </div>
                     )}
 
                     <button 
                       onClick={() => onSelectLocation(loc)}
-                      className="w-full py-1.5 px-2 text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white rounded-md transition shadow"
+                      className="w-full py-1.5 px-2 text-xs font-semibold bg-[#1769AA] hover:bg-[#155d97] text-white rounded-md transition shadow-sm"
                     >
                       {isSelected ? "Current Station Active" : "Analyze This Station"}
                     </button>
@@ -677,64 +678,64 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
       <div className="absolute bottom-3 left-3 right-3 z-[1000] flex flex-wrap items-center justify-between gap-2 pointer-events-none">
         
         {/* Left: GIS Layer Legend */}
-        <div className="bg-[#0c1322]/95 backdrop-blur-md border border-[#1e2c47] rounded-lg px-3 py-2 text-[11px] text-slate-300 space-y-1 shadow-2xl pointer-events-auto">
-          <div className="flex items-center justify-between gap-3 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+        <div className="bg-white/95 backdrop-blur-md border border-[#D9E0E7] rounded-lg px-3 py-2 text-[11px] text-[#334155] space-y-1 shadow-sm pointer-events-auto">
+          <div className="flex items-center justify-between gap-3 text-[9px] font-bold text-[#64748B] uppercase tracking-wider">
             <span>{activeLayer.toUpperCase()} CLASSIFICATION</span>
-            <span className="text-cyan-400 font-mono">{BASEMAPS[activeBasemap].name}</span>
+            <span className="text-[#1769AA] font-mono">{BASEMAPS[activeBasemap].name}</span>
           </div>
 
           {activeLayer === "rainfall" && (
             <div className="flex items-center gap-2 text-[10px] font-mono">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400"></span>&lt;2.5mm</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400"></span>2.5-15mm</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400"></span>15-64mm</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>&gt;64.5mm</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#06b6d4]"></span>&lt;2.5mm</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span>2.5-15mm</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span>15-64mm</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-600"></span>&gt;64.5mm</span>
             </div>
           )}
 
           {activeLayer === "temperature" && (
             <div className="flex items-center gap-2 text-[10px] font-mono">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span>&lt;20°C</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>20-28°C</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400"></span>28-35°C</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>&gt;35°C</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>20-28°C</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span>28-35°C</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-600"></span>&gt;35°C</span>
             </div>
           )}
 
           {activeLayer === "disagreement" && (
             <div className="flex items-center gap-2 text-[10px] font-mono">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400"></span>High Agreement</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400"></span>Moderate Spread</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>High Disagreement</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>High Agreement</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span>Moderate Spread</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-600"></span>High Disagreement</span>
             </div>
           )}
 
           {activeLayer === "wind" && (
             <div className="flex items-center gap-2 text-[10px] font-mono">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400"></span>Light (&lt;8 m/s)</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400"></span>Gale (8-15 m/s)</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>Storm (&gt;15 m/s)</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span>Light (&lt;8 m/s)</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500"></span>Gale (8-15 m/s)</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-600"></span>Storm (&gt;15 m/s)</span>
             </div>
           )}
         </div>
 
         {/* Right: Live Geographic Coordinates HUD */}
-        <div className="bg-[#0c1322]/95 backdrop-blur-md border border-[#1e2c47] rounded-lg px-3 py-1.5 text-[11px] font-mono text-slate-300 shadow-2xl flex items-center gap-3 pointer-events-auto">
-          <div className="flex items-center gap-1 text-cyan-400">
+        <div className="bg-white/95 backdrop-blur-md border border-[#D9E0E7] rounded-lg px-3 py-1.5 text-[11px] font-mono text-[#0B1F33] shadow-sm flex items-center gap-3 pointer-events-auto">
+          <div className="flex items-center gap-1 text-[#1769AA]">
             <Crosshair className="w-3 h-3" />
             <span>LAT: {coordsHud.lat.toFixed(4)}°N</span>
-            <span className="text-slate-600">|</span>
+            <span className="text-[#CBD5E1]">|</span>
             <span>LON: {coordsHud.lng.toFixed(4)}°E</span>
           </div>
-          <span className="text-[10px] text-slate-400 bg-slate-900 border border-slate-700 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] text-[#64748B] bg-[#F8FAFC] border border-[#D9E0E7] px-1.5 py-0.5 rounded">
             Z: {coordsHud.zoom}
           </span>
           <button
             onClick={() => setShowRadius(!showRadius)}
             className={`text-[10px] px-2 py-0.5 rounded border transition ${
               showRadius 
-                ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" 
-                : "bg-slate-900 text-slate-500 border-slate-700"
+                ? "bg-blue-50 text-[#1769AA] border-blue-200" 
+                : "bg-[#F8FAFC] text-[#64748B] border-[#D9E0E7]"
             }`}
           >
             Radar Envelope
@@ -742,6 +743,7 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
         </div>
 
       </div>
+
     </div>
   );
 };

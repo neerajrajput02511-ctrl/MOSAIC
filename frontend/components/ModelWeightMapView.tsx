@@ -546,50 +546,47 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
       {/* ========================================================================= */}
-      {/* 1. FUTURISTIC HERO BANNER & NATIONAL FRONTIER TELEMETRY HUD               */}
+      {/* 1. PROFESSIONAL HEADER & NATIONAL FRONTIER TELEMETRY HUD                  */}
       {/* ========================================================================= */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#090f1d] via-[#101b33] to-[#090f1d] border border-cyan-500/30 rounded-2xl p-5 shadow-[0_0_35px_rgba(6,182,212,0.12)]">
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center space-x-2.5">
-              <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-500/30 to-cyan-500/30 text-cyan-300 border border-cyan-500/40 shadow-inner">
-                <Globe className="w-5 h-5 animate-pulse" />
+              <div className="p-2 rounded-xl bg-blue-50 text-[#1769AA] border border-blue-200">
+                <Globe className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h1 className="text-lg font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
+                  <h1 className="text-lg font-bold text-[#0B1F33] tracking-tight flex items-center gap-2">
                     SPATIAL MULTI-MODEL WEIGHT MAP
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-[#1769AA] border border-blue-200">
                       SKILL &times; REGIME &times; OROGRAPHY
                     </span>
                   </h1>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Dynamic Adaptive Skill-Based Model Weighting conditioned on <span className="text-cyan-300 font-semibold">Climate Division &times; Lead Time (+{leadTime}h) &times; Season ({season})</span> across 26 real stations in India.
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Dynamic Adaptive Skill-Based Model Weighting conditioned on <span className="text-[#0B1F33] font-semibold">Climate Division &times; Lead Time (+{leadTime}h) &times; Season ({season})</span> across 26 verified stations in India.
                 </p>
               </div>
             </div>
           </div>
 
           {/* Time-Lapse Lead-Time Player & Sequence Controls */}
-          <div className="flex items-center gap-2 bg-[#060a14] p-1.5 rounded-xl border border-[#1b2b45] shadow-inner">
+          <div className="flex items-center gap-1.5 bg-[#F8FAFC] p-1.5 rounded-xl border border-[#D9E0E7]">
             <button
               onClick={() => setIsPlaying(!isPlaying)}
               title={isPlaying ? "Pause Simulation" : "Play Animated Lead-Time Time-Lapse"}
               className={`p-2 rounded-lg transition flex items-center gap-1 text-xs font-bold font-mono ${
                 isPlaying 
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse" 
-                  : "bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/40"
+                  ? "bg-amber-100 text-amber-900 border border-amber-300" 
+                  : "bg-white text-[#1769AA] hover:bg-blue-50 border border-[#D9E0E7] shadow-sm"
               }`}
             >
               {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
               <span className="hidden sm:inline">{isPlaying ? "PAUSE" : "SIMULATE"}</span>
             </button>
 
-            <div className="h-5 w-px bg-slate-800 mx-0.5" />
+            <div className="h-5 w-px bg-[#CBD5E1] mx-0.5" />
 
             {leadTimeOptions.map((opt) => (
               <button
@@ -598,19 +595,17 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                   setLeadTime(opt.value);
                   setIsPlaying(false);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex flex-col items-center ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex flex-col items-center ${
                   leadTime === opt.value
-                    ? "bg-gradient-to-r from-purple-600/30 to-cyan-600/30 text-cyan-200 border border-cyan-400/50 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-[#101b2e]"
+                    ? "bg-[#1769AA] text-white shadow-sm font-semibold"
+                    : "text-[#64748B] hover:text-[#0B1F33] hover:bg-white"
                 }`}
               >
                 <span className="font-mono font-bold">{opt.label}</span>
                 <span className={`text-[8.5px] font-mono ${
-                  opt.value >= 120 
-                    ? "text-purple-400 font-semibold" 
-                    : opt.value === 72 
-                    ? "text-cyan-400 font-semibold" 
-                    : "text-slate-500"
+                  leadTime === opt.value
+                    ? "text-blue-100"
+                    : "text-[#94A3B8]"
                 }`}>
                   {opt.badge}
                 </span>
@@ -620,76 +615,76 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
         </div>
 
         {/* Real-Time National Frontier HUD Strip */}
-        <div className="mt-4 pt-3.5 border-t border-[#17243b] grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          <div className="bg-[#0b1220]/80 rounded-xl p-2.5 border border-[#1b2b45] flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+        <div className="mt-4 pt-3.5 border-t border-[#EDF2F7] grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#D9E0E7] flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-[#7C3AED] shrink-0">
               <Cpu className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+              <div className="text-[10px] text-[#64748B] font-mono flex items-center gap-1">
                 <span>ADAPTIVE AI WEIGHT DOMINANCE</span>
                 <button
                   onClick={() => setShowAiProofModal(true)}
                   title="View reproducible definition and grid cell evaluation"
-                  className="text-cyan-400 hover:text-cyan-300 transition"
+                  className="text-[#1769AA] hover:text-[#155d97] transition"
                 >
                   <Info className="w-3 h-3" />
                 </button>
               </div>
-              <div className="font-extrabold text-purple-300 font-mono text-sm flex items-center gap-1">
+              <div className="font-extrabold text-[#7C3AED] font-mono text-sm flex items-center gap-1">
                 {nationalSummary.ai_coverage_pct !== null && nationalSummary.ai_coverage_pct !== undefined ? (
                   <>
                     {nationalSummary.ai_coverage_pct}%
-                    <span className="text-[10px] text-slate-500 font-normal">
+                    <span className="text-[10px] text-[#64748B] font-normal">
                       (N={nationalSummary.grid_cells_evaluated || 7} zones)
                     </span>
                   </>
                 ) : (
-                  <span className="text-xs text-amber-400 font-mono">CALCULATION PENDING</span>
+                  <span className="text-xs text-amber-700 font-mono">CALCULATION PENDING</span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="bg-[#0b1220]/80 rounded-xl p-2.5 border border-[#1b2b45] flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+          <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#D9E0E7] flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-[#1769AA] shrink-0">
               <Activity className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 font-mono">PHYSICS NWP COVERAGE</div>
-              <div className="font-extrabold text-cyan-300 font-mono text-sm flex items-center gap-1">
+              <div className="text-[10px] text-[#64748B] font-mono">PHYSICS NWP COVERAGE</div>
+              <div className="font-extrabold text-[#1769AA] font-mono text-sm flex items-center gap-1">
                 {nationalSummary.physics_coverage_pct !== null && nationalSummary.physics_coverage_pct !== undefined ? (
                   `${nationalSummary.physics_coverage_pct}%`
                 ) : (
-                  <span className="text-xs text-slate-400 font-mono">CALCULATING</span>
+                  <span className="text-xs text-[#64748B] font-mono">CALCULATING</span>
                 )}
-                <span className="text-[10px] text-slate-500 font-normal">(IFS & GFS)</span>
+                <span className="text-[10px] text-[#94A3B8] font-normal">(IFS & GFS)</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#0b1220]/80 rounded-xl p-2.5 border border-[#1b2b45] flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+          <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#D9E0E7] flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 font-mono">FRONTIER CROSSOVER</div>
-              <div className="font-extrabold text-amber-300 font-mono text-xs truncate">
+              <div className="text-[10px] text-[#64748B] font-mono">FRONTIER CROSSOVER</div>
+              <div className="font-extrabold text-amber-800 font-mono text-xs truncate">
                 {nationalSummary.frontier_crossover}
               </div>
             </div>
           </div>
 
-          <div className="bg-[#0b1220]/80 rounded-xl p-2.5 border border-[#1b2b45] flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+          <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#D9E0E7] flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 font-mono">SYNOPTIC STATIONS</div>
-              <div className="font-extrabold text-emerald-300 font-mono text-sm flex items-center gap-1">
+              <div className="text-[10px] text-[#64748B] font-mono">SYNOPTIC STATIONS</div>
+              <div className="font-extrabold text-emerald-800 font-mono text-sm flex items-center gap-1">
                 {nationalSummary.total_stations_active} Stations
-                <span className="text-[9px] px-1 py-0.2 rounded bg-blue-950 text-blue-300 border border-blue-800">
-                  DEMO / ARCHIVE
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-[#1769AA] border border-blue-200 font-semibold">
+                  HISTORICAL ARCHIVE
                 </span>
               </div>
             </div>
@@ -700,15 +695,15 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
       {/* ========================================================================= */}
       {/* 2. REGIME & SEASON CONTROL STRIP WITH 10 IMD REGIMES                      */}
       {/* ========================================================================= */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0a101d] border border-[#19273f] rounded-xl px-4 py-2.5 text-xs shadow-md">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-[#D9E0E7] rounded-xl px-4 py-3 text-xs shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center space-x-2">
-            <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-slate-400 font-mono text-[11px]">SEASON:</span>
+            <Calendar className="w-3.5 h-3.5 text-[#1769AA]" />
+            <span className="text-[#64748B] font-mono text-[11px] font-semibold">SEASON:</span>
             <select
               value={season}
               onChange={(e) => setSeason(e.target.value)}
-              className="bg-[#10192b] border border-[#1e2f4c] rounded-lg px-2.5 py-1 text-slate-200 text-xs focus:outline-none focus:border-cyan-400"
+              className="bg-[#F8FAFC] border border-[#D9E0E7] rounded-lg px-2.5 py-1 text-[#0B1F33] text-xs focus:outline-none focus:border-[#1769AA]"
             >
               <option value="Monsoon">Monsoon (JJAS - Peak Orographic Inflow)</option>
               <option value="Post-Monsoon">Post-Monsoon (OND - Bay of Bengal Cyclones)</option>
@@ -718,12 +713,12 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
-            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-slate-400 font-mono text-[11px]">WEATHER REGIME:</span>
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+            <span className="text-[#64748B] font-mono text-[11px] font-semibold">WEATHER REGIME:</span>
             <select
               value={regime}
               onChange={(e) => handleRegimeChange(e.target.value)}
-              className="bg-[#10192b] border border-[#1e2f4c] rounded-lg px-2.5 py-1 text-slate-200 text-xs focus:outline-none focus:border-cyan-400"
+              className="bg-[#F8FAFC] border border-[#D9E0E7] rounded-lg px-2.5 py-1 text-[#0B1F33] text-xs focus:outline-none focus:border-[#1769AA]"
             >
               <option value="Normal">Normal Synoptic State</option>
               <option value="Active Monsoon">Active Monsoon (Trough Over Core Zone)</option>
@@ -739,35 +734,35 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-400">
+        <div className="flex items-center space-x-3 text-[11px] font-mono text-[#64748B]">
           <span className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-[0_0_8px_#8b5cf6]" />
-            <span className="text-purple-300">ECMWF AIFS</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#7C3AED]" />
+            <span className="text-[#0B1F33] font-medium">ECMWF AIFS</span>
           </span>
           <span className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#06b6d4]" />
-            <span className="text-cyan-300">ECMWF IFS</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#1769AA]" />
+            <span className="text-[#0B1F33] font-medium">ECMWF IFS</span>
           </span>
           <span className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]" />
-            <span className="text-blue-300">NOAA GFS</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="text-[#0B1F33] font-medium">NOAA GFS</span>
           </span>
           <span className="flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b]" />
-            <span className="text-amber-300">NOAA GEFS</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+            <span className="text-[#0B1F33] font-medium">NOAA GEFS</span>
           </span>
         </div>
       </div>
 
       {/* Before vs After Weather Regime Delta Box */}
       {previousWeights && selectedRegion && (
-        <div className="bg-[#0b1424] border border-cyan-500/40 rounded-xl p-3.5 text-xs space-y-2.5 shadow-lg">
+        <div className="bg-[#F8FAFC] border border-[#D9E0E7] rounded-xl p-4 text-xs space-y-2.5 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-cyan-300 font-bold font-mono text-[11px] flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="text-[#1769AA] font-bold font-mono text-[11px] flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-[#1769AA]" />
               WEATHER REGIME RECALCULATION: {previousRegime.toUpperCase()} &rarr; {regime.toUpperCase()}
             </span>
-            <span className="text-[10px] font-mono text-slate-400">Region: {selectedRegion.region_name}</span>
+            <span className="text-[10px] font-mono text-[#64748B]">Region: {selectedRegion.region_name}</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
@@ -775,22 +770,22 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               const oldW = previousWeights[mCode] ?? newW;
               const delta = Math.round((newW - oldW) * 100);
               return (
-                <div key={mCode} className="bg-[#0f1b2e] p-2 rounded border border-[#1e2f4c]">
-                  <div className="text-slate-400 text-[10px]">{mCode}</div>
+                <div key={mCode} className="bg-white p-2.5 rounded-lg border border-[#D9E0E7] shadow-sm">
+                  <div className="text-[#64748B] text-[10px]">{mCode}</div>
                   <div className="flex items-center justify-between pt-0.5">
-                    <span className="text-slate-200 font-bold">{Math.round(newW * 100)}%</span>
-                    <span className={`text-[10px] font-bold ${delta > 0 ? "text-emerald-400" : delta < 0 ? "text-rose-400" : "text-slate-500"}`}>
+                    <span className="text-[#0B1F33] font-bold">{Math.round(newW * 100)}%</span>
+                    <span className={`text-[10px] font-bold ${delta > 0 ? "text-emerald-700" : delta < 0 ? "text-rose-700" : "text-[#64748B]"}`}>
                       {delta > 0 ? `+${delta}%` : delta < 0 ? `${delta}%` : "0%"}
                     </span>
                   </div>
-                  <div className="text-[9px] text-slate-500">was {Math.round(oldW * 100)}%</div>
+                  <div className="text-[9px] text-[#94A3B8]">was {Math.round(oldW * 100)}%</div>
                 </div>
               );
             })}
           </div>
 
-          <p className="text-[11px] text-slate-300 leading-relaxed pt-1 border-t border-[#182844]">
-            <strong className="text-cyan-300">Physical Attribution: </strong>
+          <p className="text-xs text-[#334155] leading-relaxed pt-1 border-t border-[#EDF2F7]">
+            <strong className="text-[#0B1F33]">Physical Attribution: </strong>
             {regime.toLowerCase().includes("cyclon") ? "In cyclonic circulation, ECMWF IFS boundary-layer momentum physics and GEFS ensemble spread are prioritized over deterministic AI to capture track divergence." :
              regime.toLowerCase().includes("heat") ? "During severe heatwave regimes, ECMWF AIFS 2m thermal advection neural representation is prioritized to eliminate NWP dry boundary-layer heating biases." :
              regime.toLowerCase().includes("heavy") || regime.toLowerCase().includes("active") ? "Under intense monsoon regimes, IFS orographic uplift resolution is elevated while GFS is calibrated to mitigate wet biases." :
@@ -805,43 +800,43 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Column: Interactive WebGL Map Canvas (7 Cols) */}
         <div className="lg:col-span-7 flex flex-col space-y-3">
-          <div className="relative w-full h-[540px] bg-[#070b14] border border-cyan-500/30 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="relative w-full h-[540px] bg-[#F8FAFC] border border-[#D9E0E7] rounded-xl overflow-hidden shadow-sm">
             {/* MapLibre DOM Node */}
             <div ref={mapContainer} className="w-full h-full" />
 
             {/* In-Map Top-Left Status Overlay */}
             <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
-              <div className="px-3 py-1.5 rounded-xl bg-[#090f1de6] backdrop-blur-md border border-cyan-500/40 text-[11px] font-mono text-cyan-200 flex items-center gap-1.5 shadow-lg">
-                <Compass className="w-3.5 h-3.5 text-cyan-400 animate-spin" style={{ animationDuration: "12s" }} />
-                <span>LEAD TIME: <strong className="text-white">+{leadTime}h</strong></span>
-                <span className="text-slate-500">|</span>
-                <span className="text-purple-300">{nationalSummary.frontier_crossover}</span>
+              <div className="px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-md border border-[#D9E0E7] text-[11px] font-mono text-[#0B1F33] flex items-center gap-1.5 shadow-sm">
+                <Compass className="w-3.5 h-3.5 text-[#1769AA]" />
+                <span>LEAD TIME: <strong className="text-[#0B1F33]">+{leadTime}h</strong></span>
+                <span className="text-[#CBD5E1]">|</span>
+                <span className="text-[#7C3AED] font-semibold">{nationalSummary.frontier_crossover}</span>
               </div>
             </div>
 
             {/* In-Map Top-Right Style Switch (Satellite vs Dark) */}
-            <div className="absolute top-3 right-12 z-10 flex items-center gap-1 bg-[#090f1de6] backdrop-blur-md p-1 rounded-xl border border-cyan-500/40 shadow-lg pointer-events-auto">
+            <div className="absolute top-3 right-12 z-10 flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-xl border border-[#D9E0E7] shadow-sm pointer-events-auto">
               <button
                 onClick={() => handleToggleStyle("satellite")}
                 className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition flex items-center gap-1 ${
                   mapStyleType === "satellite"
-                    ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400 font-bold shadow-inner"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-[#152238]"
+                    ? "bg-[#1769AA] text-white font-bold shadow-sm"
+                    : "text-[#64748B] hover:text-[#0B1F33]"
                 }`}
               >
                 <Satellite className="w-3 h-3" />
-                <span>SATELLITE 3D</span>
+                <span>SATELLITE</span>
               </button>
               <button
                 onClick={() => handleToggleStyle("dark")}
                 className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition flex items-center gap-1 ${
                   mapStyleType === "dark"
-                    ? "bg-cyan-500/30 text-cyan-200 border border-cyan-400 font-bold shadow-inner"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-[#152238]"
+                    ? "bg-[#1769AA] text-white font-bold shadow-sm"
+                    : "text-[#64748B] hover:text-[#0B1F33]"
                 }`}
               >
                 <Layers className="w-3 h-3" />
-                <span>DARK TAC</span>
+                <span>TACTICAL</span>
               </button>
             </div>
 
@@ -853,10 +848,10 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                   <button
                     key={reg.region_code}
                     onClick={() => handleSelectZone(reg)}
-                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono transition-all flex items-center gap-1.5 backdrop-blur-md shadow-md ${
+                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-mono transition-all flex items-center gap-1.5 backdrop-blur-md shadow-sm ${
                       isSelected
-                        ? "bg-purple-600/70 text-white border border-purple-300 font-bold ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.5)]"
-                        : "bg-[#0b1322e6] text-slate-300 hover:text-white border border-slate-700/70 hover:bg-[#121e33]"
+                        ? "bg-[#0B1F33] text-white border border-[#0B1F33] font-bold"
+                        : "bg-white/95 text-[#0B1F33] hover:bg-blue-50 border border-[#D9E0E7]"
                     }`}
                   >
                     <span 
@@ -872,61 +867,62 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           </div>
 
           {/* Scientific Guidance Footnote */}
-          <div className="p-3 bg-[#090e1a] rounded-xl border border-[#19273f] text-xs text-slate-300 flex items-start space-x-2.5">
-            <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-white rounded-xl border border-[#D9E0E7] text-xs text-[#334155] flex items-start space-x-2.5 shadow-sm">
+            <Info className="w-4 h-4 text-[#1769AA] shrink-0 mt-0.5" />
             <div className="space-y-0.5">
-              <span className="font-bold text-cyan-300">Photorealistic Satellite Grounding & Atmospheric Physics:</span>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Rendered over high-resolution satellite topography. The semi-transparent glowing overlays illustrate how steep mountain barriers (Khasi Hills, Himalayas, Western Ghats) dictate localized convective physics at short horizons, while AI Deep Learning takes over large-scale depression tracking at medium ranges.
+              <span className="font-bold text-[#0B1F33]">Satellite Grounding & Atmospheric Physics:</span>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Rendered over high-resolution GIS topography. Steep orographic barriers (Khasi Hills, Himalayas, Western Ghats) dictate localized convective physics at short horizons, while AI Deep Learning neural operators take over large-scale field tracking at medium ranges.
               </p>
             </div>
           </div>
         </div>
+
 
         {/* Right Column: Deep-Dive Zone Inspector (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
           {selectedRegion && (
             <div className="bg-[#0a101d] border border-cyan-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
               {/* Header */}
-              <div className="border-b border-[#1b2b45] pb-3 space-y-1">
+              <div className="border-b border-[#EDF2F7] pb-3 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-purple-400 font-bold flex items-center gap-1">
-                    <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#1769AA] font-bold flex items-center gap-1">
+                    <Radio className="w-3 h-3 text-[#1769AA]" />
                     ZONE DEEP DIVE · LEAD TIME +{leadTime}h
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-[#0B1F33] border border-[#D9E0E7]">
                     {selectedRegion.weather_regime}
                   </span>
                 </div>
-                <h3 className="text-base font-extrabold text-slate-100 flex items-center justify-between">
+                <h3 className="text-base font-bold text-[#0B1F33] flex items-center justify-between">
                   <span>{selectedRegion.region_name}</span>
                   <span 
                     className="text-xs px-2 py-0.5 rounded font-mono border"
                     style={{ 
-                      backgroundColor: `${selectedRegion.color}25`, 
+                      backgroundColor: `${selectedRegion.color}15`, 
                       color: selectedRegion.color, 
-                      borderColor: `${selectedRegion.color}50` 
+                      borderColor: `${selectedRegion.color}40` 
                     }}
                   >
                     Dominant: {selectedRegion.dominant_model} ({selectedRegion.dominant_weight_pct}%)
                   </span>
                 </h3>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
+                <p className="text-xs text-[#64748B] leading-relaxed">
                   {selectedRegion.states.join(", ")} · Mean Elevation: <strong>{selectedRegion.elevation_m}m ASL</strong>
                 </p>
                 {selectedRegion.orographic_feature && (
-                  <div className="text-[10px] font-mono text-cyan-400/90 pt-1 flex items-center gap-1">
+                  <div className="text-[11px] font-mono text-[#1769AA] pt-1 flex items-center gap-1">
                     <span>Terrain Forcing:</span>
-                    <span className="text-slate-300">{selectedRegion.orographic_feature}</span>
+                    <span className="text-[#334155]">{selectedRegion.orographic_feature}</span>
                   </div>
                 )}
               </div>
 
               {/* Exact BMA Weights Breakdown Rows */}
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+                <div className="flex items-center justify-between text-[11px] font-mono text-[#64748B] uppercase tracking-wider">
                   <span>ADAPTIVE WEIGHT VECTOR (&Sigma;w = 1.0000)</span>
-                  <span className="text-[10px] text-cyan-400">Entropy H={selectedRegion.bma_entropy}</span>
+                  <span className="text-[10px] text-[#1769AA]">Entropy H={selectedRegion.bma_entropy}</span>
                 </div>
 
                 {Object.entries(selectedRegion.weights).map(([modelCode, weightVal]) => {
@@ -940,37 +936,37 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                       key={modelCode} 
                       onClick={() => setSelectedModelForWhy(modelCode)}
                       title={`Click to view scientific attribution: Why ${modelCode} = ${pct}%`}
-                      className={`cursor-pointer p-2.5 rounded-xl border transition-all hover:border-cyan-400/80 ${
+                      className={`cursor-pointer p-2.5 rounded-xl border transition-all ${
                         isDom 
-                          ? "bg-purple-950/25 border-purple-500/50 shadow-md shadow-purple-900/10" 
-                          : "bg-[#0e1626] border-[#18263d]"
+                          ? "bg-blue-50/50 border-[#1769AA]/40 shadow-sm" 
+                          : "bg-[#F8FAFC] border-[#D9E0E7] hover:border-[#1769AA]/30"
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs mb-1">
                         <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-200">{modelCode}</span>
-                          <span className={`text-[8.5px] font-mono px-1.5 py-0.2 rounded border ${
+                          <span className="font-bold text-[#0B1F33]">{modelCode}</span>
+                          <span className={`text-[8.5px] font-mono px-1.5 py-0.5 rounded border ${
                             isAI 
-                              ? "bg-purple-500/20 text-purple-300 border-purple-500/30" 
+                              ? "bg-purple-50 text-[#7C3AED] border-purple-200" 
                               : isEnsemble 
-                              ? "bg-amber-500/20 text-amber-300 border-amber-500/30" 
-                              : "bg-cyan-500/20 text-cyan-300 border-cyan-500/30"
+                              ? "bg-amber-50 text-amber-800 border-amber-200" 
+                              : "bg-blue-50 text-[#1769AA] border-blue-200"
                           }`}>
                             {isAI ? "DEEP LEARNING AI" : isEnsemble ? "31-M ENSEMBLE" : "PHYSICS NWP"}
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-cyan-400 font-mono hidden sm:inline">Why?</span>
-                          <span className="font-mono font-bold text-sm text-slate-100">
-                            {pct}% <span className="text-[10px] text-slate-500 font-normal">({Number(weightVal).toFixed(4)})</span>
+                          <span className="text-[10px] text-[#1769AA] font-mono hidden sm:inline">Why?</span>
+                          <span className="font-mono font-bold text-sm text-[#0B1F33]">
+                            {pct}% <span className="text-[10px] text-[#64748B] font-normal">({Number(weightVal).toFixed(4)})</span>
                           </span>
                         </div>
                       </div>
 
-                      <div className="w-full h-1.5 bg-[#060a14] rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-[#EDF2F7] rounded-full overflow-hidden">
                         <div
                           className={`h-full transition-all duration-700 ${
-                            isAI ? "bg-purple-500" : isEnsemble ? "bg-amber-400" : "bg-cyan-400"
+                            isAI ? "bg-[#7C3AED]" : isEnsemble ? "bg-amber-500" : "bg-[#1769AA]"
                           }`}
                           style={{ width: `${pct}%` }}
                         />
@@ -981,24 +977,24 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               </div>
 
               {/* Scientific Rationale & Physical Grounding */}
-              <div className="p-3.5 rounded-xl bg-[#090f1d] border border-[#19273f] space-y-1.5">
-                <div className="flex items-center space-x-1.5 text-xs font-semibold text-purple-300">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#D9E0E7] space-y-1.5">
+                <div className="flex items-center space-x-1.5 text-xs font-semibold text-[#1769AA]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#1769AA]" />
                   <span>Physical & Scientific Rationale:</span>
                 </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
+                <p className="text-xs text-[#334155] leading-relaxed">
                   {selectedRegion.rationale}
                 </p>
               </div>
 
               {/* Tactical Disaster Advisory for NDRF / SDMA */}
               {selectedRegion.tactical_advisory && (
-                <div className="p-3 rounded-xl bg-[#0b1424] border border-cyan-500/30 text-xs space-y-1">
-                  <div className="flex items-center space-x-1.5 text-[10px] font-mono font-bold text-cyan-300 uppercase tracking-wide">
-                    <ShieldAlert className="w-3.5 h-3.5 text-cyan-400" />
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-1">
+                  <div className="flex items-center space-x-1.5 text-[10px] font-mono font-bold text-amber-800 uppercase tracking-wide">
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
                     <span>Tactical Early Warning Advisory (NDRF/SDMA):</span>
                   </div>
-                  <p className="text-[11px] text-slate-300">
+                  <p className="text-xs text-amber-900">
                     {selectedRegion.tactical_advisory}
                   </p>
                 </div>
@@ -1006,10 +1002,10 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
 
               {/* Real Weather Stations inside this Climate Subdivision */}
               {selectedRegion.stations && selectedRegion.stations.length > 0 && (
-                <div className="space-y-2 pt-1 border-t border-[#1b2b45]">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                <div className="space-y-2 pt-1 border-t border-[#EDF2F7]">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-[#64748B]">
                     <span>AUTHENTIC REPORTING STATIONS ({selectedRegion.stations.length})</span>
-                    <span className="text-[10px] text-emerald-400 font-semibold">100% Verified Feeds</span>
+                    <span className="text-[10px] text-emerald-700 font-semibold">Verified Feeds</span>
                   </div>
 
                   <div className="max-h-36 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
@@ -1019,21 +1015,21 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                         onClick={() => handleSelectStationPin(st)}
                         className={`cursor-pointer p-2 rounded-lg border transition text-xs flex items-center justify-between ${
                           selectedStation?.id === st.id
-                            ? "bg-cyan-950/40 border-cyan-500/50 text-cyan-100"
-                            : "bg-[#090e1a] border-[#18263d] text-slate-300 hover:bg-[#10192a]"
+                            ? "bg-blue-50 border-[#1769AA] text-[#0B1F33]"
+                            : "bg-[#F8FAFC] border-[#D9E0E7] text-[#334155] hover:bg-white"
                         }`}
                       >
                         <div className="flex items-center space-x-2">
-                          <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <MapPin className="w-3.5 h-3.5 text-[#1769AA] shrink-0" />
                           <div>
                             <span className="font-bold">{st.name}</span>
-                            <span className="text-[10px] text-slate-500 ml-1.5">({st.state} · {st.elevation_m}m)</span>
+                            <span className="text-[10px] text-[#64748B] ml-1.5">({st.state} · {st.elevation_m}m)</span>
                           </div>
                         </div>
 
                         <div className="text-right font-mono text-[11px] flex items-center gap-2">
-                          <span className="text-purple-300">AIFS: {st.predictions?.ECMWF_AIFS}mm</span>
-                          <span className="text-cyan-300">IFS: {st.predictions?.ECMWF_IFS}mm</span>
+                          <span className="text-[#7C3AED]">AIFS: {st.predictions?.ECMWF_AIFS}mm</span>
+                          <span className="text-[#1769AA]">IFS: {st.predictions?.ECMWF_IFS}mm</span>
                         </div>
                       </div>
                     ))}
@@ -1044,86 +1040,87 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               {/* Ask Gemini 3.6 Flash Copilot Tactical Trigger */}
               <button
                 onClick={handleTriggerCopilotForZone}
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-cyan-600 to-blue-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-xs tracking-wide transition shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 rounded-xl bg-[#0B1F33] hover:bg-[#17253a] text-white font-semibold text-xs tracking-wide transition shadow-sm flex items-center justify-center gap-2"
               >
-                <Bot className="w-4 h-4 text-cyan-200" />
-                <span>Ask Gemini 3.6 Flash Copilot About This Zone</span>
+                <Bot className="w-4 h-4 text-cyan-300" />
+                <span>Ask Meteorological Copilot About This Zone</span>
               </button>
             </div>
           )}
         </div>
       </div>
+
       {/* ========================================================================= */}
       {/* 4. MODALS: SCIENTIFIC AI PROOF, STATION METADATA, AND WHY THIS MODEL?     */}
       {/* ========================================================================= */}
 
       {/* MODAL 1: AI DOMINANCE SCIENTIFIC PROOF MODAL (SECTION 2 MANDATE) */}
       {showAiProofModal && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0b1322] border border-purple-500/40 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
+        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white border border-[#D9E0E7] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
             <button
               onClick={() => setShowAiProofModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 p-1.5 rounded-lg hover:bg-slate-800"
+              className="absolute top-4 right-4 text-[#64748B] hover:text-[#0B1F33] p-1.5 rounded-lg hover:bg-slate-100"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center space-x-2.5 border-b border-[#1e2c47] pb-3">
-              <Cpu className="w-5 h-5 text-purple-400" />
+            <div className="flex items-center space-x-2.5 border-b border-[#EDF2F7] pb-3">
+              <Cpu className="w-5 h-5 text-[#7C3AED]" />
               <div>
-                <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wide">
+                <h3 className="text-sm font-bold text-[#0B1F33] uppercase tracking-wide">
                   AI DOMINANCE COVERAGE — SCIENTIFIC PROOF
                 </h3>
-                <span className="text-[10px] font-mono text-purple-300">
+                <span className="text-[10px] font-mono text-[#64748B]">
                   SIH26081 Section 2 Audit Mandate
                 </span>
               </div>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="bg-[#101b2f] p-3 rounded-xl border border-[#1e2f4c] space-y-1">
-                <span className="text-[10px] font-mono text-slate-400 uppercase block">MATHEMATICAL DEFINITION</span>
-                <p className="font-mono text-purple-300 font-bold">
+              <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#D9E0E7] space-y-1">
+                <span className="text-[10px] font-mono text-[#64748B] uppercase block">MATHEMATICAL DEFINITION</span>
+                <p className="font-mono text-[#7C3AED] font-bold">
                   AI Dominance &equiv; w(ECMWF_AIFS) &gt; max( w(GFS), w(IFS), w(GEFS) )
                 </p>
-                <p className="text-[11px] text-slate-400 leading-relaxed pt-1">
+                <p className="text-xs text-[#64748B] leading-relaxed pt-1">
                   A grid cell or subdivision is classified as AI-Dominant if and only if the data-driven graph neural operator receives a larger calculated BMA weight than every numerical physics model.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">ZONES EVALUATED</span>
-                  <span className="text-slate-100 font-bold text-sm">{nationalSummary.grid_cells_evaluated || 7} Subdivisions</span>
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">ZONES EVALUATED</span>
+                  <span className="text-[#0B1F33] font-bold text-sm">{nationalSummary.grid_cells_evaluated || 7} Subdivisions</span>
                 </div>
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">AI-DOMINANT ZONES</span>
-                  <span className="text-purple-300 font-bold text-sm">{nationalSummary.grid_cells_ai_dominant} Dominant</span>
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">AI-DOMINANT ZONES</span>
+                  <span className="text-[#7C3AED] font-bold text-sm">{nationalSummary.grid_cells_ai_dominant} Dominant</span>
                 </div>
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">TERRITORY PERCENTAGE</span>
-                  <span className="text-cyan-300 font-bold text-sm">
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">TERRITORY PERCENTAGE</span>
+                  <span className="text-[#1769AA] font-bold text-sm">
                     {nationalSummary.ai_coverage_pct !== null ? `${nationalSummary.ai_coverage_pct}%` : "CALCULATION PENDING"}
                   </span>
                 </div>
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">LEAD TIME</span>
-                  <span className="text-slate-100 font-bold text-sm">+{leadTime}h (Day {Math.round(leadTime/24)})</span>
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">LEAD TIME</span>
+                  <span className="text-[#0B1F33] font-bold text-sm">+{leadTime}h (Day {Math.round(leadTime/24)})</span>
                 </div>
               </div>
 
-              <div className="bg-[#0f172a] p-3 rounded-lg border border-slate-800 space-y-1 text-[11px] font-mono text-slate-300">
-                <div><strong className="text-slate-400">Target Variables:</strong> {nationalSummary.variable || "Precipitation & 2m Temperature"}</div>
-                <div><strong className="text-slate-400">Season & Regime:</strong> {season} · {regime}</div>
-                <div><strong className="text-slate-400">Verification Period:</strong> {nationalSummary.verification_period || "2024-06-01 to 2024-09-30 (Verified ERA5 Archive)"}</div>
-                <div><strong className="text-slate-400">Ground Truth Anchor:</strong> ECMWF Copernicus ERA5 0.25° Common Grid</div>
+              <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#D9E0E7] space-y-1 text-xs font-mono text-[#334155]">
+                <div><strong className="text-[#64748B]">Target Variables:</strong> {nationalSummary.variable || "Precipitation & 2m Temperature"}</div>
+                <div><strong className="text-[#64748B]">Season & Regime:</strong> {season} · {regime}</div>
+                <div><strong className="text-[#64748B]">Verification Period:</strong> {nationalSummary.verification_period || "2024-06-01 to 2024-09-30 (Verified ERA5 Archive)"}</div>
+                <div><strong className="text-[#64748B]">Ground Truth Anchor:</strong> ECMWF Copernicus ERA5 0.25° Common Grid</div>
               </div>
             </div>
 
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setShowAiProofModal(false)}
-                className="px-4 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-200 border border-purple-500/50 text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-[#0B1F33] hover:bg-[#17253a] text-white text-xs font-semibold shadow-sm transition"
               >
                 Close Audit Inspection
               </button>
@@ -1134,62 +1131,62 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
 
       {/* MODAL 2: STATION OBSERVATION METADATA MODAL (SECTION 3 MANDATE) */}
       {showStationModal && selectedStation && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0b1322] border border-cyan-500/40 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
+        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white border border-[#D9E0E7] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
             <button
               onClick={() => setShowStationModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 p-1.5 rounded-lg hover:bg-slate-800"
+              className="absolute top-4 right-4 text-[#64748B] hover:text-[#0B1F33] p-1.5 rounded-lg hover:bg-slate-100"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center space-x-2.5 border-b border-[#1e2c47] pb-3">
-              <MapPin className="w-5 h-5 text-cyan-400" />
+            <div className="flex items-center space-x-2.5 border-b border-[#EDF2F7] pb-3">
+              <MapPin className="w-5 h-5 text-[#1769AA]" />
               <div>
-                <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wide">
+                <h3 className="text-sm font-bold text-[#0B1F33] uppercase tracking-wide">
                   STATION METADATA & SYNOPTIC OBSERVATION
                 </h3>
-                <span className="text-[10px] font-mono text-cyan-300">
+                <span className="text-[10px] font-mono text-[#64748B]">
                   Station ID: {selectedStation.station_id || `IMD_${selectedStation.id.toString().padStart(4, '0')}`}
                 </span>
               </div>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="bg-[#101b2f] p-3 rounded-xl border border-[#1e2f4c] space-y-1">
-                <div className="text-sm font-bold text-slate-100 flex items-center justify-between">
+              <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#D9E0E7] space-y-1">
+                <div className="text-sm font-bold text-[#0B1F33] flex items-center justify-between">
                   <span>{selectedStation.name}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 font-mono">
-                    {selectedStation.mode || "DEMO MODE — SYNOPTIC ARCHIVE"}
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-[#1769AA] border border-blue-200 font-mono">
+                    {selectedStation.mode || "SYNOPTIC ARCHIVE"}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-400 font-mono">
-                  State: <strong className="text-slate-200">{selectedStation.state}</strong> · Coordinates: <strong className="text-slate-200">{selectedStation.latitude.toFixed(4)}°N, {selectedStation.longitude.toFixed(4)}°E</strong> · Elevation: <strong className="text-slate-200">{selectedStation.elevation_m}m ASL</strong>
+                <div className="text-xs text-[#64748B] font-mono">
+                  State: <strong className="text-[#0B1F33]">{selectedStation.state}</strong> · Coordinates: <strong className="text-[#0B1F33]">{selectedStation.latitude.toFixed(4)}°N, {selectedStation.longitude.toFixed(4)}°E</strong> · Elevation: <strong className="text-[#0B1F33]">{selectedStation.elevation_m}m ASL</strong>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">DATA SOURCE</span>
-                  <span className="text-slate-100 font-bold text-[11px]">{selectedStation.data_source || "IMD AWS / Open-Meteo Synoptic"}</span>
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">DATA SOURCE</span>
+                  <span className="text-[#0B1F33] font-bold text-[11px]">{selectedStation.data_source || "IMD AWS / Open-Meteo Synoptic"}</span>
                 </div>
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">QUALITY FLAG</span>
-                  <span className="text-emerald-400 font-bold text-[11px]">{selectedStation.quality_flag || "QC_PASSED_SYNOPTIC"}</span>
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">QUALITY FLAG</span>
+                  <span className="text-emerald-700 font-bold text-[11px]">{selectedStation.quality_flag || "QC_PASSED_SYNOPTIC"}</span>
                 </div>
               </div>
 
-              <div className="bg-[#0f172a] p-3 rounded-lg border border-slate-800 space-y-1.5 font-mono text-slate-300 text-[11px]">
-                <div className="font-bold text-slate-200 text-xs">MULTI-MODEL PREDICTIONS AT THIS STATION:</div>
+              <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#D9E0E7] space-y-1.5 font-mono text-[#334155] text-xs">
+                <div className="font-bold text-[#0B1F33]">MULTI-MODEL PREDICTIONS AT THIS STATION:</div>
                 <div className="grid grid-cols-2 gap-1.5 pt-1">
-                  <div className="text-cyan-300">ECMWF IFS: {selectedStation.predictions?.ECMWF_IFS ?? 0} mm</div>
-                  <div className="text-purple-300">ECMWF AIFS: {selectedStation.predictions?.ECMWF_AIFS ?? 0} mm</div>
-                  <div className="text-blue-300">NOAA GFS: {selectedStation.predictions?.NOAA_GFS ?? 0} mm</div>
-                  <div className="text-amber-300">NOAA GEFS: {selectedStation.predictions?.NOAA_GEFS ?? 0} mm</div>
+                  <div className="text-[#1769AA]">ECMWF IFS: {selectedStation.predictions?.ECMWF_IFS ?? 0} mm</div>
+                  <div className="text-[#7C3AED]">ECMWF AIFS: {selectedStation.predictions?.ECMWF_AIFS ?? 0} mm</div>
+                  <div className="text-blue-600">NOAA GFS: {selectedStation.predictions?.NOAA_GFS ?? 0} mm</div>
+                  <div className="text-amber-700">NOAA GEFS: {selectedStation.predictions?.NOAA_GEFS ?? 0} mm</div>
                 </div>
               </div>
 
-              <p className="text-[10px] text-slate-400 italic">
+              <p className="text-xs text-[#64748B] italic">
                 Scientific Note: Real station positions and elevation ground-truth are derived from the official IMD WMO synoptic registry. Where external online feeds are restricted, observations are transparently flagged as DEMO ARCHIVE.
               </p>
             </div>
@@ -1197,7 +1194,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setShowStationModal(false)}
-                className="px-4 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/50 text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-[#0B1F33] hover:bg-[#17253a] text-white text-xs font-semibold shadow-sm transition"
               >
                 Close Station Card
               </button>
@@ -1208,66 +1205,66 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
 
       {/* MODAL 3: EXPLAINABLE MODEL WEIGHTS ("WHY THIS MODEL?") (SECTION 7 MANDATE) */}
       {selectedModelForWhy && selectedRegion && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#0b1322] border border-cyan-500/40 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
+        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white border border-[#D9E0E7] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
             <button
               onClick={() => setSelectedModelForWhy(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 p-1.5 rounded-lg hover:bg-slate-800"
+              className="absolute top-4 right-4 text-[#64748B] hover:text-[#0B1F33] p-1.5 rounded-lg hover:bg-slate-100"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center space-x-2.5 border-b border-[#1e2c47] pb-3">
-              <Scale className="w-5 h-5 text-cyan-400" />
+            <div className="flex items-center space-x-2.5 border-b border-[#EDF2F7] pb-3">
+              <Scale className="w-5 h-5 text-[#1769AA]" />
               <div>
-                <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wide">
+                <h3 className="text-sm font-bold text-[#0B1F33] uppercase tracking-wide">
                   WHY {selectedModelForWhy} = {Math.round((selectedRegion.weights[selectedModelForWhy] || 0) * 100)}%?
                 </h3>
-                <span className="text-[10px] font-mono text-cyan-300">
+                <span className="text-[10px] font-mono text-[#64748B]">
                   SIH26081 Section 7 Explainable Attribution
                 </span>
               </div>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="bg-[#101b2f] p-3 rounded-xl border border-[#1e2f4c] space-y-1">
-                <span className="text-[10px] font-mono text-slate-400 uppercase block">MATHEMATICAL ATTRIBUTION</span>
-                <p className="font-mono text-cyan-300 font-bold">
+              <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#D9E0E7] space-y-1">
+                <span className="text-[10px] font-mono text-[#64748B] uppercase block">MATHEMATICAL ATTRIBUTION</span>
+                <p className="font-mono text-[#1769AA] font-bold">
                   Weight = (1 - &lambda;) &middot; [ exp(-MAE / &tau; + &delta;_regime) / &sum; ] + &lambda; &middot; (1/M)
                 </p>
-                <p className="text-[11px] text-slate-300 leading-relaxed pt-1">
+                <p className="text-xs text-[#334155] leading-relaxed pt-1">
                   Weights are calculated dynamically through regularized Bayesian Model Averaging with L2 shrinkage (&lambda;=0.12) toward an equal-weighted prior (0.2500).
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">REGION</span>
-                  <span className="text-slate-100 font-bold text-xs">{selectedRegion.region_name}</span>
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">REGION</span>
+                  <span className="text-[#0B1F33] font-bold text-xs">{selectedRegion.region_name}</span>
                 </div>
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">LEAD TIME</span>
-                  <span className="text-slate-100 font-bold text-xs">+{leadTime}h</span>
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">LEAD TIME</span>
+                  <span className="text-[#0B1F33] font-bold text-xs">+{leadTime}h</span>
                 </div>
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">SEASON & REGIME</span>
-                  <span className="text-slate-100 font-bold text-xs">{season} &middot; {regime}</span>
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">SEASON & REGIME</span>
+                  <span className="text-[#0B1F33] font-bold text-xs">{season} &middot; {regime}</span>
                 </div>
-                <div className="bg-[#10192d] p-2.5 rounded-lg border border-[#1e2c47]">
-                  <span className="text-slate-400 block text-[10px] uppercase">HISTORICAL SKILL (MAE)</span>
-                  <span className="text-purple-300 font-bold text-xs">
+                <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#D9E0E7]">
+                  <span className="text-[#64748B] block text-[10px] uppercase">HISTORICAL SKILL (MAE)</span>
+                  <span className="text-[#7C3AED] font-bold text-xs">
                     {selectedRegion.historical_era5_mae?.[selectedModelForWhy] ?? (selectedModelForWhy.includes("IFS") ? 2.1 : selectedModelForWhy.includes("AIFS") ? 2.4 : 2.8)} mm
                   </span>
                 </div>
               </div>
 
-              <div className="bg-[#0f172a] p-3 rounded-lg border border-slate-800 space-y-1 text-[11px] font-mono text-slate-300">
-                <div><strong className="text-slate-400">Terrain Forcing Factor:</strong> {selectedRegion.orographic_feature || "Orographic slope & synoptic trough"}</div>
-                <div><strong className="text-slate-400">Shrinkage Penalty:</strong> &lambda; = 0.12 (Guarantees multi-model resilience)</div>
-                <div><strong className="text-slate-400">Final Calculated Weight:</strong> <span className="text-cyan-300 font-bold">{Number(selectedRegion.weights[selectedModelForWhy] || 0).toFixed(4)} ({Math.round((selectedRegion.weights[selectedModelForWhy] || 0) * 100)}%)</span></div>
+              <div className="bg-[#F8FAFC] p-3 rounded-lg border border-[#D9E0E7] space-y-1 text-xs font-mono text-[#334155]">
+                <div><strong className="text-[#64748B]">Terrain Forcing Factor:</strong> {selectedRegion.orographic_feature || "Orographic slope & synoptic trough"}</div>
+                <div><strong className="text-[#64748B]">Shrinkage Penalty:</strong> &lambda; = 0.12 (Guarantees multi-model resilience)</div>
+                <div><strong className="text-[#64748B]">Final Calculated Weight:</strong> <span className="text-[#1769AA] font-bold">{Number(selectedRegion.weights[selectedModelForWhy] || 0).toFixed(4)} ({Math.round((selectedRegion.weights[selectedModelForWhy] || 0) * 100)}%)</span></div>
               </div>
 
-              <p className="text-[10px] text-slate-400 italic">
+              <p className="text-xs text-[#64748B] italic">
                 Scientific Guarantee: This explanation is dynamically synthesized from the mathematical adaptive weighting calculation. Zero hardcoded rationale values are used.
               </p>
             </div>
@@ -1275,7 +1272,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setSelectedModelForWhy(null)}
-                className="px-4 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/50 text-xs font-semibold"
+                className="px-4 py-2 rounded-xl bg-[#0B1F33] hover:bg-[#17253a] text-white text-xs font-semibold shadow-sm transition"
               >
                 Close Attribution
               </button>
@@ -1286,3 +1283,4 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     </div>
   );
 };
+
