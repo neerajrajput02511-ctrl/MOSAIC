@@ -34,9 +34,15 @@ export default function Home() {
   // Modals & Drawers
   const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
   const [chatModalOpen, setChatModalOpen] = useState<boolean>(false);
+  const [chatInitialQuery, setChatInitialQuery] = useState<string | undefined>(undefined);
   const [explainDrawerOpen, setExplainDrawerOpen] = useState<boolean>(false);
   const [explainData, setExplainData] = useState<WhyThisForecastData | null>(null);
   const [loadingExplain, setLoadingExplain] = useState<boolean>(false);
+
+  const handleOpenChat = (query?: string) => {
+    setChatInitialQuery(query);
+    setChatModalOpen(true);
+  };
 
   // Forecast State
   const [forecastData, setForecastData] = useState<BlendedForecastResponse | null>(null);
@@ -184,7 +190,7 @@ export default function Home() {
         selectedLocation={selectedLocation}
         onSelectLocation={handleSelectLocation}
         onOpenHelp={() => setHelpModalOpen(true)}
-        onOpenChat={() => setChatModalOpen(true)}
+        onOpenChat={() => handleOpenChat()}
         isBackendOnline={isBackendOnline}
         monitoringScope={monitoringScope}
         onToggleScope={handleToggleScope}
@@ -223,7 +229,10 @@ export default function Home() {
 
           {/* TAB 2: MODELS (MODEL PROFILES & SPATIAL WEIGHT MAP) */}
           {activeTab === "models" && (
-            <ModelsView monitoringScope={monitoringScope} />
+            <ModelsView 
+              monitoringScope={monitoringScope} 
+              onOpenCopilot={handleOpenChat}
+            />
           )}
 
           {/* TAB 3: VERIFICATION (SKILL CURVES, BASELINES & REPLAY) */}
@@ -293,8 +302,12 @@ export default function Home() {
       {/* Meteorological AI Copilot Modal */}
       <MeteorologicalChatModal
         isOpen={chatModalOpen}
-        onClose={() => setChatModalOpen(false)}
+        onClose={() => {
+          setChatModalOpen(false);
+          setChatInitialQuery(undefined);
+        }}
         activeStationId={selectedLocation?.id}
+        initialQuery={chatInitialQuery}
       />
     </div>
   );

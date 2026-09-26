@@ -308,9 +308,15 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
       {/* 3. HERO MAP (65%) & RIGHT INFORMATION PANELS (35%) (Reference Mockup) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* HERO MAP CONTAINER (lg:col-span-8) */}
-        <div className="lg:col-span-8 bg-white border border-[#D9E0E7] rounded-2xl p-3 shadow-sm relative overflow-hidden flex flex-col">
+        <div 
+          className="lg:col-span-8 bg-white border border-[#D9E0E7] rounded-2xl p-3 shadow-sm relative overflow-hidden flex flex-col map-container"
+          style={{ position: "relative", zIndex: 1, isolation: "isolate" }}
+        >
           {/* Map canvas container */}
-          <div className="h-[520px] lg:h-[580px] w-full rounded-xl overflow-hidden relative">
+          <div 
+            className="h-[520px] lg:h-[580px] w-full rounded-xl overflow-hidden relative map-stacking-context"
+            style={{ position: "relative", zIndex: 1, isolation: "isolate" }}
+          >
             <WeatherMap 
               locations={locations}
               selectedLocation={selectedLocation} 

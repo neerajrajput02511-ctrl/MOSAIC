@@ -1167,7 +1167,10 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
 
       {/* MODAL 1: AI DOMINANCE SCIENTIFIC PROOF MODAL (SECTION 2 MANDATE) */}
       {showAiProofModal && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-[99980] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          style={{ isolation: "isolate" }}
+        >
           <div className="bg-white border border-[#D9E0E7] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
             <button
               onClick={() => setShowAiProofModal(false)}
@@ -1242,7 +1245,10 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
 
       {/* MODAL 2: STATION OBSERVATION METADATA MODAL (SECTION 3 MANDATE) */}
       {showStationModal && selectedStation && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-[99980] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          style={{ isolation: "isolate" }}
+        >
           <div className="bg-white border border-[#D9E0E7] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
             <button
               onClick={() => setShowStationModal(false)}
@@ -1316,7 +1322,10 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
 
       {/* MODAL 3: EXPLAINABLE MODEL WEIGHTS ("WHY THIS MODEL?") (SECTION 7 MANDATE) */}
       {selectedModelForWhy && selectedRegion && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-[99980] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          style={{ isolation: "isolate" }}
+        >
           <div className="bg-white border border-[#D9E0E7] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
             <button
               onClick={() => setSelectedModelForWhy(null)}

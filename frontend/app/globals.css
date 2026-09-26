@@ -74,3 +74,49 @@ body {
   font-family: var(--font-mono);
   letter-spacing: -0.02em;
 }
+
+/* ========================================================================= */
+/* MODAL & DIALOG ARCHITECTURE (SIH26081)                                    */
+/* ========================================================================= */
+
+/* Dedicated Top-Level Portal Root */
+#copilot-modal-root {
+  position: relative;
+  z-index: 99999;
+}
+
+.copilot-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  isolation: isolate;
+  pointer-events: auto;
+}
+
+.copilot-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(8, 20, 35, 0.70);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 0;
+  pointer-events: auto;
+}
+
+.copilot-dialog {
+  position: relative;
+  z-index: 1;
+}
+
+/* Explicit Stacking Context Boundary for Dashboard Map Containers */
+.map-container,
+.map-stacking-context {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+}
+
+.leaflet-container,
+.maplibregl-map {
+  isolation: isolate;
+}

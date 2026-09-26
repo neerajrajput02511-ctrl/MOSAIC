@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { MessageSquare, Send, Bot, User, Sparkles, X, ShieldAlert, CheckCircle2, RotateCcw, Cpu } from "lucide-react";
 import { askMeteorologicalCopilot } from "@/services/api";
 
@@ -8,6 +9,7 @@ interface ChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   activeStationId?: number;
+  initialQuery?: string;
 }
 
 interface Message {
@@ -21,8 +23,35 @@ interface Message {
 export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
   isOpen,
   onClose,
-  activeStationId
+  activeStationId,
+  initialQuery
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll and handle Escape key while Copilot is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
   const initialGreeting: Message = {
     role: "assistant",
     content: "Welcome to the **WEATHERFUSION AI Meteorological Copilot**, powered by **Google Gemini 3.6 Flash**.\n\nI am grounded in available application data from **NOAA GFS**, **ECMWF IFS**, and **ECMWF AIFS**, synthesized with official **IMD advisories** and **ERA5** historical reanalysis. Ask any operational forecast or multi-model blending question.",
@@ -47,7 +76,20 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
     }
   }, [messages, isLoading]);
 
-  if (!isOpen) return null;
+  // Handle optional initialQuery trigger
+  useEffect(() => {
+    if (isOpen && initialQuery && initialQuery.trim()) {
+      handleSend(initialQuery.trim());
+    }
+  }, [isOpen, initialQuery]);
+
+  if (!isOpen || !mounted) return null;
+
+  const portalTarget = typeof document !== "undefined"
+    ? (document.getElementById("copilot-modal-root") || document.body)
+    : null;
+
+  if (!portalTarget) return null;
 
   const quickQuestions = [
     "Why trust the blended forecast over GFS for Guwahati today?",
@@ -155,9 +197,31 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
     });
   };
 
-  return (
-    <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl h-[680px] bg-white border border-[#D9E0E7] rounded-2xl flex flex-col justify-between shadow-2xl overflow-hidden">
+  return createPortal(
+    <div 
+      className="copilot-modal-root fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 md:p-6"
+      style={{ isolation: "isolate" }}
+    >
+      {/* Full Viewport Dark/Blurred Backdrop */}
+      <div 
+        className="copilot-backdrop fixed inset-0 transition-opacity duration-200"
+        style={{
+          backgroundColor: "rgba(8, 20, 35, 0.70)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)"
+        }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Copilot Dialog */}
+      <div 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="copilot-modal-title"
+        className="copilot-dialog relative z-10 w-full max-w-3xl h-[680px] max-h-[92vh] bg-white border border-[#D9E0E7] rounded-2xl flex flex-col justify-between shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-4 border-b border-[#D9E0E7] flex items-center justify-between bg-[#F8FAFC]">
           <div className="flex items-center space-x-3">
@@ -166,7 +230,7 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="font-bold text-sm tracking-wide text-[#0B1F33] flex items-center gap-1.5">
+                <h3 id="copilot-modal-title" className="font-bold text-sm tracking-wide text-[#0B1F33] flex items-center gap-1.5">
                   WEATHERFUSION AI COPILOT
                 </h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1769AA]/10 text-[#1769AA] border border-[#1769AA]/20 flex items-center gap-1">
@@ -192,7 +256,8 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              title="Close Copilot"
+              title="Close Copilot (Esc)"
+              aria-label="Close Copilot"
               className="p-1.5 rounded-lg text-[#64748B] hover:text-rose-600 hover:bg-rose-50 transition"
             >
               <X className="w-4 h-4" />
@@ -293,7 +358,8 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    portalTarget
   );
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   X, 
   HelpCircle, 
@@ -26,8 +27,40 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
   defaultTab = "faq"
 }) => {
   const [tab, setTab] = useState<"onboarding" | "faq">(defaultTab);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll and handle Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted) return null;
+
+  const portalTarget = typeof document !== "undefined"
+    ? (document.getElementById("copilot-modal-root") || document.body)
+    : null;
+
+  if (!portalTarget) return null;
 
   const faqs = [
     {
@@ -60,10 +93,27 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
     }
   ];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[99990] flex items-center justify-center p-4 animate-in fade-in duration-200"
+      style={{ isolation: "isolate" }}
+    >
+      {/* Full Viewport Dark/Blurred Backdrop */}
       <div 
-        className="w-full max-w-2xl bg-white border border-[#D9E0E7] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        className="fixed inset-0 transition-opacity duration-200"
+        style={{
+          backgroundColor: "rgba(8, 20, 35, 0.70)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)"
+        }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div 
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 w-full max-w-2xl bg-white border border-[#D9E0E7] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -199,6 +249,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    portalTarget
   );
 };

@@ -50,6 +50,8 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
+        {/* Dedicated Top-Level Portal Root for Copilot and Application Modals */}
+        <div id="copilot-modal-root" />
       </body>
     </html>
   );

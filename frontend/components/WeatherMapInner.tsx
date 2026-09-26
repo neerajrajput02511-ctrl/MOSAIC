@@ -327,9 +327,10 @@ export const WeatherMapInner: React.FC<WeatherMapInnerProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full h-full rounded-xl overflow-hidden border border-[#1e2c47] bg-[#090d16] flex flex-col ${
+      className={`relative w-full h-full rounded-xl overflow-hidden border border-[#1e2c47] bg-[#090d16] flex flex-col map-container map-stacking-context ${
         isFullscreen ? "p-0" : ""
       }`}
+      style={{ position: "relative", zIndex: 1, isolation: "isolate" }}
     >
       {/* TOP GIS COMMAND BAR */}
       <div className="absolute top-3 left-3 right-3 z-[1000] flex flex-wrap items-center justify-between gap-2 pointer-events-none">

@@ -530,7 +530,10 @@ export const MapLibreView: React.FC<MapLibreViewProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden border border-[#1e2c47] bg-[#0c1322] flex flex-col shadow-2xl">
+    <div 
+      className="relative w-full h-full rounded-xl overflow-hidden border border-[#1e2c47] bg-[#0c1322] flex flex-col shadow-2xl map-container map-stacking-context"
+      style={{ position: "relative", zIndex: 1, isolation: "isolate" }}
+    >
       
       {/* TOP CONTROL BAR */}
       <div className="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">

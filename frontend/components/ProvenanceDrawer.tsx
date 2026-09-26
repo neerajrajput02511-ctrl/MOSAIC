@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, ShieldCheck, Database, Layers, CheckCircle2, Clock, Globe, Cpu, FileText } from "lucide-react";
 import { TimelinePoint, LocationItem } from "@/types";
 import { fetchProvenance } from "@/services/api";
@@ -19,6 +20,32 @@ export const ProvenanceDrawer: React.FC<ProvenanceDrawerProps> = ({
   selectedLocation
 }) => {
   const [provenanceData, setProvenanceData] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll and handle Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     async function loadProvenance() {
@@ -36,7 +63,13 @@ export const ProvenanceDrawer: React.FC<ProvenanceDrawerProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
+
+  const portalTarget = typeof document !== "undefined"
+    ? (document.getElementById("copilot-modal-root") || document.body)
+    : null;
+
+  if (!portalTarget) return null;
 
   const validTimeStr = currentPoint?.forecast_time 
     ? new Date(currentPoint.forecast_time).toUTCString()
@@ -44,9 +77,29 @@ export const ProvenanceDrawer: React.FC<ProvenanceDrawerProps> = ({
 
   const leadHours = currentPoint?.lead_time_hours ?? 24;
 
-  return (
-    <div className="fixed inset-0 z-[700] flex justify-end bg-black/40 backdrop-blur-sm transition-opacity">
-      <div className="w-full max-w-xl h-full bg-white border-l border-[#D9E0E7] p-6 overflow-y-auto space-y-6 shadow-2xl flex flex-col justify-between">
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[99980] flex justify-end"
+      style={{ isolation: "isolate" }}
+    >
+      {/* Full Viewport Dark/Blurred Backdrop */}
+      <div 
+        className="fixed inset-0 transition-opacity duration-200"
+        style={{
+          backgroundColor: "rgba(8, 20, 35, 0.50)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)"
+        }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div 
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 w-full max-w-xl h-full bg-white border-l border-[#D9E0E7] p-6 overflow-y-auto space-y-6 shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[#EDF2F7] pb-4">
@@ -168,6 +221,7 @@ export const ProvenanceDrawer: React.FC<ProvenanceDrawerProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    portalTarget
   );
 };

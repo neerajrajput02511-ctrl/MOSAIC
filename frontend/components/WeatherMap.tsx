@@ -81,7 +81,10 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col">
+    <div 
+      className="relative w-full h-full flex flex-col map-container map-stacking-context"
+      style={{ position: "relative", zIndex: 1, isolation: "isolate" }}
+    >
       {/* Map Status Badge (Phase 12: Visually distinct map states) */}
       <div className="absolute top-4 right-4 z-20 flex items-center space-x-2">
         {mapState === "READY" && (
