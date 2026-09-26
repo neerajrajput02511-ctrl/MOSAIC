@@ -468,17 +468,19 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       </div>
 
       {/* 3. BOTTOM: MODEL COMPARISON: MOSAIC vs INDIVIDUAL MODELS vs EQUAL MEAN */}
-      <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-5 space-y-4">
+      <div className="bg-white border border-[#D9E2EC] rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Layers className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-tight font-mono">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] border border-[#BFD9FF] flex items-center justify-center text-[#1677FF]">
+              <Layers className="w-3.5 h-3.5 text-[#1677FF]" />
+            </div>
+            <h3 className="text-sm font-bold text-[#102A43] tracking-tight">
               Operational Comparison: MOSAIC vs Individual Models vs Equal Mean (+{selectedLeadTime}h)
             </h3>
           </div>
           <button
             onClick={() => onNavigateTab("blending_engine")}
-            className="text-xs font-mono text-cyan-400 hover:underline flex items-center space-x-1"
+            className="text-xs font-semibold text-[#1677FF] hover:underline flex items-center space-x-1"
           >
             <span>Full Mathematical Breakdown</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -490,54 +492,54 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           {/* NOAA GFS */}
           <div 
             onClick={() => { setSelectedModelForProvenance(forecastTruth.models.gfs); setShowModelProvenance(true); }}
-            className="bg-[#10192d] border border-[#1e2c47] hover:border-blue-500/60 cursor-pointer rounded-lg p-3 space-y-1 transition group"
+            className="bg-white border border-[#D9E2EC] hover:border-[#1677FF]/60 cursor-pointer rounded-xl p-3.5 space-y-1 transition shadow-xs group"
             title="Click to view GFS provenance and audit metadata"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 block uppercase">NOAA GFS</span>
-              <span className="text-[9px] text-blue-400 opacity-60 group-hover:opacity-100">PROV ↗</span>
+              <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">NOAA GFS</span>
+              <span className="text-[9px] text-[#1677FF] opacity-60 group-hover:opacity-100">PROV ↗</span>
             </div>
-            <div className="text-lg font-bold text-blue-300">
+            <div className="text-lg font-bold text-[#102A43]">
               {forecastTruth.models.gfs.value.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-slate-400 block">Weight: {(forecastTruth.models.gfs.normalized_weight * 100).toFixed(1)}%</span>
+            <span className="text-[10px] text-[#52667A] block font-sans">Weight: {(forecastTruth.models.gfs.normalized_weight * 100).toFixed(1)}%</span>
           </div>
 
           {/* ECMWF IFS */}
           <div 
             onClick={() => { setSelectedModelForProvenance(forecastTruth.models.ifs); setShowModelProvenance(true); }}
-            className="bg-[#10192d] border border-[#1e2c47] hover:border-cyan-500/60 cursor-pointer rounded-lg p-3 space-y-1 transition group"
+            className="bg-white border border-[#D9E2EC] hover:border-[#1677FF]/60 cursor-pointer rounded-xl p-3.5 space-y-1 transition shadow-xs group"
             title="Click to view IFS provenance and audit metadata"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 block uppercase">ECMWF IFS</span>
-              <span className="text-[9px] text-cyan-400 opacity-60 group-hover:opacity-100">PROV ↗</span>
+              <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">ECMWF IFS</span>
+              <span className="text-[9px] text-[#1677FF] opacity-60 group-hover:opacity-100">PROV ↗</span>
             </div>
-            <div className="text-lg font-bold text-cyan-300">
+            <div className="text-lg font-bold text-[#0284C7]">
               {forecastTruth.models.ifs.value.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-slate-400 block">Weight: {(forecastTruth.models.ifs.normalized_weight * 100).toFixed(1)}%</span>
+            <span className="text-[10px] text-[#52667A] block font-sans">Weight: {(forecastTruth.models.ifs.normalized_weight * 100).toFixed(1)}%</span>
           </div>
 
           {/* ECMWF AIFS */}
           <div 
             onClick={() => { setSelectedModelForProvenance(forecastTruth.models.aifs); setShowModelProvenance(true); }}
-            className={`bg-[#10192d] border ${
-              forecastTruth.models.aifs.status === "DEGRADED" ? "border-rose-500/60 bg-rose-950/20" : "border-purple-500/30 hover:border-purple-500/60"
-            } cursor-pointer rounded-lg p-3 space-y-1 transition group`}
+            className={`bg-white border ${
+              forecastTruth.models.aifs.status === "DEGRADED" ? "border-rose-300 bg-rose-50/50" : "border-[#D9E2EC] hover:border-[#1677FF]/60"
+            } cursor-pointer rounded-xl p-3.5 space-y-1 transition shadow-xs group`}
             title="Click to view AIFS provenance and audit metadata"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-purple-300 block uppercase flex items-center space-x-1">
-                <Zap className="w-3 h-3 text-purple-400" />
+              <span className="text-[10px] text-[#1677FF] block uppercase flex items-center space-x-1 font-sans font-bold">
+                <Zap className="w-3 h-3 text-[#1677FF]" />
                 <span>ECMWF AIFS</span>
               </span>
-              <span className="text-[9px] text-purple-400 opacity-60 group-hover:opacity-100">PROV ↗</span>
+              <span className="text-[9px] text-[#1677FF] opacity-60 group-hover:opacity-100">PROV ↗</span>
             </div>
-            <div className="text-lg font-bold text-purple-200">
+            <div className="text-lg font-bold text-[#1677FF]">
               {forecastTruth.models.aifs.value.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-purple-300 block">
+            <span className="text-[10px] text-[#52667A] block font-sans">
               {forecastTruth.models.aifs.status === "DEGRADED" 
                 ? "DEGRADED (0% Weight)" 
                 : `Weight: ${(forecastTruth.models.aifs.normalized_weight * 100).toFixed(1)}%`}
@@ -547,38 +549,38 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           {/* NOAA GEFS */}
           <div 
             onClick={() => { setSelectedModelForProvenance(forecastTruth.models.gefs); setShowModelProvenance(true); }}
-            className="bg-[#10192d] border border-[#1e2c47] hover:border-amber-500/60 cursor-pointer rounded-lg p-3 space-y-1 transition group"
+            className="bg-white border border-[#D9E2EC] hover:border-[#B7791F]/60 cursor-pointer rounded-xl p-3.5 space-y-1 transition shadow-xs group"
             title="Click to view GEFS provenance and audit metadata"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 block uppercase">NOAA GEFS</span>
-              <span className="text-[9px] text-amber-400 opacity-60 group-hover:opacity-100">PROV ↗</span>
+              <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">NOAA GEFS</span>
+              <span className="text-[9px] text-[#B7791F] opacity-60 group-hover:opacity-100">PROV ↗</span>
             </div>
-            <div className="text-lg font-bold text-amber-300">
+            <div className="text-lg font-bold text-[#B7791F]">
               {forecastTruth.models.gefs.value.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-slate-400 block">Weight: {(forecastTruth.models.gefs.normalized_weight * 100).toFixed(1)}%</span>
+            <span className="text-[10px] text-[#52667A] block font-sans">Weight: {(forecastTruth.models.gefs.normalized_weight * 100).toFixed(1)}%</span>
           </div>
 
-          {/* EQUAL MEAN BASELINE (Requirement 9 & 13) */}
-          <div className="bg-[#10192d] border border-slate-700 rounded-lg p-3 space-y-1">
-            <span className="text-[10px] text-slate-400 block uppercase">EQUAL MEAN</span>
-            <div className="text-lg font-bold text-slate-200">
+          {/* EQUAL MEAN BASELINE */}
+          <div className="bg-[#F4F7FA] border border-[#D9E2EC] rounded-xl p-3.5 space-y-1">
+            <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">EQUAL MEAN</span>
+            <div className="text-lg font-bold text-[#102A43]">
               {forecastTruth.equal_mean.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-slate-500 block">{forecastTruth.ingested_label}</span>
+            <span className="text-[10px] text-[#52667A] block font-sans">{forecastTruth.ingested_label}</span>
           </div>
 
-          {/* MOSAIC BLEND (Guaranteed exact match with Σ w_i_norm * x_i) */}
-          <div className="bg-emerald-950/30 border border-emerald-500/50 rounded-lg p-3 space-y-1 shadow-md shadow-emerald-950/40">
-            <span className="text-[10px] text-emerald-300 block uppercase font-bold flex items-center space-x-1">
-              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+          {/* MOSAIC BLEND */}
+          <div className="bg-[#EAF3FF] border border-[#BFD9FF] rounded-xl p-3.5 space-y-1 shadow-xs">
+            <span className="text-[10px] text-[#1677FF] block uppercase font-bold flex items-center space-x-1 font-sans">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1677FF]" />
               <span>MOSAIC BLEND</span>
             </span>
-            <div className="text-xl font-bold text-emerald-300">
+            <div className="text-xl font-bold text-[#1677FF]">
               {forecastTruth.mosaic_blend.toFixed(1)} mm
             </div>
-            <span className="text-[10px] text-emerald-400 block">
+            <span className="text-[10px] text-[#15966B] font-semibold block font-sans">
               {currentPoint?.improvement_vs_baseline_pct !== undefined 
                 ? `⭐ ${currentPoint.improvement_vs_baseline_pct.toFixed(1)}% vs Equal Mean`
                 : "Calibrated vs Equal Mean"}
@@ -586,23 +588,23 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
         </div>
 
-        {/* Mathematical Consistency Verification Footnote (Requirement 1, 3, & 4) */}
-        <div className="bg-[#080d18] border border-[#172338] rounded-lg p-2.5 flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-400 gap-2">
+        {/* Mathematical Consistency Verification Footnote */}
+        <div className="bg-[#F4F7FA] border border-[#D9E2EC] rounded-xl p-3 flex flex-wrap items-center justify-between text-xs text-[#52667A] gap-2 font-mono">
           <div className="flex items-center space-x-2 flex-wrap">
-            <span className="text-cyan-400 font-bold uppercase text-[10px]">MATHEMATICAL AUDIT:</span>
+            <span className="text-[#1677FF] font-bold uppercase text-[10px] font-sans">MATHEMATICAL AUDIT:</span>
             <span>
-              &Sigma;(w<sub>i</sub> &times; x<sub>i</sub>) = {forecastTruth.active_models.map(m => `${m.value.toFixed(1)} × ${(m.normalized_weight * 100).toFixed(1)}%`).join(" + ")} = <strong className="text-emerald-300">{forecastTruth.weighted_sum.toFixed(2)} mm</strong>
+              &Sigma;(w<sub>i</sub> &times; x<sub>i</sub>) = {forecastTruth.active_models.map(m => `${m.value.toFixed(1)} × ${(m.normalized_weight * 100).toFixed(1)}%`).join(" + ")} = <strong className="text-[#102A43] font-bold">{forecastTruth.weighted_sum.toFixed(2)} mm</strong>
             </span>
           </div>
           {forecastTruth.is_identity_match ? (
-            <span className="text-emerald-400 font-semibold flex items-center space-x-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>✓ Strict Identity Match: MOSAIC Blend = {forecastTruth.mosaic_blend.toFixed(1)} mm</span>
+            <span className="text-[#15966B] font-semibold flex items-center space-x-1 font-sans">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#15966B] shrink-0" />
+              <span>Identity Verified: MOSAIC Blend = {forecastTruth.mosaic_blend.toFixed(1)} mm</span>
             </span>
           ) : (
-            <span className="text-rose-400 font-semibold flex items-center space-x-1">
-              <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-              <span>Identity Mismatch: &Delta; = {Math.abs(forecastTruth.weighted_sum - forecastTruth.mosaic_blend).toFixed(3)} mm</span>
+            <span className="text-[#C53030] font-semibold flex items-center space-x-1 font-sans">
+              <AlertCircle className="w-3.5 h-3.5 text-[#C53030] shrink-0" />
+              <span>Difference: &Delta; = {Math.abs(forecastTruth.weighted_sum - forecastTruth.mosaic_blend).toFixed(3)} mm</span>
             </span>
           )}
         </div>
