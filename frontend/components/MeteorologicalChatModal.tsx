@@ -25,11 +25,11 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
 }) => {
   const initialGreeting: Message = {
     role: "assistant",
-    content: "Welcome to the **WEATHERFUSION AI Autonomous Copilot**, powered by **Google Gemini 3.6 Flash**.\n\nI am grounded in live telemetry from **NOAA GFS**, **ECMWF IFS**, and **ECMWF AIFS Deep Learning**, alongside real-time **IMD warnings**. Ask any operational disaster response or forecast blending question.",
+    content: "Welcome to the **WEATHERFUSION AI Meteorological Copilot**, powered by **Google Gemini 3.6 Flash**.\n\nI am grounded in available application data from **NOAA GFS**, **ECMWF IFS**, and **ECMWF AIFS**, synthesized with official **IMD advisories** and **ERA5** historical reanalysis. Ask any operational forecast or multi-model blending question.",
     citations: [
       "NOAA NCEP GFS 0.25° Physics Run",
       "ECMWF IFS 0.25° Physics Run & AIFS Deep Learning Model",
-      "IMD Mausam Live Station Feed",
+      "IMD Regional Meteorological Telemetry",
       "ECMWF ERA5 Historical Validation Archive"
     ],
     model_used: "gemini-3.6-flash",
@@ -81,7 +81,7 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
       const data = await askMeteorologicalCopilot(text, activeStationId || 1, historyPayload);
       const botMsg: Message = {
         role: "assistant",
-        content: data.response || "No response received.",
+        content: data.response || "I don't currently have verified forecast data for this location.",
         citations: data.citations || [],
         model_used: data.model_used,
         is_ai_agent: data.is_ai_agent ?? true
@@ -92,8 +92,8 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
         ...prev,
         {
           role: "assistant",
-          content: "⚠️ **Service Communication Notice**: Unable to reach the meteorological intelligence backend. Please verify that `python scripts/run_server.py` is active on port 8000.",
-          model_used: "system-offline",
+          content: "I don't currently have verified forecast data for this location. Please check backend service connectivity on port 8000.",
+          model_used: "service-offline",
           is_ai_agent: false
         }
       ]);
@@ -108,20 +108,20 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
       // Headers
       if (line.startsWith("### ")) {
         return (
-          <h4 key={lIdx} className="text-cyan-300 font-bold text-xs mt-3 mb-1 tracking-wide uppercase">
+          <h4 key={lIdx} className="text-[#0B1F33] font-bold text-xs mt-3 mb-1 tracking-wide uppercase">
             {line.replace("### ", "")}
           </h4>
         );
       }
       if (line.startsWith("## ")) {
         return (
-          <h3 key={lIdx} className="text-cyan-200 font-bold text-sm mt-3 mb-1 tracking-wide">
+          <h3 key={lIdx} className="text-[#0B1F33] font-bold text-sm mt-3 mb-1 tracking-wide">
             {line.replace("## ", "")}
           </h3>
         );
       }
       if (line.startsWith("---")) {
-        return <hr key={lIdx} className="border-slate-800 my-2" />;
+        return <hr key={lIdx} className="border-[#EDF2F7] my-2" />;
       }
 
       // Format bold markdown
@@ -129,7 +129,7 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
       const formattedParts = parts.map((part, pIdx) => {
         if (part.startsWith("**") && part.endsWith("**")) {
           return (
-            <strong key={pIdx} className="font-semibold text-cyan-200">
+            <strong key={pIdx} className="font-semibold text-[#0B1F33]">
               {part.slice(2, -2)}
             </strong>
           );
@@ -141,14 +141,14 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
       if (line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
         return (
           <div key={lIdx} className="flex items-start space-x-1.5 ml-2 my-0.5">
-            <span className="text-cyan-400 mt-1 shrink-0 text-[10px]">•</span>
-            <span className="flex-1">{formattedParts}</span>
+            <span className="text-[#1769AA] mt-1 shrink-0 text-[10px]">•</span>
+            <span className="flex-1 text-[#334155]">{formattedParts}</span>
           </div>
         );
       }
 
       return (
-        <p key={lIdx} className={line.trim() === "" ? "h-2" : "my-0.5"}>
+        <p key={lIdx} className={line.trim() === "" ? "h-2" : "my-0.5 text-[#334155]"}>
           {formattedParts}
         </p>
       );
@@ -156,35 +156,29 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl h-[700px] bg-[#0b111e] border border-cyan-500/30 rounded-2xl flex flex-col justify-between shadow-[0_0_50px_rgba(6,182,212,0.15)] overflow-hidden">
+    <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-3xl h-[680px] bg-white border border-[#D9E0E7] rounded-2xl flex flex-col justify-between shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-[#1b273d] flex items-center justify-between bg-gradient-to-r from-[#0d1627] via-[#111c33] to-[#0d1627]">
+        <div className="p-4 border-b border-[#D9E0E7] flex items-center justify-between bg-[#F8FAFC]">
           <div className="flex items-center space-x-3">
-            <div className="relative">
-              <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-                <Sparkles className="w-5 h-5 animate-pulse" />
-              </div>
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
+            <div className="w-9 h-9 rounded-xl bg-[#1769AA]/10 border border-[#1769AA]/20 flex items-center justify-center text-[#1769AA]">
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="font-extrabold text-sm tracking-wide text-slate-100 flex items-center gap-1.5">
+                <h3 className="font-bold text-sm tracking-wide text-[#0B1F33] flex items-center gap-1.5">
                   WEATHERFUSION AI COPILOT
                 </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
-                  <Cpu className="w-3 h-3 text-cyan-400" />
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1769AA]/10 text-[#1769AA] border border-[#1769AA]/20 flex items-center gap-1">
+                  <Cpu className="w-3 h-3 text-[#1769AA]" />
                   Gemini 3.6 Flash
                 </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  REAL-DATA GROUNDED
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  GROUNDED IN APP DATA
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                AUTONOMOUS DISASTER INTELLIGENCE AGENT · ZERO HALLUCINATION · IMD & NWP TELEMETRY
+              <p className="text-[11px] text-[#64748B] font-mono mt-0.5">
+                METEOROLOGICAL DECISION SUPPORT · GROUNDED IN AVAILABLE NWP & OBSERVATIONS
               </p>
             </div>
           </div>
@@ -192,14 +186,14 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
             <button
               onClick={handleClearChat}
               title="Reset Conversation"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#1a263d] transition"
+              className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0B1F33] hover:bg-[#EDF2F7] transition"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
               title="Close Copilot"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+              className="p-1.5 rounded-lg text-[#64748B] hover:text-rose-600 hover:bg-rose-50 transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -207,43 +201,45 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
         </div>
 
         {/* Message Log */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 text-xs leading-relaxed custom-scrollbar">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 text-xs leading-relaxed bg-[#F8FAFC]">
           {messages.map((m, idx) => (
             <div
               key={idx}
               className={`flex items-start space-x-3 ${m.role === "user" ? "flex-row-reverse space-x-reverse" : ""}`}
             >
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
                 m.role === "user" 
-                  ? "bg-gradient-to-tr from-cyan-600 to-blue-500 text-white shadow-cyan-600/30" 
-                  : "bg-[#111c30] text-cyan-400 border border-cyan-500/30 shadow-black/50"
+                  ? "bg-[#1769AA] text-white" 
+                  : "bg-white text-[#1769AA] border border-[#D9E0E7]"
               }`}>
                 {m.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
-              <div className={`max-w-[85%] p-4 rounded-2xl shadow-lg ${
+              <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${
                 m.role === "user" 
-                  ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-50 border border-cyan-400/30 rounded-tr-none" 
-                  : "bg-[#0e172a] text-slate-200 border border-[#1e2f4f] rounded-tl-none"
+                  ? "bg-[#1769AA] text-white rounded-tr-none" 
+                  : "bg-white text-[#0B1F33] border border-[#D9E0E7] rounded-tl-none"
               }`}>
-                <div className="text-[12px]">{renderFormattedContent(m.content)}</div>
+                <div className={`text-[12px] ${m.role === "user" ? "text-white" : "text-[#0B1F33]"}`}>
+                  {m.role === "user" ? m.content : renderFormattedContent(m.content)}
+                </div>
                 
                 {/* Citations & Metadata */}
                 {m.citations && m.citations.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-[#1b2b45] text-[10px] font-mono text-slate-400 space-y-1">
-                    <div className="flex items-center justify-between text-slate-500 font-semibold mb-1">
-                      <span className="flex items-center gap-1 text-cyan-400/80">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <div className="mt-3 pt-2.5 border-t border-[#EDF2F7] text-[10px] font-mono text-[#64748B] space-y-1">
+                    <div className="flex items-center justify-between text-[#64748B] font-semibold mb-1">
+                      <span className="flex items-center gap-1 text-[#1769AA]">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         Grounded Meteorological Citations:
                       </span>
                       {m.model_used && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/40">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-[#1769AA] border border-blue-200">
                           {m.model_used}
                         </span>
                       )}
                     </div>
                     {m.citations.map((c, cIdx) => (
-                      <div key={cIdx} className="text-slate-400/90 flex items-start space-x-1">
-                        <span className="text-cyan-500 shrink-0">›</span>
+                      <div key={cIdx} className="text-[#64748B] flex items-start space-x-1">
+                        <span className="text-[#1769AA] shrink-0">›</span>
                         <span>{c}</span>
                       </div>
                     ))}
@@ -254,23 +250,23 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
           ))}
 
           {isLoading && (
-            <div className="flex items-center space-x-3 text-cyan-300 font-mono text-xs pl-11 py-2">
-              <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center space-x-3 text-[#1769AA] font-mono text-xs pl-11 py-2">
+              <div className="w-4 h-4 border-2 border-[#1769AA] border-t-transparent rounded-full animate-spin" />
               <span className="animate-pulse">
-                Gemini 3.6 Flash synthesizing multi-model NWP runs & IMD radar telemetry...
+                Querying multi-model NWP runs & meteorological telemetry...
               </span>
             </div>
           )}
         </div>
 
         {/* Suggested Quick Queries */}
-        <div className="px-4 py-2 bg-[#080d17] border-t border-[#162238] flex flex-wrap gap-1.5">
-          <span className="text-[9px] font-mono text-slate-500 self-center mr-1">QUICK QUERIES:</span>
+        <div className="px-4 py-2 bg-white border-t border-[#EDF2F7] flex flex-wrap gap-1.5">
+          <span className="text-[10px] font-mono text-[#64748B] self-center mr-1">QUICK QUERIES:</span>
           {quickQuestions.map((q, idx) => (
             <button
               key={idx}
               onClick={() => handleSend(q)}
-              className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-[#101a2e] hover:bg-cyan-500/20 text-cyan-300 border border-[#1b2a47] hover:border-cyan-500/50 transition duration-150"
+              className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[#F8FAFC] hover:bg-[#1769AA]/10 text-[#0B1F33] hover:text-[#1769AA] border border-[#D9E0E7] transition"
             >
               {q}
             </button>
@@ -278,19 +274,19 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
         </div>
 
         {/* Input Bar */}
-        <div className="p-3.5 border-t border-[#1b273d] bg-[#0a101d] flex items-center space-x-2.5">
+        <div className="p-3.5 border-t border-[#D9E0E7] bg-white flex items-center space-x-2.5">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Ask meteorological & disaster intelligence questions (e.g. Why is rainfall risk high in Assam?)..."
-            className="flex-1 bg-[#10192b] border border-[#1d2d4a] rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition"
+            placeholder="Ask meteorological questions grounded in active data (e.g. Why is rainfall risk high in Assam?)..."
+            className="flex-1 bg-[#F8FAFC] border border-[#D9E0E7] rounded-xl px-4 py-2.5 text-xs text-[#0B1F33] placeholder-[#94A3B8] focus:outline-none focus:border-[#1769AA] focus:ring-1 focus:ring-[#1769AA] transition"
           />
           <button
             onClick={() => handleSend()}
             disabled={isLoading || !input.trim()}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:opacity-40 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20 flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-[#1769AA] hover:bg-[#155d97] disabled:opacity-40 text-white font-semibold transition shadow-sm flex items-center gap-1.5"
           >
             <Send className="w-3.5 h-3.5" />
             <span className="text-xs">Ask</span>
@@ -300,3 +296,4 @@ export const MeteorologicalChatModal: React.FC<ChatModalProps> = ({
     </div>
   );
 };
+

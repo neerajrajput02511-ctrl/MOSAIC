@@ -90,18 +90,18 @@ export const AutomatedPipelineView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0c1322] border border-[#1e2c47] rounded-xl p-5 shadow-md">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <Server className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-base font-bold text-slate-100 uppercase tracking-wider font-mono">
+            <Server className="w-5 h-5 text-[#1769AA]" />
+            <h2 className="text-base font-bold text-[#0B1F33] uppercase tracking-wider font-mono">
               12-STAGE OPERATIONAL PIPELINE WORKFLOW
             </h2>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              SIH26081 · SEC 15
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E0F2FE] text-[#1769AA] font-bold border border-[#BAE6FD]">
+              SIH26081 PIPELINE
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1 max-w-3xl">
+          <p className="text-xs text-[#64748B] mt-1 max-w-3xl">
             Fully automated orchestration executing all 12 operational stages: Fetch, Validate, Normalize, Regrid, Update Verification, Calculate Skill, Adaptive Weights, Blend, Uncertainty, Detect Extremes, Publish API, and Update Dashboard.
           </p>
         </div>
@@ -111,7 +111,7 @@ export const AutomatedPipelineView: React.FC = () => {
           <button
             onClick={loadStatus}
             disabled={loading}
-            className="p-2 bg-[#111a2e] hover:bg-[#19243d] border border-[#1e2c47] text-slate-300 rounded-lg transition"
+            className="p-2 bg-[#F8FAFC] hover:bg-[#EEF2F6] border border-[#D9E0E7] text-[#475569] rounded-lg transition"
             title="Refresh Status"
           >
             <RotateCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -120,7 +120,7 @@ export const AutomatedPipelineView: React.FC = () => {
           <button
             onClick={handleTrigger}
             disabled={triggering}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-100 text-xs font-bold rounded-lg shadow-lg shadow-emerald-900/30 transition-all disabled:opacity-50"
+            className="flex items-center space-x-2 px-4 py-2 bg-[#0B1F33] hover:bg-[#1769AA] text-white text-xs font-bold rounded-lg shadow-sm transition-all disabled:opacity-50"
           >
             {triggering ? (
               <>
@@ -138,108 +138,107 @@ export const AutomatedPipelineView: React.FC = () => {
       </div>
 
       {triggerSuccessMsg && (
-        <div className="p-3 bg-emerald-950/30 border border-emerald-500/40 rounded-lg text-xs font-mono text-emerald-300 flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="p-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-lg text-xs font-mono text-[#16A34A] flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0" />
           <span>{triggerSuccessMsg}</span>
         </div>
       )}
 
       {/* Scheduler Telemetry Tiles */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-4 space-y-1">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 space-y-1 shadow-sm">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-wider block font-semibold">
             SCHEDULER STATUS
           </span>
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-sm font-bold font-mono text-emerald-400">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
+            <span className="text-sm font-bold font-mono text-[#16A34A]">
               ACTIVE (CRON)
             </span>
           </div>
-          <span className="text-[10px] text-slate-500 font-mono block">
+          <span className="text-[10px] text-[#64748B] font-mono block">
             00:00, 06:00, 12:00, 18:00 UTC
           </span>
         </div>
 
-        <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-4 space-y-1">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 space-y-1 shadow-sm">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-wider block font-semibold">
             LAST CYCLE COMPLETED
           </span>
-          <div className="text-sm font-bold font-mono text-slate-200">
+          <div className="text-sm font-bold font-mono text-[#0B1F33]">
             {pipeline?.last_run_utc ? new Date(pipeline.last_run_utc).toLocaleTimeString() : "Recent"}
           </div>
-          <span className="text-[10px] text-slate-500 font-mono block">
+          <span className="text-[10px] text-[#64748B] font-mono block">
             Total Duration: {pipeline?.last_result?.duration_seconds ?? "3.84"}s
           </span>
         </div>
 
-        <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-4 space-y-1">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 space-y-1 shadow-sm">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-wider block font-semibold">
             NEXT SCHEDULED CYCLE
           </span>
-          <div className="text-sm font-bold font-mono text-cyan-400">
+          <div className="text-sm font-bold font-mono text-[#1769AA]">
             {pipeline?.next_run_utc ? new Date(pipeline.next_run_utc).toLocaleTimeString() : "In 5h"}
           </div>
-          <span className="text-[10px] text-slate-500 font-mono block">
+          <span className="text-[10px] text-[#64748B] font-mono block">
             Automatic Cron Wakeup
           </span>
         </div>
 
-        <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-4 space-y-1">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 space-y-1 shadow-sm">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-wider block font-semibold">
             RECORDS PROCESSED
           </span>
-          <div className="text-2xl font-bold font-mono text-slate-100">
+          <div className="text-2xl font-bold font-mono text-[#0B1F33]">
             {pipeline?.last_result?.records_ingested ?? "288"}
           </div>
-          <span className="text-[10px] text-slate-500 font-mono block">
+          <span className="text-[10px] text-[#64748B] font-mono block">
             0.25° Common Lat-Lon Grid
           </span>
         </div>
       </div>
 
       {/* 12-STAGE OPERATIONAL PIPELINE TRACKER GRID */}
-      <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-5 space-y-4 shadow-md">
-        <div className="flex items-center justify-between border-b border-[#1e2c47] pb-3">
+      <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#EDF2F7] pb-3">
           <div className="flex items-center space-x-2">
-            <Zap className="w-4 h-4 text-cyan-400" />
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200 font-mono">
+            <Zap className="w-4 h-4 text-[#1769AA]" />
+            <h3 className="font-bold text-xs uppercase tracking-wider text-[#0B1F33] font-mono">
               Mandatory 12 Stages Execution Lifecycle
             </h3>
           </div>
-          <span className="text-[11px] font-mono text-emerald-400 font-semibold">
-            All 12 Stages Operational
+          <span className="text-[11px] font-mono text-[#16A34A] font-bold">
+            All 12 Stages Synchronized
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 font-mono">
           {stages.map((st: any) => {
-            const isSuccess = st.status === "SUCCESS";
             return (
               <div 
                 key={st.stage_number}
-                className="bg-[#10192d] border border-[#1e2c47] rounded-lg p-3 space-y-2 hover:border-slate-600 transition"
+                className="bg-[#F8FAFC] border border-[#D9E0E7] rounded-lg p-3 space-y-2 hover:border-[#CBD5E1] transition"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E0F2FE] text-[#1769AA] border border-[#BAE6FD]">
                     STAGE {st.stage_number}
                   </span>
-                  <span className="text-[10px] text-emerald-400 font-bold flex items-center space-x-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <span className="text-[10px] text-[#16A34A] font-bold flex items-center space-x-1">
+                    <CheckCircle2 className="w-3 h-3 text-[#16A34A]" />
                     <span>{st.status}</span>
                   </span>
                 </div>
 
-                <div className="text-xs font-bold text-slate-100 truncate">
+                <div className="text-xs font-bold text-[#0B1F33] truncate">
                   {st.stage_name}
                 </div>
 
-                <div className="flex justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800">
-                  <span>Duration: <strong className="text-slate-200">{st.duration_seconds}s</strong></span>
-                  <span>Records: <strong className="text-cyan-400">{st.records_processed}</strong></span>
+                <div className="flex justify-between text-[10px] text-[#64748B] pt-1 border-t border-[#EDF2F7]">
+                  <span>Duration: <strong className="text-[#0F172A]">{st.duration_seconds}s</strong></span>
+                  <span>Records: <strong className="text-[#1769AA]">{st.records_processed}</strong></span>
                 </div>
 
-                <div className="flex justify-between text-[9px] text-slate-500">
+                <div className="flex justify-between text-[9px] text-[#64748B]">
                   <span>Retry: {st.retry_count || 0}</span>
                   <span>{st.timestamp}</span>
                 </div>
@@ -250,15 +249,15 @@ export const AutomatedPipelineView: React.FC = () => {
       </div>
 
       {/* Ingestion Sources Operational Matrix */}
-      <div className="bg-[#0c1322] border border-[#1e2c47] rounded-xl p-5 space-y-4 shadow-md">
-        <div className="flex items-center justify-between border-b border-[#1e2c47] pb-3">
+      <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#EDF2F7] pb-3">
           <div className="flex items-center space-x-2">
-            <Database className="w-4 h-4 text-cyan-400" />
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200 font-mono">
+            <Database className="w-4 h-4 text-[#1769AA]" />
+            <h3 className="font-bold text-xs uppercase tracking-wider text-[#0B1F33] font-mono">
               Multi-Source Ingestion & Network Telemetry
             </h3>
           </div>
-          <span className="text-[11px] font-mono text-slate-400">
+          <span className="text-[11px] font-mono text-[#64748B]">
             Section 2 Live Status Guarantee
           </span>
         </div>
@@ -270,47 +269,47 @@ export const AutomatedPipelineView: React.FC = () => {
             return (
               <div 
                 key={sCode}
-                className="bg-[#111a2e] border border-[#1e2c47] rounded-lg p-3.5 space-y-2"
+                className="bg-[#F8FAFC] border border-[#D9E0E7] rounded-lg p-3.5 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400" : "bg-amber-400"}`} />
-                    <span className="font-bold text-xs text-slate-200 font-mono">{sCode}</span>
+                    <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-[#16A34A]" : "bg-[#D97706]"}`} />
+                    <span className="font-bold text-xs text-[#0B1F33] font-mono">{sCode}</span>
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0] font-semibold">
                     {sInfo.status}
                   </span>
                 </div>
 
-                <div className="text-[11px] text-slate-400 space-y-1 font-mono">
+                <div className="text-[11px] text-[#64748B] space-y-1 font-mono">
                   {sInfo.run && (
                     <div className="flex justify-between">
                       <span>Model Cycle:</span>
-                      <strong className="text-slate-200">{sInfo.run}</strong>
+                      <strong className="text-[#0F172A]">{sInfo.run}</strong>
                     </div>
                   )}
                   {sInfo.records !== undefined && (
                     <div className="flex justify-between">
                       <span>Timesteps Ingested:</span>
-                      <strong className="text-slate-200">{sInfo.records}</strong>
+                      <strong className="text-[#0F172A]">{sInfo.records}</strong>
                     </div>
                   )}
                   {sInfo.members !== undefined && (
                     <div className="flex justify-between">
                       <span>Ensemble Members:</span>
-                      <strong className="text-amber-300">{sInfo.members} Members</strong>
+                      <strong className="text-[#D97706]">{sInfo.members} Members</strong>
                     </div>
                   )}
                   {sInfo.latency_ms !== undefined && (
                     <div className="flex justify-between">
                       <span>Network Latency:</span>
-                      <span className="text-cyan-400">{sInfo.latency_ms} ms</span>
+                      <span className="text-[#1769AA] font-bold">{sInfo.latency_ms} ms</span>
                     </div>
                   )}
                   {sInfo.active_warnings !== undefined && (
                     <div className="flex justify-between">
                       <span>Active Warnings:</span>
-                      <span className="text-amber-400">{sInfo.active_warnings} Bulletins</span>
+                      <span className="text-[#D97706]">{sInfo.active_warnings} Bulletins</span>
                     </div>
                   )}
                 </div>
@@ -321,27 +320,27 @@ export const AutomatedPipelineView: React.FC = () => {
       </div>
 
       {/* Live Operational Console Logs */}
-      <div className="bg-[#080d1a] border border-[#1e2c47] rounded-xl p-5 space-y-3 font-mono shadow-inner">
-        <div className="flex items-center justify-between border-b border-[#1e2c47] pb-2 text-xs">
-          <div className="flex items-center space-x-2 text-slate-300">
-            <Terminal className="w-4 h-4 text-cyan-400" />
+      <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 space-y-3 font-mono shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#EDF2F7] pb-2 text-xs">
+          <div className="flex items-center space-x-2 text-[#0B1F33]">
+            <Terminal className="w-4 h-4 text-[#1769AA]" />
             <span className="font-bold uppercase tracking-wider">Operational Pipeline Execution Log</span>
           </div>
-          <span className="text-[10px] text-slate-500">12-Stage Stream Buffer</span>
+          <span className="text-[10px] text-[#64748B]">12-Stage Stream Buffer</span>
         </div>
 
-        <div className="space-y-1.5 text-xs max-h-60 overflow-y-auto pt-1">
+        <div className="space-y-1.5 text-xs max-h-60 overflow-y-auto pt-1 bg-[#F8FAFC] p-3 rounded-lg border border-[#EDF2F7]">
           {pipeline?.recent_logs?.map((log: any, idx: number) => {
             const levelColor = log.level === "SUCCESS" 
-              ? "text-emerald-400" 
+              ? "text-[#16A34A]" 
               : log.level === "ERROR" 
-              ? "text-rose-400" 
-              : "text-cyan-300";
+              ? "text-[#DC2626]" 
+              : "text-[#1769AA]";
             return (
               <div key={idx} className="flex items-start space-x-3 text-[11px]">
-                <span className="text-slate-500 shrink-0">{log.time}</span>
+                <span className="text-[#64748B] shrink-0">{log.time}</span>
                 <span className={`font-bold shrink-0 ${levelColor}`}>[{log.level}]</span>
-                <span className="text-slate-300">{log.message}</span>
+                <span className="text-[#0F172A]">{log.message}</span>
               </div>
             );
           })}
