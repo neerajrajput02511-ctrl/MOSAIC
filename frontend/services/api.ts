@@ -695,4 +695,117 @@ export async function fetchFusionDossier(lat: number, lon: number): Promise<any>
   }
 }
 
+// =========================================================================
+// PHASE 4: DEDICATED MOSAIC FORECAST INTELLIGENCE SUITE
+// =========================================================================
+
+export async function fetchWeatherCurrent(locationId?: number, lat?: number, lon?: number): Promise<any> {
+  try {
+    let path = "/weather/current";
+    const params = new URLSearchParams();
+    if (locationId) params.append("location_id", locationId.toString());
+    if (lat !== undefined) params.append("latitude", lat.toString());
+    if (lon !== undefined) params.append("longitude", lon.toString());
+    if (params.toString()) path += `?${params.toString()}`;
+
+    const res = await apiFetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchWeatherCurrent error:", err);
+    return null;
+  }
+}
+
+export async function fetchRainfallIntelligence(locationId: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/weather/rainfall?location_id=${locationId}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchRainfallIntelligence error:", err);
+    return null;
+  }
+}
+
+export async function fetchSoilData(lat: number, lon: number, locationId?: number): Promise<any> {
+  try {
+    const path = locationId
+      ? `/weather/soil?latitude=${lat}&longitude=${lon}&location_id=${locationId}`
+      : `/weather/soil?latitude=${lat}&longitude=${lon}`;
+    const res = await apiFetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchSoilData error:", err);
+    return null;
+  }
+}
+
+export async function fetchAtmosphericProfile(lat: number, lon: number, locationId?: number): Promise<any> {
+  try {
+    const path = locationId
+      ? `/weather/profile?latitude=${lat}&longitude=${lon}&location_id=${locationId}`
+      : `/weather/profile?latitude=${lat}&longitude=${lon}`;
+    const res = await apiFetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchAtmosphericProfile error:", err);
+    return null;
+  }
+}
+
+export async function fetchLandslideIntelligence(locationId: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/weather/landslide?location_id=${locationId}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchLandslideIntelligence error:", err);
+    return null;
+  }
+}
+
+export async function fetchWeatherConfidence(locationId: number, leadTimeHours: number = 24): Promise<any> {
+  try {
+    const res = await apiFetch(`/weather/confidence?location_id=${locationId}&lead_time_hours=${leadTimeHours}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchWeatherConfidence error:", err);
+    return null;
+  }
+}
+
+export async function fetchWeatherWarnings(locationId?: number, lat?: number, lon?: number): Promise<any> {
+  try {
+    let path = "/weather/warnings";
+    const params = new URLSearchParams();
+    if (locationId) params.append("location_id", locationId.toString());
+    if (lat !== undefined) params.append("latitude", lat.toString());
+    if (lon !== undefined) params.append("longitude", lon.toString());
+    if (params.toString()) path += `?${params.toString()}`;
+
+    const res = await apiFetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchWeatherWarnings error:", err);
+    return null;
+  }
+}
+
+export async function fetchWeatherHealth(): Promise<any> {
+  try {
+    const res = await apiFetch("/weather/health", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchWeatherHealth error:", err);
+    return null;
+  }
+}
+
+
 
