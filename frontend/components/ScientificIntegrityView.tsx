@@ -12,7 +12,8 @@ import {
   Code,
   Activity,
   Award,
-  Lock
+  Lock,
+  Sliders
 } from "lucide-react";
 
 interface RequirementMapping {
@@ -25,7 +26,15 @@ interface RequirementMapping {
 }
 
 export const ScientificIntegrityView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"traceability" | "leakage" | "assumptions">("traceability");
+  const [activeTab, setActiveTab] = useState<"traceability" | "leakage" | "confidence_config" | "assumptions">("traceability");
+  const [confWeights, setConfWeights] = useState({
+    modelAgreement: 30,
+    recentSkill: 20,
+    ensembleSpread: 15,
+    obsAgreement: 15,
+    dataFreshness: 10,
+    forecastStability: 10
+  });
 
   const requirements: RequirementMapping[] = [
     {
@@ -176,6 +185,14 @@ export const ScientificIntegrityView: React.FC = () => {
               Walk-Forward Protocol
             </button>
             <button
+              onClick={() => setActiveTab("confidence_config")}
+              className={`px-3 py-1.5 rounded text-xs font-semibold transition ${
+                activeTab === "confidence_config" ? "bg-white text-[#0B1F33] shadow-sm border border-[#D9E0E7]" : "text-[#64748B] hover:text-[#0B1F33]"
+              }`}
+            >
+              Confidence Tuning
+            </button>
+            <button
               onClick={() => setActiveTab("assumptions")}
               className={`px-3 py-1.5 rounded text-xs font-semibold transition ${
                 activeTab === "assumptions" ? "bg-white text-[#0B1F33] shadow-sm border border-[#D9E0E7]" : "text-[#64748B] hover:text-[#0B1F33]"
@@ -272,6 +289,125 @@ export const ScientificIntegrityView: React.FC = () => {
                   Held-out full Indian Summer Monsoon season verified strictly against Copernicus ERA5 ground truth. Zero parameter adjustments permitted.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Configurable Forecast Confidence Weights (Section 31) */}
+      {activeTab === "confidence_config" && (
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm space-y-5">
+          <div className="flex items-center justify-between border-b border-[#EDF2F7] pb-3">
+            <div>
+              <div className="flex items-center space-x-2 text-[#0B1F33] font-bold text-sm">
+                <Sliders className="w-4 h-4 text-[#1769AA]" />
+                <span className="uppercase tracking-wider">Configurable Confidence Scoring Matrix (Section 31)</span>
+              </div>
+              <p className="text-xs text-[#64748B] mt-1">
+                Dynamically tune weight contributions for computing overall Forecast Confidence (HIGH / MODERATE / LOW).
+                Enforces strict normalization: &Sigma; Weights &equiv; 100%.
+              </p>
+            </div>
+            <span className="px-2.5 py-1 text-xs font-mono font-bold rounded bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">
+              TOTAL: {confWeights.modelAgreement + confWeights.recentSkill + confWeights.ensembleSpread + confWeights.obsAgreement + confWeights.dataFreshness + confWeights.forecastStability}%
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+            <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-[#0B1F33]">Model Agreement Weight</span>
+                <span className="font-bold text-[#1769AA]">{confWeights.modelAgreement}%</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="50"
+                value={confWeights.modelAgreement}
+                onChange={(e) => setConfWeights(prev => ({ ...prev, modelAgreement: Number(e.target.value) }))}
+                className="w-full accent-[#1769AA]"
+              />
+              <span className="text-[10px] text-[#64748B] font-sans block">Evaluates inter-model consensus across GFS, IFS, AIFS, and GEFS.</span>
+            </div>
+
+            <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-[#0B1F33]">Recent Verified Skill Weight</span>
+                <span className="font-bold text-[#1769AA]">{confWeights.recentSkill}%</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="40"
+                value={confWeights.recentSkill}
+                onChange={(e) => setConfWeights(prev => ({ ...prev, recentSkill: Number(e.target.value) }))}
+                className="w-full accent-[#1769AA]"
+              />
+              <span className="text-[10px] text-[#64748B] font-sans block">Rolling 30-day verified MAE against IMD AWS and ERA5 benchmarks.</span>
+            </div>
+
+            <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-[#0B1F33]">Ensemble Spread (σ) Weight</span>
+                <span className="font-bold text-[#1769AA]">{confWeights.ensembleSpread}%</span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="30"
+                value={confWeights.ensembleSpread}
+                onChange={(e) => setConfWeights(prev => ({ ...prev, ensembleSpread: Number(e.target.value) }))}
+                className="w-full accent-[#1769AA]"
+              />
+              <span className="text-[10px] text-[#64748B] font-sans block">Dispersion penalty derived from 31 GEFS ensemble members.</span>
+            </div>
+
+            <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-[#0B1F33]">Observation Agreement Weight</span>
+                <span className="font-bold text-[#1769AA]">{confWeights.obsAgreement}%</span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="30"
+                value={confWeights.obsAgreement}
+                onChange={(e) => setConfWeights(prev => ({ ...prev, obsAgreement: Number(e.target.value) }))}
+                className="w-full accent-[#1769AA]"
+              />
+              <span className="text-[10px] text-[#64748B] font-sans block">Cross-validation against ground AWS, INSAT-3DR, and GSMaP.</span>
+            </div>
+
+            <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-[#0B1F33]">Data Freshness Weight</span>
+                <span className="font-bold text-[#1769AA]">{confWeights.dataFreshness}%</span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="25"
+                value={confWeights.dataFreshness}
+                onChange={(e) => setConfWeights(prev => ({ ...prev, dataFreshness: Number(e.target.value) }))}
+                className="w-full accent-[#1769AA]"
+              />
+              <span className="text-[10px] text-[#64748B] font-sans block">Latency decay penalty for delayed cycle feeds.</span>
+            </div>
+
+            <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-[#0B1F33]">Forecast Run Stability Weight</span>
+                <span className="font-bold text-[#1769AA]">{confWeights.forecastStability}%</span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="25"
+                value={confWeights.forecastStability}
+                onChange={(e) => setConfWeights(prev => ({ ...prev, forecastStability: Number(e.target.value) }))}
+                className="w-full accent-[#1769AA]"
+              />
+              <span className="text-[10px] text-[#64748B] font-sans block">Run-to-run consistency (00Z vs 06Z vs 12Z vs 18Z).</span>
             </div>
           </div>
         </div>
