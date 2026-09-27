@@ -217,7 +217,7 @@ export default function Home() {
         </div>
 
         {/* MAIN OPERATIONAL WORKSPACE */}
-        <main className="flex-1 bg-[#F5F7FA] p-4 lg:p-6 overflow-y-auto">
+        <main className="flex-1 bg-[#07111F] p-4 lg:p-6 overflow-y-auto">
           {/* TAB 1: FORECAST (PRIMARY HERO VIEW) */}
           {activeTab === "forecast" && (
             <ForecastHeroView
@@ -297,7 +297,7 @@ export default function Home() {
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION BAR */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-[#D9E0E7] flex items-center justify-around z-40 px-2 shadow-lg overflow-x-auto">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-[#070D18] border-t border-[#1E293B] flex items-center justify-around z-40 px-2 shadow-2xl overflow-x-auto">
         {[
           { id: "forecast", label: "Forecast" },
           { id: "map", label: "Map" },
@@ -311,10 +311,10 @@ export default function Home() {
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id as NavTab)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
               activeTab === t.id
-                ? "bg-[#0B1F33] text-white"
-                : "text-[#64748B] hover:text-[#0F172A]"
+                ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm font-bold"
+                : "text-[#9DAFC4] hover:text-white"
             }`}
           >
             {t.label}

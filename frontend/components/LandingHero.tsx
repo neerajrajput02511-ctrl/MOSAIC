@@ -22,7 +22,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
         <div className="relative z-10 max-w-4xl space-y-6">
           <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono">
             <Radio className="w-3.5 h-3.5 animate-pulse text-cyan-400" />
-            <span>SIH26081 OPERATIONAL METEOROLOGICAL PROTOTYPE</span>
+            <span>SIH26081 OPERATIONAL METEOROLOGICAL PLATFORM</span>
           </div>
 
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-100 leading-tight">

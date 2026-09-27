@@ -16,12 +16,12 @@ interface WeatherMapProps {
   monitoringScope?: "NER" | "INDIA";
 }
 
-// Clean light enterprise loading placeholder
+// Clean dark command center loading placeholder
 const MapLoadingPlaceholder = ({ message }: { message: string }) => (
-  <div className="w-full h-full min-h-[420px] bg-[#F8FAFC] border border-[#D9E0E7] rounded-xl flex flex-col items-center justify-center space-y-3 text-[#64748B]">
-    <Loader2 className="w-7 h-7 text-[#1769AA] animate-spin" />
-    <span className="text-xs font-semibold text-[#0F172A]">{message}</span>
-    <span className="text-[11px] text-[#64748B]">Calibrating high-resolution meteorological GIS grid</span>
+  <div className="w-full h-full min-h-[420px] bg-[#07111F] border border-[#1E293B] rounded-xl flex flex-col items-center justify-center space-y-3 text-[#9DAFC4]">
+    <Loader2 className="w-7 h-7 text-[#00B8E6] animate-spin" />
+    <span className="text-xs font-semibold text-white">{message}</span>
+    <span className="text-[11px] text-[#667B94]">Calibrating high-resolution meteorological GIS grid</span>
   </div>
 );
 
@@ -85,29 +85,29 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
       className="relative w-full h-full flex flex-col map-container map-stacking-context"
       style={{ position: "relative", zIndex: 1, isolation: "isolate" }}
     >
-      {/* Map Status Badge (Phase 12: Visually distinct map states) */}
+      {/* Map Status Badge */}
       <div className="absolute top-4 right-4 z-20 flex items-center space-x-2">
         {mapState === "READY" && (
-          <div className="bg-white/95 backdrop-blur-sm border border-[#D9E0E7] px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#16A34A] flex items-center space-x-1.5 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+          <div className="bg-[#0D1B2E]/95 backdrop-blur-sm border border-[#233852] px-2.5 py-1 rounded-lg text-[10px] font-bold text-emerald-400 flex items-center space-x-1.5 shadow-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>GIS READY</span>
           </div>
         )}
 
         {mapState === "DEGRADED" && (
-          <div className="bg-[#FFFBEB] border border-[#FDE68A] px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#D97706] flex items-center space-x-1.5 shadow-sm">
-            <AlertCircle className="w-3 h-3 text-[#D97706]" />
+          <div className="bg-[#0D1B2E]/95 backdrop-blur-sm border border-amber-500/40 px-2.5 py-1 rounded-lg text-[10px] font-bold text-amber-400 flex items-center space-x-1.5 shadow-lg">
+            <AlertCircle className="w-3 h-3 text-amber-400" />
             <span>STANDARD 2D GIS (SAFE MODE)</span>
           </div>
         )}
 
         {mapState === "ERROR" && (
-          <div className="bg-[#FEF2F2] border border-[#FECACA] px-2.5 py-1 rounded-lg text-[10px] font-bold text-[#DC2626] flex items-center space-x-1.5 shadow-sm">
-            <AlertCircle className="w-3 h-3 text-[#DC2626]" />
+          <div className="bg-[#0D1B2E]/95 backdrop-blur-sm border border-rose-500/40 px-2.5 py-1 rounded-lg text-[10px] font-bold text-rose-400 flex items-center space-x-1.5 shadow-lg">
+            <AlertCircle className="w-3 h-3 text-rose-400" />
             <span>TILES DEGRADED</span>
             <button
               onClick={() => { setEngine("leaflet"); setMapState("READY"); }}
-              className="ml-1 text-[9px] underline hover:text-[#B91C1C]"
+              className="ml-1 text-[9px] underline hover:text-rose-300"
             >
               Reset
             </button>
@@ -115,11 +115,11 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
         )}
 
         {/* Engine switcher toggle */}
-        <div className="bg-white/95 backdrop-blur-sm border border-[#D9E0E7] p-0.5 rounded-lg flex items-center text-[10px] font-semibold shadow-sm">
+        <div className="bg-[#0D1B2E]/95 backdrop-blur-sm border border-[#233852] p-0.5 rounded-lg flex items-center text-[10px] font-semibold shadow-lg">
           <button
             onClick={() => handleEngineChange("leaflet")}
-            className={`px-2 py-0.5 rounded transition ${
-              engine === "leaflet" ? "bg-[#0B1F33] text-white shadow-xs" : "text-[#64748B] hover:text-[#0F172A]"
+            className={`px-2.5 py-1 rounded transition ${
+              engine === "leaflet" ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm" : "text-[#9DAFC4] hover:text-[#F4F8FC]"
             }`}
             title="Reliable 2D GIS Canvas (Universal Compatibility)"
           >
@@ -128,12 +128,12 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
           <button
             onClick={() => handleEngineChange("maplibre")}
             disabled={!webglSupported}
-            className={`px-2 py-0.5 rounded transition ${
+            className={`px-2.5 py-1 rounded transition ${
               engine === "maplibre"
-                ? "bg-[#0B1F33] text-white shadow-xs"
+                ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm"
                 : webglSupported
-                ? "text-[#64748B] hover:text-[#0F172A]"
-                : "text-slate-300 cursor-not-allowed"
+                ? "text-[#9DAFC4] hover:text-[#F4F8FC]"
+                : "text-slate-600 cursor-not-allowed"
             }`}
             title={webglSupported ? "3D Vector Terrain" : "WebGL not available on this browser"}
           >

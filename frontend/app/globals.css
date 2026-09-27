@@ -2,22 +2,41 @@
 @import "leaflet/dist/leaflet.css";
 @import "maplibre-gl/dist/maplibre-gl.css";
 
+/* ========================================================================= */
+/* MOSAIC GLOBAL DESIGN SYSTEM TOKENS (SIH26081)                             */
+/* Premium Meteorological Command Center Theme                               */
+/* ========================================================================= */
+
 :root {
-  --bg-app: #F5F7FA;
-  --bg-card: #FFFFFF;
-  --brand-primary: #0B1F33;
-  --brand-secondary: #071522;
-  --blue-primary: #1769AA;
-  --blue-accent: #2D8CFF;
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
-  --border-color: #D9E0E7;
-  --border-light: #EDF2F7;
-  --success: #16A34A;
+  /* Master Color Palette */
+  --bg-app: #07111F;
+  --bg-surface: #081426;
+  --bg-shell: #070D18;
+  --bg-card: #0D1B2E;
+  --bg-card-secondary: #111F33;
+  --bg-card-hover: #172A43;
+
+  /* Borders */
+  --border-color: #233852;
+  --border-subtle: #1E293B;
+
+  /* Accents */
+  --accent-cyan: #00B8E6;
+  --accent-blue: #1687FF;
+  --gradient-mosaic: linear-gradient(135deg, #00B8E6 0%, #1687FF 100%);
+
+  /* Typography */
+  --text-primary: #F4F8FC;
+  --text-secondary: #9DAFC4;
+  --text-muted: #667B94;
+
+  /* Semantic Statuses */
+  --success: #10B981;
   --warning: #F59E0B;
-  --danger: #DC2626;
-  --card-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  --danger: #EF4444;
+
+  /* Shadows & Radius */
+  --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
@@ -30,44 +49,63 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Professional Clean Scrollbar */
+/* Professional Meteorological Cockpit Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: #081426;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #1E293B;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #233852;
 }
 
-/* Clean Map Overlays */
+/* ========================================================================= */
+/* MAP GIS DARK COMMAND CENTER OVERLAYS                                     */
+/* ========================================================================= */
+
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: #E2E8F0 !important;
+  background: #081426 !important;
   font-family: inherit;
 }
+
 .leaflet-bar a {
-  background-color: #FFFFFF !important;
-  color: #0F172A !important;
-  border-bottom: 1px solid #D9E0E7 !important;
+  background-color: #0D1B2E !important;
+  color: #F4F8FC !important;
+  border-bottom: 1px solid #233852 !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #172A43 !important;
+  color: #00B8E6 !important;
 }
 
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-  background: #FFFFFF !important;
-  color: #0F172A !important;
-  border: 1px solid #D9E0E7 !important;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15) !important;
-  border-radius: 8px !important;
+  background: #0D1B2E !important;
+  color: #F4F8FC !important;
+  border: 1px solid #233852 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 12px !important;
 }
+
 .leaflet-popup-content {
-  margin: 8px 12px !important;
+  margin: 10px 14px !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: #9DAFC4 !important;
+  padding: 6px !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #F4F8FC !important;
 }
 
 .telemetry-num {
@@ -96,7 +134,7 @@ body {
 .copilot-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(8, 20, 35, 0.70);
+  background-color: rgba(7, 17, 31, 0.80);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 0;
