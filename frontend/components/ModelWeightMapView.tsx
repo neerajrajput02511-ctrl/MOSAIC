@@ -540,7 +540,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     mean_ai_weight_pct: null,
     mean_physics_weight_pct: null,
     mean_ensemble_weight_pct: null,
-    frontier_crossover: leadTime >= 72 ? "+72h Crossover Passed (AI Dominating)" : "+72h (Day 3 Crossover)",
+    frontier_crossover: mapData?.national_summary?.frontier_crossover || (leadTime >= 72 ? `+${leadTime}h AI Dominance Inflection` : `+${leadTime}h Physics Deterministic Dominance`),
     total_stations_active: mapData?.stations?.length || 26,
     mean_bma_entropy: null,
     definition: "AIFS weight > max(GFS, IFS, GEFS)",

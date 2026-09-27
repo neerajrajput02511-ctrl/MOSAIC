@@ -550,7 +550,7 @@ export default function EarthObservationView({
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Radar Nowcast Display */}
-                {radarNowcast && (
+                {radarNowcast ? (
                   <div className="lg:col-span-2 bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#E2E8F0]">
                       <div>
@@ -589,6 +589,26 @@ export default function EarthObservationView({
                             : "No active squall line"}
                         </span>
                       </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="lg:col-span-2 bg-white border border-[#D9E0E7] rounded-xl p-8 shadow-sm flex flex-col justify-center items-center text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg">
+                      📡
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs font-mono font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded">
+                        RADAR DATA UNAVAILABLE
+                      </span>
+                      <h3 className="text-sm font-bold text-[#0B1F33] mt-2">No Doppler Weather Radar within Active Scan Radius</h3>
+                      <p className="text-xs text-[#64748B] max-w-md mx-auto">
+                        In accordance with MOSAIC Absolute Rule #1, radar echoes are never fabricated or simulated. Target coordinates ({currentLat.toFixed(2)}°N, {currentLon.toFixed(2)}°E) are outside the 250 km operational Doppler coverage range of nearby DWR sites.
+                      </p>
+                    </div>
+                    <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-left text-xs space-y-1 w-full max-w-md font-mono text-[11px]">
+                      <div><span className="text-[#94A3B8]">Primary Source:</span> IMD DWR Network (S-Band / C-Band)</div>
+                      <div><span className="text-[#94A3B8]">Reason:</span> Terrain beam blockage or distance &gt; 250 km</div>
+                      <div><span className="text-[#94A3B8]">Fallback Source:</span> INSAT-3DR Rapid-Scan TIR1 (10.8 µm) &amp; GSMaP_ISRO Rain</div>
                     </div>
                   </div>
                 )}

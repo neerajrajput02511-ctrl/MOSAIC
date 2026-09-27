@@ -756,9 +756,12 @@ export async function fetchAtmosphericProfile(lat: number, lon: number, location
   }
 }
 
-export async function fetchLandslideIntelligence(locationId: number): Promise<any> {
+export async function fetchLandslideIntelligence(locationIdOrLat: number, lon?: number): Promise<any> {
   try {
-    const res = await apiFetch(`/weather/landslide?location_id=${locationId}`, { cache: "no-store" });
+    const path = lon !== undefined
+      ? `/weather/landslide?latitude=${locationIdOrLat}&longitude=${lon}`
+      : `/weather/landslide?location_id=${locationIdOrLat}`;
+    const res = await apiFetch(path, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
