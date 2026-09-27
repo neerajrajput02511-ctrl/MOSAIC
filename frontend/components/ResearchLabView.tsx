@@ -22,10 +22,14 @@ import {
 import { fetchExperiments, runExperimentApi, fetchForecastBusts } from "@/services/api";
 
 interface ResearchLabViewProps {
+  monitoringScope?: "NER" | "INDIA";
   onOpenCopilot?: (query?: string) => void;
 }
 
-export const ResearchLabView: React.FC<ResearchLabViewProps> = ({ onOpenCopilot }) => {
+export const ResearchLabView: React.FC<ResearchLabViewProps> = ({ 
+  monitoringScope = "NER", 
+  onOpenCopilot 
+}) => {
   const [activeSubTab, setActiveSubTab] = useState<"experiments" | "busts">("experiments");
   const [experiments, setExperiments] = useState<any[]>([]);
   const [bustCases, setBustCases] = useState<any[]>([]);
@@ -33,9 +37,13 @@ export const ResearchLabView: React.FC<ResearchLabViewProps> = ({ onOpenCopilot 
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
 
   // Experiment Form Config
-  const [expName, setExpName] = useState("Brahmaputra Orographic Influx Experiment");
+  const [expName, setExpName] = useState(
+    monitoringScope === "INDIA"
+      ? "All-India Synoptic Multi-Model Blend"
+      : "North East Orographic Influx Experiment"
+  );
   const [variable, setVariable] = useState("precipitation_mm");
-  const [region, setRegion] = useState("NER");
+  const [region, setRegion] = useState(monitoringScope === "INDIA" ? "INDIA" : "NER");
   const [leadTime, setLeadTime] = useState<number>(48);
   const [weightingMethod, setWeightingMethod] = useState("BMA_ADAPTIVE");
   const [season, setSeason] = useState("Monsoon");
@@ -45,6 +53,16 @@ export const ResearchLabView: React.FC<ResearchLabViewProps> = ({ onOpenCopilot 
   ]);
 
   const [activeResult, setActiveResult] = useState<any | null>(null);
+
+  // Sync with scope when scope changes
+  useEffect(() => {
+    setRegion(monitoringScope === "INDIA" ? "INDIA" : "NER");
+    setExpName(
+      monitoringScope === "INDIA"
+        ? "All-India Synoptic Multi-Model Blend"
+        : "North East Orographic Influx Experiment"
+    );
+  }, [monitoringScope]);
 
   // Load initial data
   useEffect(() => {
@@ -440,8 +458,9 @@ export const ResearchLabView: React.FC<ResearchLabViewProps> = ({ onOpenCopilot 
                 </div>
               </div>
             ) : (
-              <div className="bg-[#0B1528] border border-[#1E293B] rounded-2xl p-12 text-center text-slate-500 font-mono text-xs">
-                Select or run an experiment to inspect performance curves.
+              <div className="bg-[#0B1528] border border-[#1E293B] rounded-2xl p-12 text-center text-slate-400 font-mono text-xs space-y-2">
+                <div className="text-sm font-bold text-slate-200">NO EXPERIMENT SELECTED</div>
+                <p className="text-[11px] text-slate-500">Configure parameters on the left and click &quot;EXECUTE EXPERIMENT&quot; to calculate multi-model verification metrics.</p>
               </div>
             )}
 
@@ -449,7 +468,9 @@ export const ResearchLabView: React.FC<ResearchLabViewProps> = ({ onOpenCopilot 
             <div className="bg-[#0B1528] border border-[#1E293B] rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between text-xs font-mono font-bold text-white">
                 <span>RECENT BENCHMARK EXPERIMENTS</span>
-                <span className="text-slate-500 font-normal">N = {experiments.length} runs</span>
+                <span className="text-slate-400 font-normal">
+                  {experiments.length === 0 ? "NO EXPERIMENTS RUN YET" : `Experiments: ${experiments.length}`}
+                </span>
               </div>
               <div className="space-y-2">
                 {experiments.map(exp => (

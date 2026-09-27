@@ -43,12 +43,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems: { id: NavTab; label: string; icon: any; count?: number; badge?: string }[] = [
     { id: "forecast", label: "Forecast", icon: Home },
-    { id: "map", label: "Dominant Map", icon: Globe, badge: "WHO TO TRUST" },
-    { id: "observations", label: "Earth Obs", icon: Activity, badge: "FUSION" },
+    { id: "map", label: "Model Reliability", icon: Globe },
+    { id: "observations", label: "Earth Obs", icon: Activity },
     { id: "models", label: "Models", icon: Layers },
     { id: "verify", label: "Verify", icon: CheckCircle2 },
     { id: "extremes", label: "Extremes", icon: ShieldAlert, count: extremeEventsCount },
-    { id: "research", label: "Research", icon: FlaskConical, badge: "LAB" },
+    { id: "research", label: "Research", icon: FlaskConical },
     { id: "system", label: "System", icon: Settings },
   ];
 

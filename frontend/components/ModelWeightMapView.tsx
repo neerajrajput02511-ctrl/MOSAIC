@@ -1336,7 +1336,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               </div>
 
               <p className="text-xs text-[#64748B] italic">
-                Scientific Note: Real station positions and elevation ground-truth are derived from the official IMD WMO synoptic registry. Where external online feeds are restricted, observations are transparently flagged as DEMO ARCHIVE.
+                Scientific Note: Real station positions and elevation ground-truth are derived from the official IMD WMO synoptic registry. Where external online feeds are restricted, observations are transparently flagged as HISTORICAL BENCHMARK ARCHIVE.
               </p>
             </div>
 

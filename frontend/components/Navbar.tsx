@@ -190,10 +190,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Clock className="w-4 h-4 text-[#64748B]" />
           <div className="text-left leading-tight">
             <div className="text-[10px] text-[#64748B]">
-              Last updated
+              Telemetry Sync
             </div>
             <div className="text-xs font-bold text-[#0F172A] font-mono">
-              {lastUpdated}
+              {currentTime}
             </div>
           </div>
         </div>
@@ -206,23 +206,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Calendar className="w-4 h-4 text-[#64748B]" />
           <div className="text-left leading-tight">
             <div className="text-[10px] text-[#64748B]">
-              Forecast initialized
+              Forecast Cycle
             </div>
             <div className="text-xs font-bold text-[#0F172A] font-mono">
-              {currentTime}
+              00Z Operational Run
             </div>
           </div>
         </div>
 
-        {/* SIH26081 Guided Jury Demonstration Trigger */}
+        {/* SIH26081 System Architecture Specification */}
         {onOpenSihDemo && (
           <button
             onClick={onOpenSihDemo}
-            className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-600 hover:from-blue-800 hover:to-indigo-800 text-white text-xs font-bold font-mono shadow-sm transition border border-blue-400/40"
-            title="Launch SIH26081 Multi-Model Forecast Blending System Jury Tour"
+            className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#0B1F33] hover:bg-[#17253a] text-white text-xs font-bold font-mono shadow-sm transition border border-cyan-500/30"
+            title="Inspect SIH26081 Multi-Model Forecast Blending System Architecture & Verification"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="tracking-wide">SIH26081 DEMO</span>
+            <span className="tracking-wide">SYSTEM ARCHITECTURE</span>
           </button>
         )}
 

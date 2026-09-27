@@ -275,6 +275,7 @@ export default function Home() {
           {/* TAB 6: RESEARCH (REPRODUCIBLE RESEARCH LAB & FORECAST BUST MONITOR) */}
           {activeTab === "research" && (
             <ResearchLabView
+              monitoringScope={monitoringScope}
               onOpenCopilot={handleOpenChat}
             />
           )}

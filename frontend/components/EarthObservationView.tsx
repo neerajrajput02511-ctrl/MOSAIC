@@ -122,7 +122,7 @@ export default function EarthObservationView({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2 py-0.5 text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded">
-                SIH26081 Phase 3 Architecture
+                EARTH OBSERVATION & MULTI-SENSOR DATA FUSION
               </span>
               <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -138,9 +138,11 @@ export default function EarthObservationView({
           </div>
 
           <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-700/60 rounded-lg p-2 text-xs">
-            <span className="text-slate-400">Target Focus:</span>
-            <span className="font-bold text-sky-400">{locationName}</span>
-            <span className="text-slate-500">({currentLat.toFixed(2)}°N, {currentLon.toFixed(2)}°E)</span>
+            <span className="text-slate-400 font-bold uppercase text-[10px]">TARGET LOCATION:</span>
+            <span className="font-bold text-sky-400">{locationName || "All India Domain"}</span>
+            {currentLat !== undefined && currentLon !== undefined && (
+              <span className="text-slate-500 font-mono">({currentLat.toFixed(2)}°N, {currentLon.toFixed(2)}°E)</span>
+            )}
           </div>
         </div>
 
