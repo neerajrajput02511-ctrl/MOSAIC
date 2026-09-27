@@ -138,14 +138,17 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
   mapDataRef.current = mapData;
   selectedRegionRef.current = selectedRegion;
 
-  const leadTimeSequence = [24, 48, 72, 120, 168];
+  const [variable, setVariable] = useState<string>("precipitation_mm");
+
+  const leadTimeSequence = [6, 12, 24, 48, 72, 120];
 
   const leadTimeOptions = [
-    { label: "Day 1 (+24h)", value: 24, badge: "NWP Dominant", hero: false },
-    { label: "Day 2 (+48h)", value: 48, badge: "Physics Focus", hero: false },
-    { label: "Day 3 (+72h)", value: 72, badge: "Frontier Crossover", hero: false },
-    { label: "Day 5 (+120h)", value: 120, badge: "AI Dominates", hero: true },
-    { label: "Day 7 (+168h)", value: 168, badge: "AI Wavefront", hero: false }
+    { label: "+6h", value: 6, badge: "Nowcast/NWP", hero: false },
+    { label: "+12h", value: 12, badge: "Synoptic NWP", hero: false },
+    { label: "+24h", value: 24, badge: "NWP Dominant", hero: false },
+    { label: "+48h", value: 48, badge: "Physics Focus", hero: false },
+    { label: "+72h", value: 72, badge: "Crossover Point", hero: false },
+    { label: "+120h", value: 120, badge: "AI Dominant", hero: true }
   ];
 
   // 1. Fetch live telemetry from backend
@@ -153,7 +156,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     let isCancelled = false;
     async function loadWeights() {
       setLoading(true);
-      const data = await fetchSpatialWeightMap(leadTime, season, regime, monitoringScope);
+      const data = await fetchSpatialWeightMap(leadTime, season, regime, monitoringScope, variable);
       if (!isCancelled && data) {
         setMapData(data);
         if (data.regions && data.regions.length > 0) {
@@ -171,7 +174,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     }
     loadWeights();
     return () => { isCancelled = true; };
-  }, [leadTime, season, regime, monitoringScope]);
+  }, [leadTime, season, regime, monitoringScope, variable]);
 
   // 2. Automated Simulation Time-Lapse Player
   useEffect(() => {
@@ -563,59 +566,86 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               <div>
                 <div className="flex items-center space-x-2">
                   <h1 className="text-lg font-bold text-[#0B1F33] tracking-tight flex items-center gap-2">
-                    SPATIAL MULTI-MODEL WEIGHT MAP
+                    <span className="text-[#1769AA] uppercase">WHO SHOULD WE TRUST HERE?</span>
+                    <span className="text-[#94A3B8]">/</span>
+                    <span>SPATIAL WEIGHT MAP</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-[#1769AA] border border-blue-200">
                       SKILL &times; REGIME &times; OROGRAPHY
                     </span>
                   </h1>
                 </div>
                 <p className="text-xs text-[#64748B] mt-0.5">
-                  Dynamic Adaptive Skill-Based Model Weighting conditioned on <span className="text-[#0B1F33] font-semibold">Climate Division &times; Lead Time (+{leadTime}h) &times; Season ({season})</span> across 26 verified stations in India.
+                  Dynamic Adaptive Skill-Based Dominant Model Mapping conditioned on <span className="text-[#0B1F33] font-semibold">Climate Division &times; Lead Time (+{leadTime}h) &times; Season ({season}) &times; {variable.replace('_', ' ').toUpperCase()}</span> across verified stations in India.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Time-Lapse Lead-Time Player & Sequence Controls */}
-          <div className="flex items-center gap-1.5 bg-[#F8FAFC] p-1.5 rounded-xl border border-[#D9E0E7]">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              title={isPlaying ? "Pause Simulation" : "Play Animated Lead-Time Time-Lapse"}
-              className={`p-2 rounded-lg transition flex items-center gap-1 text-xs font-bold font-mono ${
-                isPlaying 
-                  ? "bg-amber-100 text-amber-900 border border-amber-300" 
-                  : "bg-white text-[#1769AA] hover:bg-blue-50 border border-[#D9E0E7] shadow-sm"
-              }`}
-            >
-              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{isPlaying ? "PAUSE" : "SIMULATE"}</span>
-            </button>
+          {/* Controls: Variable Switcher + Lead-Time Player & Sequence */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Variable Switcher */}
+            <div className="flex items-center gap-1 bg-[#F1F5F9] p-1 rounded-xl border border-[#D9E0E7]">
+              <span className="text-[10px] font-mono text-[#64748B] px-1.5 uppercase font-bold">Var:</span>
+              {[
+                { id: "precipitation_mm", label: "Rainfall" },
+                { id: "temperature_2m", label: "Temperature" },
+                { id: "wind_speed_10m", label: "Wind" }
+              ].map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setVariable(v.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                    variable === v.id
+                      ? "bg-[#0B1F33] text-white shadow-xs"
+                      : "text-[#64748B] hover:text-[#0B1F33] hover:bg-white"
+                  }`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
 
-            <div className="h-5 w-px bg-[#CBD5E1] mx-0.5" />
-
-            {leadTimeOptions.map((opt) => (
+            {/* Time-Lapse Lead-Time Player & Sequence Controls */}
+            <div className="flex items-center gap-1.5 bg-[#F8FAFC] p-1 rounded-xl border border-[#D9E0E7]">
               <button
-                key={opt.value}
-                onClick={() => {
-                  setLeadTime(opt.value);
-                  setIsPlaying(false);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex flex-col items-center ${
-                  leadTime === opt.value
-                    ? "bg-[#1769AA] text-white shadow-sm font-semibold"
-                    : "text-[#64748B] hover:text-[#0B1F33] hover:bg-white"
+                onClick={() => setIsPlaying(!isPlaying)}
+                title={isPlaying ? "Pause Simulation" : "Play Animated Lead-Time Time-Lapse"}
+                className={`p-1.5 px-2 rounded-lg transition flex items-center gap-1 text-xs font-bold font-mono ${
+                  isPlaying 
+                    ? "bg-amber-100 text-amber-900 border border-amber-300" 
+                    : "bg-white text-[#1769AA] hover:bg-blue-50 border border-[#D9E0E7] shadow-sm"
                 }`}
               >
-                <span className="font-mono font-bold">{opt.label}</span>
-                <span className={`text-[8.5px] font-mono ${
-                  leadTime === opt.value
-                    ? "text-blue-100"
-                    : "text-[#94A3B8]"
-                }`}>
-                  {opt.badge}
-                </span>
+                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{isPlaying ? "PAUSE" : "SIM"}</span>
               </button>
-            ))}
+
+              <div className="h-5 w-px bg-[#CBD5E1] mx-0.5" />
+
+              {leadTimeOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    setLeadTime(opt.value);
+                    setIsPlaying(false);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition flex flex-col items-center ${
+                    leadTime === opt.value
+                      ? "bg-[#1769AA] text-white shadow-sm font-semibold"
+                      : "text-[#64748B] hover:text-[#0B1F33] hover:bg-white"
+                  }`}
+                >
+                  <span className="font-mono font-bold text-xs">{opt.label}</span>
+                  <span className={`text-[8px] font-mono leading-none ${
+                    leadTime === opt.value
+                      ? "text-blue-100"
+                      : "text-[#94A3B8]"
+                  }`}>
+                    {opt.badge}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

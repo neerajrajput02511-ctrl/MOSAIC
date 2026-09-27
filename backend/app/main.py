@@ -28,7 +28,7 @@ app.add_middleware(
 async def startup_event():
     logger.info("Initializing database schemas and meteorological reference seeds...")
     init_db()
-    logger.info("WEATHERFUSION AI backend initialized successfully.")
+    logger.info("MOSAIC backend initialized successfully.")
 
 # Mount API routes
 app.include_router(api_router, prefix="/api/v1")
@@ -39,10 +39,13 @@ app.include_router(api_router) # root alias for direct /ping, /health, /location
 def root():
     return {
         "platform": settings.PROJECT_NAME,
+        "name": "MOSAIC",
         "subtitle": settings.PROJECT_SUBTITLE,
+        "challenge": "SIH26081",
+        "organization": "Ministry of Earth Sciences (MoES) / NCMRWF",
         "status": "OPERATIONAL",
         "documentation": "/docs",
-        "timestamp_utc": datetime.datetime.utcnow().isoformat()
+        "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
     }
 
 if __name__ == "__main__":

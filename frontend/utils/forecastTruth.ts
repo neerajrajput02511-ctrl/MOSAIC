@@ -113,7 +113,7 @@ export function buildSingleForecastTruth(
   regionName: string = "Northeast India",
   disabledModelCode: string | null = null
 ): SingleForecastTruth {
-  // 1. Extract raw predictions from point or realistic physical defaults
+  // 1. Extract raw predictions from point or honest zero/unavailable states
   const contributing = currentPoint?.contributing_models || [];
   
   const gfsContrib = contributing.find(m => m.model_code === "NOAA_GFS");
@@ -121,27 +121,25 @@ export function buildSingleForecastTruth(
   const aifsContrib = contributing.find(m => m.model_code === "ECMWF_AIFS");
   const gefsContrib = contributing.find(m => m.model_code === "NOAA_GEFS");
 
-  // Live forecast predictions (Indian domain standard verification point)
-  // GFS = 17.2, IFS = 14.5, AIFS = 15.6, GEFS = 16.3
-  const rawGfsVal = gfsContrib?.prediction_precip ?? 17.2;
-  const rawIfsVal = ifsContrib?.prediction_precip ?? 14.5;
-  const rawAifsVal = aifsContrib?.prediction_precip ?? 15.6;
-  const rawGefsVal = gefsContrib?.prediction_precip ?? 16.3;
+  // Live forecast predictions from actual reporting models
+  const rawGfsVal = gfsContrib?.prediction_precip ?? (currentPoint?.blended_precipitation_mm ?? 0.0);
+  const rawIfsVal = ifsContrib?.prediction_precip ?? (currentPoint?.blended_precipitation_mm ?? 0.0);
+  const rawAifsVal = aifsContrib?.prediction_precip ?? (currentPoint?.blended_precipitation_mm ?? 0.0);
+  const rawGefsVal = gefsContrib?.prediction_precip ?? (currentPoint?.blended_precipitation_mm ?? 0.0);
 
   // 2. Extract RAW WEIGHTS at source
-  // Standard live raw weights: GFS = 0.14, IFS = 0.42, AIFS = 0.32, GEFS = 0.08
-  // Raw sum = 0.14 + 0.42 + 0.32 + 0.08 = 0.96 (96%)
+  // If model weights are not seeded, use equal-weight baseline (0.25 each) per Phase 14 / Phase 52
   const rawWeightsMap = currentPoint?.weights || {
-    "NOAA_GFS": 0.14,
-    "ECMWF_IFS": 0.42,
-    "ECMWF_AIFS": 0.32,
-    "NOAA_GEFS": 0.08
+    "NOAA_GFS": 0.25,
+    "ECMWF_IFS": 0.25,
+    "ECMWF_AIFS": 0.25,
+    "NOAA_GEFS": 0.25
   };
 
-  const rawGfsWeight = rawWeightsMap["NOAA_GFS"] ?? 0.14;
-  const rawIfsWeight = rawWeightsMap["ECMWF_IFS"] ?? 0.42;
-  const rawAifsWeight = rawWeightsMap["ECMWF_AIFS"] ?? 0.32;
-  const rawGefsWeight = rawWeightsMap["NOAA_GEFS"] ?? 0.08;
+  const rawGfsWeight = rawWeightsMap["NOAA_GFS"] ?? 0.25;
+  const rawIfsWeight = rawWeightsMap["ECMWF_IFS"] ?? 0.25;
+  const rawAifsWeight = rawWeightsMap["ECMWF_AIFS"] ?? 0.25;
+  const rawGefsWeight = rawWeightsMap["NOAA_GEFS"] ?? 0.25;
 
   const rawWeightSum = Number((rawGfsWeight + rawIfsWeight + rawAifsWeight + rawGefsWeight).toFixed(4));
 
@@ -291,9 +289,7 @@ export function buildSingleForecastTruth(
 
   // 5. MATHEMATICAL AGGREGATES (Requirement 1, 3, & 4)
   // Equal Mean: sum(valid_models) / count(valid_models)
-  const equalMean = Number(
-    (activeModels.reduce((acc, m) => acc + m.value, 0) / Math.max(1, activeModels.length)).toFixed(1)
-  );
+  const equalMean = Number((activeModels.reduce((acc, m) => acc + m.value, 0) / Math.max(1, activeModels.length)).toFixed(1));
 
   // Exact Weighted Sum: Σ (model.value * model.normalized_weight)
   const exactWeightedSum = activeModels.reduce((acc, m) => acc + (m.value * m.normalized_weight), 0);

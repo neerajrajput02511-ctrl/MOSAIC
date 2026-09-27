@@ -216,103 +216,35 @@ export async function fetchLocations(nerOnly: boolean = false, scope?: "NER" | "
   }
 }
 
+// In-memory cache for last-valid operational data (Phase 38 & Phase 40)
+const _VALID_FORECAST_CACHE = new Map<string, { data: BlendedForecastResponse; timestamp: string }>();
+const _VALID_SNAPSHOT_CACHE = new Map<string, { data: ForecastSnapshot; timestamp: string }>();
+
 export async function fetchBlendedForecast(locationId: number, horizonHours: number = 72): Promise<BlendedForecastResponse | null> {
+  const cacheKey = `loc_${locationId}_h_${horizonHours}`;
   try {
-    const res = await apiFetch(`/forecast/blended?location_id=${locationId}&horizon_hours=${horizonHours}`, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+    const res = await apiFetch(`/forecast/blended?location_id=${locationId}&horizon_hours=${horizonHours}`, { 
+      cache: "no-store", 
+      signal: AbortSignal.timeout(20000) 
+    });
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const data = await res.json();
     _isBackendHealthy = true;
+    _VALID_FORECAST_CACHE.set(cacheKey, { data, timestamp: new Date().toISOString() });
     return data;
   } catch (err) {
     _isBackendHealthy = false;
-    console.warn("Backend API unavailable, generating local client forecast strictly satisfying mathematical identities (DEMO MODE):", err);
-    const loc = FALLBACK_LOCATIONS.find(l => l.id === locationId) || FALLBACK_LOCATIONS[0];
-    const now = new Date();
-    
-    // Strict mathematical fallback for each timeline point
-    const timeline = Array.from({ length: 24 }).map((_, idx) => {
-      const fcTime = new Date(now.getTime() + idx * 3600000);
-      const isDay = fcTime.getHours() >= 6 && fcTime.getHours() <= 18;
-      const baseTemp = loc.latitude > 25 ? 24 : 28;
-      const temp = baseTemp + (isDay ? 5 : -2) + Math.sin(idx / 3) * 2;
-      
-      // Dynamic lead-time weights summing strictly to 1.0000
-      const wAifs = idx >= 72 ? 0.48 : (idx >= 24 ? 0.44 : 0.35);
-      const wIfs = idx >= 72 ? 0.32 : (idx >= 24 ? 0.34 : 0.40);
-      const wGfs = 0.14;
-      const wGefs = Number((1.0 - wAifs - wIfs - wGfs).toFixed(4));
-      
-      // Individual model values
-      const valGfs = Number((18.8 + Math.sin(idx / 2) * 1.5).toFixed(1));
-      const valIfs = Number((14.5 + Math.cos(idx / 2) * 1.2).toFixed(1));
-      const valAifs = Number((15.6 + Math.sin(idx / 3) * 1.0).toFixed(1));
-      const valGefs = Number((16.6 + Math.cos(idx / 4) * 0.8).toFixed(1));
-
-      // Exact mathematical blend: sum(w_i * x_i)
-      const exactWeightedSum = (valGfs * wGfs) + (valIfs * wIfs) + (valAifs * wAifs) + (valGefs * wGefs);
-      const blendedPrecip = Number(exactWeightedSum.toFixed(1));
-
-      // Exact equal mean: sum(x_i) / 4
-      const equalMean = Number(((valGfs + valIfs + valAifs + valGefs) / 4.0).toFixed(1));
-
-      // Variance & Spread
-      const values = [valGfs, valIfs, valAifs, valGefs];
-      const variance = values.reduce((sum, v) => sum + Math.pow(v - equalMean, 2), 0) / 4.0;
-      const stdDev = Number(Math.sqrt(variance).toFixed(2));
-      const spread = Number((Math.max(...values) - Math.min(...values)).toFixed(1));
-
+    console.warn(`[MOSAIC Data Lineage] Backend API unavailable for location ${locationId}:`, err);
+    // Phase 40: Return cached valid data if available; otherwise return null (DATA CURRENTLY UNAVAILABLE)
+    const cached = _VALID_FORECAST_CACHE.get(cacheKey);
+    if (cached) {
+      console.info(`[MOSAIC Data Lineage] Serving last-valid cached forecast (original: ${cached.timestamp})`);
       return {
-        forecast_time: fcTime.toISOString(),
-        lead_time_hours: idx,
-        blended_precipitation_mm: blendedPrecip,
-        blended_temperature_c: Math.round(temp * 10) / 10,
-        blended_wind_speed_ms: Math.round((3.5 + Math.cos(idx) * 1.5) * 10) / 10,
-        blended_humidity_pct: 68,
-        blended_pressure_hpa: 1012.0,
-        equal_weighted_precipitation_mm: equalMean,
-        equal_weighted_temperature_c: Math.round(temp * 10) / 10,
-        equal_weighted_wind_speed_ms: 3.5,
-        best_model_name: "ECMWF_IFS",
-        best_model_precipitation_mm: valIfs,
-        best_model_temperature_c: Math.round(temp * 10) / 10,
-        best_model_wind_speed_ms: 3.5,
-        improvement_vs_baseline_pct: Number((Math.abs(blendedPrecip - equalMean) / equalMean * 100).toFixed(1)),
-        gefs_prob_gt_15mm: 0.18,
-        gefs_prob_gt_50mm: 0.04,
-        uncertainty_lower_mm: Number(Math.max(0, blendedPrecip - (stdDev * 1.645)).toFixed(1)),
-        uncertainty_upper_mm: Number((blendedPrecip + (stdDev * 1.645)).toFixed(1)),
-        model_disagreement_spread: spread,
-        confidence_assessment: stdDev < 2.0 ? "HIGH" : "MODERATE",
-        weather_regime: "Normal",
-        regime_reason: "Stable synoptic gradients",
-        weighting_rationale: "Adaptive Skill-Based Model Weighting",
-        weights: {
-          "ECMWF_AIFS": wAifs,
-          "ECMWF_IFS": wIfs,
-          "NOAA_GFS": wGfs,
-          "NOAA_GEFS": wGefs
-        },
-        contributing_models: [
-          { model_code: "NOAA_GFS", model_name: "NOAA GFS (0.25° NWP)", prediction_precip: valGfs, prediction_temp: Math.round(temp * 10) / 10, prediction_wind: 3.8, weight: wGfs, historical_mae: 2.8 },
-          { model_code: "ECMWF_IFS", model_name: "ECMWF IFS (0.25° NWP)", prediction_precip: valIfs, prediction_temp: Math.round(temp * 10) / 10, prediction_wind: 3.5, weight: wIfs, historical_mae: 2.1 },
-          { model_code: "ECMWF_AIFS", model_name: "ECMWF AIFS (0.25° Deep Learning)", prediction_precip: valAifs, prediction_temp: Math.round(temp * 10) / 10, prediction_wind: 3.6, weight: wAifs, historical_mae: 2.4 },
-          { model_code: "NOAA_GEFS", model_name: "NOAA GEFS (31-M Ensemble)", prediction_precip: valGefs, prediction_temp: Math.round(temp * 10) / 10, prediction_wind: 3.7, weight: wGefs, historical_mae: 2.6 }
-        ]
+        ...cached.data,
+        blending_method: `${cached.data.blending_method} (CACHED: ${cached.timestamp})`
       };
-    });
-
-    return {
-      location: loc,
-      forecast_run_time: now.toISOString(),
-      generated_at: now.toISOString(),
-      horizon_hours: horizonHours,
-      blending_method: "SKILL_ADAPTIVE_BLEND",
-      season: "Monsoon",
-      timeline,
-      timeline_length: timeline.length,
-      extreme_events: [],
-      sources: []
-    };
+    }
+    return null;
   }
 }
 
@@ -322,6 +254,7 @@ export async function fetchForecastSnapshot(
   variable: string = "precipitation_mm",
   disabledModel?: string | null
 ): Promise<ForecastSnapshot | null> {
+  const cacheKey = `snap_${locationId}_${leadTimeHours}_${variable}_${disabledModel || "none"}`;
   try {
     const disabledQuery = disabledModel ? `&disabled_model=${disabledModel}` : "";
     const res = await apiFetch(
@@ -331,176 +264,20 @@ export async function fetchForecastSnapshot(
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const data = await res.json();
     _isBackendHealthy = true;
+    _VALID_SNAPSHOT_CACHE.set(cacheKey, { data, timestamp: new Date().toISOString() });
     return data;
   } catch (err) {
     _isBackendHealthy = false;
-    console.warn("Backend API unavailable, generating local client snapshot strictly satisfying mathematical identities (DEMO MODE):", err);
-    
-    const loc = FALLBACK_LOCATIONS.find(l => l.id === locationId) || FALLBACK_LOCATIONS[0];
-    const now = new Date();
-    const initTime = new Date(now.getTime() - (now.getTime() % (6 * 3600000)));
-    const validTime = new Date(initTime.getTime() + leadTimeHours * 3600000);
-
-    let valGfs = 17.2;
-    let valIfs = 14.5;
-    let valAifs = 15.6;
-    let valGefs = 16.3;
-
-    let rawGfs = 0.14;
-    let rawIfs = 0.42;
-    let rawAifs = 0.32;
-    let rawGefs = 0.08;
-
-    let aifsStatus: "SUCCESS" | "DEGRADED" = "SUCCESS";
-    let activeGfs = rawGfs;
-    let activeIfs = rawIfs;
-    let activeAifs = rawAifs;
-    let activeGefs = rawGefs;
-
-    if (disabledModel === "ECMWF_AIFS") {
-      aifsStatus = "DEGRADED";
-      activeAifs = 0.0;
+    console.warn(`[MOSAIC Data Lineage] Snapshot API unavailable:`, err);
+    // Phase 40: Return cached valid snapshot if available; otherwise return null
+    const cached = _VALID_SNAPSHOT_CACHE.get(cacheKey);
+    if (cached) {
+      return {
+        ...cached.data,
+        provenance_state: "CACHED"
+      };
     }
-
-    const activeSum = activeGfs + activeIfs + activeAifs + activeGefs;
-    const wGfs = activeSum > 0 ? activeGfs / activeSum : 0.25;
-    const wIfs = activeSum > 0 ? activeIfs / activeSum : 0.25;
-    const wAifs = activeSum > 0 ? activeAifs / activeSum : 0.0;
-    const wGefs = activeSum > 0 ? activeGefs / activeSum : 0.25;
-
-    const models = [
-      {
-        name: "NOAA GFS (0.25° NWP)",
-        code: "NOAA_GFS",
-        value: valGfs,
-        weight: wGfs,
-        availability: "SUCCESS" as const,
-        source: "NOAA NCEP (0.25° GRIB2 via Open-Meteo API)",
-        retrieved_at: now.toISOString(),
-        run_time: `${initTime.toISOString().slice(0, 10)} 00 UTC`,
-        quality_status: "PASS",
-        historical_mae: 2.8,
-        historical_rmse: 3.5,
-        historical_bias: -0.3
-      },
-      {
-        name: "ECMWF IFS (0.25° NWP)",
-        code: "ECMWF_IFS",
-        value: valIfs,
-        weight: wIfs,
-        availability: "SUCCESS" as const,
-        source: "ECMWF Open Data Portal (0.25° HRES)",
-        retrieved_at: now.toISOString(),
-        run_time: `${initTime.toISOString().slice(0, 10)} 00 UTC`,
-        quality_status: "PASS",
-        historical_mae: 2.1,
-        historical_rmse: 2.6,
-        historical_bias: 0.1
-      },
-      {
-        name: "ECMWF AIFS (0.25° AI Deep Learning)",
-        code: "ECMWF_AIFS",
-        value: valAifs,
-        weight: wAifs,
-        availability: aifsStatus,
-        source: "ECMWF Data Store (AI Neural Graph Operator)",
-        retrieved_at: now.toISOString(),
-        run_time: `${initTime.toISOString().slice(0, 10)} 00 UTC`,
-        quality_status: aifsStatus === "SUCCESS" ? "PASS" : "DEGRADED",
-        historical_mae: 2.4,
-        historical_rmse: 3.0,
-        historical_bias: 0.0
-      },
-      {
-        name: "NOAA GEFS (31-Member Ensemble Mean)",
-        code: "NOAA_GEFS",
-        value: valGefs,
-        weight: wGefs,
-        availability: "SUCCESS" as const,
-        source: "NOAA NCEP (31 Ensemble Perturbation Members)",
-        retrieved_at: now.toISOString(),
-        run_time: `${initTime.toISOString().slice(0, 10)} 00 UTC`,
-        quality_status: "PASS",
-        historical_mae: 2.6,
-        historical_rmse: 3.2,
-        historical_bias: -0.1
-      }
-    ];
-
-    const activeModels = models.filter(m => m.availability === "SUCCESS");
-    const exactWeightedSum = activeModels.reduce((acc, m) => acc + (m.value * m.weight), 0);
-    const mosaicBlend = Number(exactWeightedSum.toFixed(1));
-    const equalMean = Number((activeModels.reduce((acc, m) => acc + m.value, 0) / activeModels.length).toFixed(1));
-
-    const weightSum = Number(activeModels.reduce((acc, m) => acc + m.weight, 0).toFixed(4));
-    const activeValues = activeModels.map(m => m.value);
-    const variance = activeValues.reduce((sum, v) => sum + Math.pow(v - equalMean, 2), 0) / activeValues.length;
-    const stdDev = Number(Math.sqrt(variance).toFixed(2));
-    const spread = Number((Math.max(...activeValues) - Math.min(...activeValues)).toFixed(1));
-
-    return {
-      forecast_id: `MOSAIC-FC-${loc.id}-${validTime.getTime()}`,
-      generated_at: now.toISOString(),
-      initialization_time: initTime.toISOString(),
-      valid_time: validTime.toISOString(),
-      location: {
-        id: loc.id,
-        name: loc.name,
-        state: loc.state,
-        district: loc.district,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        elevation_m: loc.elevation_m,
-        is_ner: loc.is_ner,
-        region_id: loc.region_id
-      },
-      lead_time: `+${leadTimeHours}h`,
-      lead_time_hours: leadTimeHours,
-      variable,
-      units: "mm",
-      models,
-      equal_mean: equalMean,
-      mosaic_blend: mosaicBlend,
-      uncertainty: stdDev,
-      uncertainty_bounds: {
-        lower: Number(Math.max(0, mosaicBlend - (stdDev * 1.645)).toFixed(1)),
-        upper: Number((mosaicBlend + (stdDev * 1.645)).toFixed(1))
-      },
-      confidence: 82,
-      confidence_label: "HIGH (Provisional, 82%)",
-      regime: "Normal",
-      verification_metrics: {
-        period: "2024 Monsoon (JJAS)",
-        sample_count: 1824,
-        scores: {
-          NOAA_GFS: { mae: 2.8, rmse: 3.5, bias: -0.3 },
-          ECMWF_IFS: { mae: 2.1, rmse: 2.6, bias: 0.1 },
-          ECMWF_AIFS: { mae: 2.4, rmse: 3.0, bias: 0.0 },
-          NOAA_GEFS: { mae: 2.6, rmse: 3.2, bias: -0.1 }
-        }
-      },
-      provenance: {
-        common_grid: "0.25° x 0.25° Equirectangular",
-        regridding_method: "Bilinear Interpolation",
-        processing_pipeline: "MOSAIC 12-Stage Automated Pipeline",
-        qc_status: "PASSED"
-      },
-      pipeline_status: {
-        active_stages: 12,
-        completed_stages: 12,
-        active_fallbacks: disabledModel ? 1 : 0
-      },
-      provenance_state: "DEMO",
-      mathematical_audit: {
-        weights_sum: weightSum,
-        is_valid_weights: Math.abs(weightSum - 1.0) < 0.001,
-        exact_weighted_sum: Number(exactWeightedSum.toFixed(3)),
-        mosaic_blend: mosaicBlend,
-        is_valid_blend: Math.abs(mosaicBlend - exactWeightedSum) < 0.05,
-        equal_mean: equalMean,
-        diff: Number(Math.abs(mosaicBlend - exactWeightedSum).toFixed(4))
-      }
-    };
+    return null;
   }
 }
 
@@ -582,11 +359,12 @@ export async function fetchSpatialWeightMap(
   leadTimeHours: number = 72,
   season: string = "Monsoon",
   regime: string = "Normal",
-  scope: "NER" | "INDIA" = "NER"
+  scope: "NER" | "INDIA" = "NER",
+  variable: string = "precipitation_mm"
 ): Promise<any> {
   try {
     const res = await apiFetch(
-      `/spatial/weight-map?lead_time_hours=${leadTimeHours}&season=${season}&regime=${regime}&scope=${scope}`,
+      `/spatial/weight-map?lead_time_hours=${leadTimeHours}&season=${season}&regime=${regime}&scope=${scope}&variable=${variable}`,
       { cache: "no-store" }
     );
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -688,7 +466,7 @@ export async function createCustomLocation(
   } catch (err) {
     console.warn("Backend unavailable, registering custom location locally:", err);
     return {
-      id: Math.floor(Math.random() * 9000) + 1000,
+      id: 90000 + (Date.now() % 10000),
       name: name || "My Current Location",
       state: state || "Detected GPS",
       country: "India",
@@ -699,3 +477,55 @@ export async function createCustomLocation(
     };
   }
 }
+
+export async function fetchExperiments(): Promise<any> {
+  try {
+    const res = await apiFetch("/experiments", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchExperiments error:", err);
+    return { total: 0, experiments: [] };
+  }
+}
+
+export async function runExperimentApi(payload: {
+  name: string;
+  variable: string;
+  region: string;
+  lead_time_hours: number;
+  models: string[];
+  weighting_method: string;
+  season: string;
+  weather_regime: string;
+}): Promise<any> {
+  try {
+    const res = await apiFetch("/experiments/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("runExperimentApi error:", err);
+    throw err;
+  }
+}
+
+export async function fetchForecastBusts(): Promise<any> {
+  try {
+    const res = await apiFetch("/forecast/busts", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchForecastBusts error:", err);
+    return { total_bust_events: 0, cases: [] };
+  }
+}
+
+export function getExportUrl(locationId: number, format: "csv" | "json" = "csv"): string {
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  return `${backendUrl}/api/v1/export/forecast?location_id=${locationId}&format=${format}`;
+}
+

@@ -71,19 +71,26 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
     null
   );
 
-  // Dynamic telemetry from the actual live forecast
+  // Dynamic telemetry from the actual live forecast (strictly NO FAKE DATA)
   const rainValue = currentPoint?.blended_precipitation_mm !== undefined && currentPoint?.blended_precipitation_mm !== null
     ? currentPoint.blended_precipitation_mm.toFixed(1)
-    : "24.6";
+    : null;
   const tempValue = currentPoint?.blended_temperature_c !== undefined && currentPoint?.blended_temperature_c !== null
     ? currentPoint.blended_temperature_c.toFixed(1)
-    : "28.4";
+    : null;
   const windValue = currentPoint?.blended_wind_speed_ms !== undefined && currentPoint?.blended_wind_speed_ms !== null
     ? (currentPoint.blended_wind_speed_ms * 3.6).toFixed(1)
-    : "18.7";
+    : null;
   const cloudCoverValue = currentPoint?.blended_humidity_pct !== undefined && currentPoint?.blended_humidity_pct !== null
     ? Math.round(currentPoint.blended_humidity_pct)
-    : 82;
+    : null;
+
+  // Real 24h temperature diurnal range computed from actual timeline
+  const dayTemps = (forecastData?.timeline?.slice(0, 24) || [])
+    .map(p => p.blended_temperature_c)
+    .filter((t): t is number => t !== null && t !== undefined);
+  const dayMaxTemp = dayTemps.length > 0 ? Math.max(...dayTemps).toFixed(1) : null;
+  const dayMinTemp = dayTemps.length > 0 ? Math.min(...dayTemps).toFixed(1) : null;
 
   // Real model contribution weights
   const ifsWeight = Math.round(forecastTruth.models.ifs.normalized_weight * 1000) / 10;
@@ -91,23 +98,63 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
   const gfsWeight = Math.round(forecastTruth.models.gfs.normalized_weight * 1000) / 10;
   const gefsWeight = Math.max(0, Math.round((100 - (ifsWeight + aifsWeight + gfsWeight)) * 10) / 10);
 
-  // Timeline steps for bottom timeline card
-  const timelineSteps = [
-    { label: "Now", lead: 0, val: rainValue, icon: CloudRain },
-    { label: "+6h", lead: 6, val: ((parseFloat(rainValue) * 0.74)).toFixed(1), icon: CloudRain },
-    { label: "+12h", lead: 12, val: ((parseFloat(rainValue) * 0.52)).toFixed(1), icon: CloudRain },
-    { label: "+18h", lead: 18, val: ((parseFloat(rainValue) * 0.34)).toFixed(1), icon: CloudRain },
-    { label: "+24h", lead: 24, val: ((parseFloat(rainValue) * 0.17)).toFixed(1), icon: CloudRain },
-  ];
+  // Timeline steps for bottom timeline card - extracted directly from actual timeline points
+  const timelineLeads = [0, 6, 12, 18, 24];
+  const timelineSteps = timelineLeads.map((lead) => {
+    const pt = forecastData?.timeline?.find(p => p.lead_time_hours === lead);
+    const val = pt?.blended_precipitation_mm !== undefined && pt?.blended_precipitation_mm !== null
+      ? pt.blended_precipitation_mm.toFixed(1)
+      : (pt ? "0.0" : "—");
+    const rainNum = parseFloat(val) || 0;
+    const Icon = rainNum > 5.0 ? CloudRain : (rainNum > 0.1 ? Cloud : Sun);
+    return {
+      label: lead === 0 ? "Now" : `+${lead}h`,
+      lead,
+      val,
+      icon: Icon
+    };
+  });
 
-  // 5-Day Outlook Days
-  const outlookDays = [
-    { day: "Today", date: "27 Sep", icon: CloudRain, max: "31°", min: "25°", condition: "Heavy rain" },
-    { day: "Mon", date: "28 Sep", icon: CloudRain, max: "30°", min: "24°", condition: "Light rain" },
-    { day: "Tue", date: "29 Sep", icon: CloudSun, max: "32°", min: "26°", condition: "Partly cloudy" },
-    { day: "Wed", date: "30 Sep", icon: Sun, max: "33°", min: "26°", condition: "Sunny" },
-    { day: "Thu", date: "1 Oct", icon: Sun, max: "34°", min: "27°", condition: "Sunny" },
-  ];
+  // 5-Day Outlook Days dynamically aggregated from actual forecast timeline
+  const outlookDays = React.useMemo(() => {
+    if (!forecastData?.timeline || forecastData.timeline.length === 0) {
+      return [];
+    }
+    const dayGroups: Record<string, TimelinePoint[]> = {};
+    for (const pt of forecastData.timeline) {
+      const d = pt.forecast_time ? new Date(pt.forecast_time) : null;
+      if (!d || isNaN(d.getTime())) continue;
+      const key = d.toISOString().slice(0, 10);
+      if (!dayGroups[key]) dayGroups[key] = [];
+      dayGroups[key].push(pt);
+    }
+    const days = Object.keys(dayGroups).slice(0, 5);
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    return days.map((dayKey, idx) => {
+      const pts = dayGroups[dayKey];
+      const d = new Date(dayKey);
+      const temps = pts.map(p => p.blended_temperature_c).filter((t): t is number => t !== null && t !== undefined);
+      const maxT = temps.length > 0 ? Math.round(Math.max(...temps)) : null;
+      const minT = temps.length > 0 ? Math.round(Math.min(...temps)) : null;
+      const totalRain = pts.reduce((sum, p) => sum + (p.blended_precipitation_mm || 0), 0);
+      
+      const dayLabel = idx === 0 ? "Today" : dayNames[d.getDay()];
+      const dateLabel = `${d.getDate()} ${monthNames[d.getMonth()]}`;
+      const condition = totalRain >= 20.0 ? "Heavy rain" : totalRain >= 2.5 ? "Rain" : (totalRain > 0.2 ? "Light rain" : "Clear");
+      const Icon = totalRain > 5.0 ? CloudRain : (totalRain > 0.1 ? CloudSun : Sun);
+
+      return {
+        day: dayLabel,
+        date: dateLabel,
+        icon: Icon,
+        max: maxT !== null ? `${maxT}°` : "—",
+        min: minT !== null ? `${minT}°` : "—",
+        condition
+      };
+    });
+  }, [forecastData]);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto select-none">
@@ -222,11 +269,17 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
               <CloudRain className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
-                {rainValue} <span className="text-lg font-bold text-[#64748B]">mm</span>
-              </div>
+              {rainValue !== null ? (
+                <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
+                  {rainValue} <span className="text-lg font-bold text-[#64748B]">mm</span>
+                </div>
+              ) : (
+                <div className="text-xs font-bold text-amber-700 font-mono py-1">
+                  DATA UNAVAILABLE
+                </div>
+              )}
               <div className="text-[11px] text-[#64748B] mt-0.5">
-                in next {selectedLeadTime} hours
+                {rainValue !== null ? `in next ${selectedLeadTime} hours` : "Upstream feed waiting"}
               </div>
             </div>
           </div>
@@ -246,12 +299,25 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
               <Thermometer className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
-                {tempValue} <span className="text-lg font-bold text-[#64748B]">°C</span>
-              </div>
-              <div className="text-[11px] text-[#64748B] mt-0.5">
-                max {(parseFloat(tempValue) + 2.8).toFixed(1)}° / min {(parseFloat(tempValue) - 2.8).toFixed(1)}°
-              </div>
+              {tempValue !== null ? (
+                <>
+                  <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
+                    {tempValue} <span className="text-lg font-bold text-[#64748B]">°C</span>
+                  </div>
+                  <div className="text-[11px] text-[#64748B] mt-0.5">
+                    {dayMaxTemp !== null && dayMinTemp !== null ? `max ${dayMaxTemp}° / min ${dayMinTemp}°` : "2m surface ground temp"}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xs font-bold text-amber-700 font-mono py-1">
+                    DATA UNAVAILABLE
+                  </div>
+                  <div className="text-[11px] text-[#64748B] mt-0.5">
+                    Upstream feed waiting
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -261,7 +327,7 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
           <div className="flex items-center justify-between text-xs text-[#64748B]">
             <div className="flex items-center space-x-1.5 font-bold uppercase tracking-wider text-[11px]">
               <span>WIND SPEED</span>
-              <InfoTooltip term="ensemble_spread" explanation="10-meter surface wind speed and gust velocity derived from NOAA GFS/IFS." />
+              <InfoTooltip term="ensemble_spread" explanation="10-meter surface wind speed derived from NOAA GFS/IFS." />
             </div>
           </div>
 
@@ -270,12 +336,25 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
               <Wind className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
-                {windValue} <span className="text-lg font-bold text-[#64748B]">km/h</span>
-              </div>
-              <div className="text-[11px] text-[#64748B] mt-0.5">
-                NE · Gusts {(parseFloat(windValue) * 1.7).toFixed(0)} km/h
-              </div>
+              {windValue !== null ? (
+                <>
+                  <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
+                    {windValue} <span className="text-lg font-bold text-[#64748B]">km/h</span>
+                  </div>
+                  <div className="text-[11px] text-[#64748B] mt-0.5">
+                    {currentPoint?.blended_wind_speed_ms !== undefined ? `${currentPoint.blended_wind_speed_ms.toFixed(1)} m/s surface vector` : "Surface vector"}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xs font-bold text-amber-700 font-mono py-1">
+                    DATA UNAVAILABLE
+                  </div>
+                  <div className="text-[11px] text-[#64748B] mt-0.5">
+                    Upstream feed waiting
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -284,7 +363,7 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
         <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative space-y-2">
           <div className="flex items-center justify-between text-xs text-[#64748B]">
             <div className="flex items-center space-x-1.5 font-bold uppercase tracking-wider text-[11px]">
-              <span>CLOUD COVER</span>
+              <span>CLOUD COVER / HUMIDITY</span>
               <InfoTooltip term="weather_regime" explanation="Atmospheric moisture saturation and fractional cloud fraction." />
             </div>
           </div>
@@ -294,12 +373,25 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
               <Cloud className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
-                {cloudCoverValue}<span className="text-lg font-bold text-[#64748B]">%</span>
-              </div>
-              <div className="text-[11px] text-[#64748B] mt-0.5">
-                {cloudCoverValue > 70 ? "Mostly cloudy" : cloudCoverValue > 30 ? "Partly cloudy" : "Clear skies"}
-              </div>
+              {cloudCoverValue !== null ? (
+                <>
+                  <div className="text-2xl lg:text-3xl font-extrabold text-[#0B1F33] tracking-tight font-mono">
+                    {cloudCoverValue}<span className="text-lg font-bold text-[#64748B]">%</span>
+                  </div>
+                  <div className="text-[11px] text-[#64748B] mt-0.5">
+                    {cloudCoverValue > 70 ? "High atmospheric moisture" : cloudCoverValue > 30 ? "Moderate moisture" : "Dry continental"}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xs font-bold text-amber-700 font-mono py-1">
+                    DATA UNAVAILABLE
+                  </div>
+                  <div className="text-[11px] text-[#64748B] mt-0.5">
+                    Upstream feed waiting
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -567,21 +659,34 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-1.5 font-bold text-sm text-[#0B1F33]">
                 <span>Forecast Confidence</span>
-                <InfoTooltip term="forecast_certainty" explanation="Derived objectively from GEFS 31-member spread and model agreement." />
+                <InfoTooltip term="forecast_certainty" explanation="Derived objectively from multi-model spread, agreement, and historical skill." />
               </div>
-              <div className="flex items-center space-x-1 text-xs font-bold text-[#16A34A] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                <span>High</span>
+              <div className={`flex items-center space-x-1 text-xs font-bold px-2 py-0.5 rounded-full border font-mono ${
+                forecastTruth.confidence === "HIGH"
+                  ? "text-[#16A34A] bg-emerald-50 border-emerald-200"
+                  : forecastTruth.confidence === "MODERATE"
+                  ? "text-[#D97706] bg-amber-50 border-amber-200"
+                  : "text-[#DC2626] bg-red-50 border-red-200"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  forecastTruth.confidence === "HIGH" ? "bg-[#16A34A]" : forecastTruth.confidence === "MODERATE" ? "bg-[#D97706]" : "bg-[#DC2626]"
+                }`} />
+                <span>{forecastTruth.confidence} ({forecastTruth.confidence_score}%)</span>
               </div>
             </div>
 
             <div className="text-xs text-[#64748B]">
-              Model agreement: <strong className="text-[#0F172A]">High</strong>
+              Model agreement: <strong className="text-[#0F172A]">{forecastTruth.spread < 3.0 ? "High Agreement" : forecastTruth.spread < 7.0 ? "Moderate Agreement" : "High Disagreement"}</strong> (Spread: &plusmn;{forecastTruth.uncertainty_pm} mm)
             </div>
 
-            {/* Thin green progress indicator */}
+            {/* Dynamic agreement progress indicator */}
             <div className="w-full h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
-              <div className="h-full bg-[#16A34A] rounded-full w-[88%]" />
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${
+                  forecastTruth.confidence === "HIGH" ? "bg-[#16A34A]" : forecastTruth.confidence === "MODERATE" ? "bg-[#D97706]" : "bg-[#DC2626]"
+                }`}
+                style={{ width: `${Math.min(100, Math.max(15, forecastTruth.confidence_score))}%` }}
+              />
             </div>
           </div>
 
@@ -789,34 +894,50 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
 
           <div className="space-y-2 text-xs font-mono">
             <div className="flex items-center justify-between text-[#475569]">
-              <span className="text-[11px]">Data Ingestion</span>
-              <span className="flex items-center space-x-1.5 text-[#16A34A] font-bold text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                <span>Operational</span>
+              <span className="text-[11px]">NOAA GFS (0.25°)</span>
+              <span className={`flex items-center space-x-1.5 font-bold text-[10px] ${
+                forecastTruth.models.gfs.status === "HEALTHY" ? "text-[#16A34A]" : "text-[#D97706]"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  forecastTruth.models.gfs.status === "HEALTHY" ? "bg-[#16A34A]" : "bg-[#D97706]"
+                }`} />
+                <span>{forecastTruth.models.gfs.status === "HEALTHY" ? "Operational" : "Degraded"}</span>
               </span>
             </div>
 
             <div className="flex items-center justify-between text-[#475569]">
-              <span className="text-[11px]">Model Processing</span>
-              <span className="flex items-center space-x-1.5 text-[#16A34A] font-bold text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                <span>Operational</span>
+              <span className="text-[11px]">ECMWF IFS (0.25°)</span>
+              <span className={`flex items-center space-x-1.5 font-bold text-[10px] ${
+                forecastTruth.models.ifs.status === "HEALTHY" ? "text-[#16A34A]" : "text-[#D97706]"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  forecastTruth.models.ifs.status === "HEALTHY" ? "bg-[#16A34A]" : "bg-[#D97706]"
+                }`} />
+                <span>{forecastTruth.models.ifs.status === "HEALTHY" ? "Operational" : "Degraded"}</span>
               </span>
             </div>
 
             <div className="flex items-center justify-between text-[#475569]">
-              <span className="text-[11px]">Forecast API</span>
-              <span className="flex items-center space-x-1.5 text-[#16A34A] font-bold text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                <span>Operational</span>
+              <span className="text-[11px]">ECMWF AIFS (Neural)</span>
+              <span className={`flex items-center space-x-1.5 font-bold text-[10px] ${
+                forecastTruth.models.aifs.status === "HEALTHY" ? "text-[#16A34A]" : "text-[#D97706]"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  forecastTruth.models.aifs.status === "HEALTHY" ? "bg-[#16A34A]" : "bg-[#D97706]"
+                }`} />
+                <span>{forecastTruth.models.aifs.status === "HEALTHY" ? "Operational" : "Degraded"}</span>
               </span>
             </div>
 
             <div className="flex items-center justify-between text-[#475569]">
-              <span className="text-[11px]">Visualization</span>
-              <span className="flex items-center space-x-1.5 text-[#16A34A] font-bold text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                <span>Operational</span>
+              <span className="text-[11px]">NOAA GEFS (31-M)</span>
+              <span className={`flex items-center space-x-1.5 font-bold text-[10px] ${
+                forecastTruth.models.gefs.status === "HEALTHY" ? "text-[#16A34A]" : "text-[#D97706]"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  forecastTruth.models.gefs.status === "HEALTHY" ? "bg-[#16A34A]" : "bg-[#D97706]"
+                }`} />
+                <span>{forecastTruth.models.gefs.status === "HEALTHY" ? "Operational" : "Degraded"}</span>
               </span>
             </div>
           </div>

@@ -471,6 +471,7 @@ class BlendingEngine:
         season: str = "Monsoon",
         weather_regime: str = "Normal",
         scope: str = "NER",
+        variable: str = "precipitation_mm",
         db: Any = None
     ) -> Dict[str, Any]:
         """
@@ -650,6 +651,17 @@ class BlendingEngine:
                 logits["ECMWF_AIFS"] += 0.20
             elif lead_time_hours <= 24:
                 logits["ECMWF_IFS"] += 0.30
+
+            # 3. Variable-specific Skill Prior Modulation
+            is_temp = "temp" in variable.lower()
+            is_wind = "wind" in variable.lower()
+            if is_temp:
+                logits["ECMWF_AIFS"] += 0.35 # Neural operator has strong thermal 2m advection skill
+                if "NOAA_GFS" in logits:
+                    logits["NOAA_GFS"] -= 0.10 # Mitigate warm bias
+            elif is_wind:
+                logits["ECMWF_IFS"] += 0.30 # High-resolution momentum conservation
+                logits["NOAA_GEFS"] += 0.20 # Ensemble dispersion for squall gusts
 
             exp_vals = {m: math.exp(logits[m]) for m in models}
             sum_exp = sum(exp_vals.values())

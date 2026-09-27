@@ -17,12 +17,15 @@ import { Navbar } from "@/components/Navbar";
 import { Sidebar, NavTab } from "@/components/Sidebar";
 import { ForecastHeroView } from "@/components/ForecastHeroView";
 import { ModelsView } from "@/components/ModelsView";
+import { ModelWeightMapView } from "@/components/ModelWeightMapView";
 import { VerificationView } from "@/components/VerificationView";
 import { EventsView } from "@/components/EventsView";
+import { ResearchLabView } from "@/components/ResearchLabView";
 import { SystemView } from "@/components/SystemView";
 import { ExplainabilityDrawer } from "@/components/ExplainabilityDrawer";
 import { HelpGuideModal } from "@/components/HelpGuideModal";
 import { MeteorologicalChatModal } from "@/components/MeteorologicalChatModal";
+import { SihDemoModal } from "@/components/SihDemoModal";
 
 export default function Home() {
   const [locations, setLocations] = useState<LocationItem[]>([]);
@@ -34,6 +37,7 @@ export default function Home() {
   // Modals & Drawers
   const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
   const [chatModalOpen, setChatModalOpen] = useState<boolean>(false);
+  const [isSihDemoOpen, setIsSihDemoOpen] = useState<boolean>(false);
   const [chatInitialQuery, setChatInitialQuery] = useState<string | undefined>(undefined);
   const [explainDrawerOpen, setExplainDrawerOpen] = useState<boolean>(false);
   const [explainData, setExplainData] = useState<WhyThisForecastData | null>(null);
@@ -191,6 +195,7 @@ export default function Home() {
         onSelectLocation={handleSelectLocation}
         onOpenHelp={() => setHelpModalOpen(true)}
         onOpenChat={() => handleOpenChat()}
+        onOpenSihDemo={() => setIsSihDemoOpen(true)}
         isBackendOnline={isBackendOnline}
         monitoringScope={monitoringScope}
         onToggleScope={handleToggleScope}
@@ -227,7 +232,15 @@ export default function Home() {
             />
           )}
 
-          {/* TAB 2: MODELS (MODEL PROFILES & SPATIAL WEIGHT MAP) */}
+          {/* TAB 2: MAP ("WHO SHOULD WE TRUST HERE?" DOMINANT SPATIAL WEIGHT MAP) */}
+          {activeTab === "map" && (
+            <ModelWeightMapView
+              monitoringScope={monitoringScope}
+              onOpenCopilot={handleOpenChat}
+            />
+          )}
+
+          {/* TAB 3: MODELS (MODEL PROFILES & DYNAMIC ARCHITECTURE) */}
           {activeTab === "models" && (
             <ModelsView 
               monitoringScope={monitoringScope} 
@@ -235,8 +248,8 @@ export default function Home() {
             />
           )}
 
-          {/* TAB 3: VERIFICATION (SKILL CURVES, BASELINES & REPLAY) */}
-          {activeTab === "verification" && (
+          {/* TAB 4: VERIFY (SKILL SCOREBOARDS, BASELINES & REPLAY) */}
+          {(activeTab === "verify" || activeTab === "verification") && (
             <VerificationView
               timeline={forecastData?.timeline || []}
               selectedLocation={selectedLocation}
@@ -246,8 +259,8 @@ export default function Home() {
             />
           )}
 
-          {/* TAB 4: EVENTS (EXTREME WEATHER GUIDANCE & EARLY WARNINGS) */}
-          {activeTab === "events" && (
+          {/* TAB 5: EXTREMES (EXTREME WEATHER GUIDANCE & EARLY WARNINGS) */}
+          {(activeTab === "extremes" || activeTab === "events") && (
             <EventsView
               events={forecastData?.extreme_events || []}
               selectedLocation={selectedLocation}
@@ -255,7 +268,14 @@ export default function Home() {
             />
           )}
 
-          {/* TAB 5: SYSTEM (HEALTH, PIPELINE, DATA SOURCES & MATH AUDIT) */}
+          {/* TAB 6: RESEARCH (REPRODUCIBLE RESEARCH LAB & FORECAST BUST MONITOR) */}
+          {activeTab === "research" && (
+            <ResearchLabView
+              onOpenCopilot={handleOpenChat}
+            />
+          )}
+
+          {/* TAB 7: SYSTEM (HEALTH, PIPELINE, DATA SOURCES & MATH AUDIT) */}
           {activeTab === "system" && (
             <SystemView />
           )}
@@ -263,18 +283,20 @@ export default function Home() {
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION BAR */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-[#D9E0E7] flex items-center justify-around z-40 px-2 shadow-lg">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-[#D9E0E7] flex items-center justify-around z-40 px-2 shadow-lg overflow-x-auto">
         {[
           { id: "forecast", label: "Forecast" },
+          { id: "map", label: "Map" },
           { id: "models", label: "Models" },
-          { id: "verification", label: "Verify" },
-          { id: "events", label: "Events" },
+          { id: "verify", label: "Verify" },
+          { id: "extremes", label: "Extremes" },
+          { id: "research", label: "Lab" },
           { id: "system", label: "System" },
         ].map((t) => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id as NavTab)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap ${
               activeTab === t.id
                 ? "bg-[#0B1F33] text-white"
                 : "text-[#64748B] hover:text-[#0F172A]"
@@ -284,6 +306,12 @@ export default function Home() {
           </button>
         ))}
       </div>
+
+      {/* SIH26081 Guided Jury Demonstration Tour Modal */}
+      <SihDemoModal
+        isOpen={isSihDemoOpen}
+        onClose={() => setIsSihDemoOpen(false)}
+      />
 
       {/* "Why This Forecast?" Transparent Explainability Drawer */}
       <ExplainabilityDrawer

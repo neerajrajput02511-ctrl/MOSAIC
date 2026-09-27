@@ -119,6 +119,9 @@ def test_historical_metrics_calculation():
     assert cont["pod"] == 1.0
     assert cont["csi"] == 1.0
 
+import pytest
+
+@pytest.mark.asyncio
 async def test_live_data_and_blended_pipeline():
     """End-to-end integration test against live external feeds."""
     db = SessionLocal()

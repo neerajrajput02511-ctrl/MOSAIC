@@ -1212,7 +1212,8 @@ class WeatherService:
         lead_time_hours: int = 72,
         season: str = "Monsoon",
         weather_regime: str = "Normal",
-        scope: str = "NER"
+        scope: str = "NER",
+        variable: str = "precipitation_mm"
     ) -> Dict[str, Any]:
         """
         Generates the spatial model weight distribution across India's MoES climate zones and real stations.
@@ -1223,6 +1224,7 @@ class WeatherService:
             season=season,
             weather_regime=weather_regime,
             scope=scope,
+            variable=variable,
             db=self.db
         )
 
@@ -1362,23 +1364,34 @@ class WeatherService:
         aifs_list = raw_models.get("ECMWF_AIFS", [])
         gefs_list = raw_models.get("NOAA_GEFS", [])
 
+        if not gfs_list and not ifs_list and not aifs_list:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=503,
+                detail=f"NO VALID FORECAST DATA AVAILABLE: All upstream operational model feeds unreachable for {location.name}."
+            )
+
         idx = min(len(gfs_list) - 1, max(0, lead_time_hours)) if gfs_list else 0
         gfs_pt = gfs_list[idx] if idx < len(gfs_list) else {}
         ifs_pt = ifs_list[idx] if idx < len(ifs_list) else {}
         aifs_pt = aifs_list[idx] if idx < len(aifs_list) else {}
         gefs_pt = gefs_list[idx] if idx < len(gefs_list) else {}
 
-        val_gfs = float(gfs_pt.get("precipitation_mm", 0.0) or 0.0)
-        val_ifs = float(ifs_pt.get("precipitation_mm", 0.0) or 0.0)
-        val_aifs = float(aifs_pt.get("precipitation_mm", 0.0) or 0.0)
-        val_gefs = float(gefs_pt.get("precipitation_mm", 0.0) or round(val_gfs * 0.94 + val_ifs * 0.06, 2))
+        var_key = "precipitation_mm"
+        if "temp" in variable.lower():
+            var_key = "temperature_c"
+        elif "wind" in variable.lower():
+            var_key = "wind_speed_ms"
 
-        # Default fallback values for demonstration if all feeds report 0.0
-        if val_gfs == 0.0 and val_ifs == 0.0 and val_aifs == 0.0:
-            val_gfs = 17.2
-            val_ifs = 14.5
-            val_aifs = 15.6
-            val_gefs = 16.3
+        def extract_model_val(pt: dict, default_val: float = 0.0) -> float:
+            if var_key in pt and pt[var_key] is not None:
+                return float(pt[var_key])
+            return default_val
+
+        val_gfs = extract_model_val(gfs_pt, 0.0)
+        val_ifs = extract_model_val(ifs_pt, 0.0)
+        val_aifs = extract_model_val(aifs_pt, 0.0)
+        val_gefs = extract_model_val(gefs_pt, round(val_gfs * 0.94 + val_ifs * 0.06, 2))
 
         raw_vals = {
             "NOAA_GFS": val_gfs,

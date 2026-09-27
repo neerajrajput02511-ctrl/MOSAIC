@@ -3,8 +3,8 @@ from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "WEATHERFUSION AI"
-    PROJECT_SUBTITLE: str = "Hybrid AI-NWP Multi-Model Forecast Blending & Extreme Weather Intelligence Platform"
+    PROJECT_NAME: str = "MOSAIC"
+    PROJECT_SUBTITLE: str = "Hybrid AI–NWP Multi-Model Forecast Blending System (SIH26081 — MoES / NCMRWF)"
     VERSION: str = "1.0.0"
     DEBUG: bool = True
     APP_ENV: str = "development"

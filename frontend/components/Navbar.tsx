@@ -20,6 +20,7 @@ interface NavbarProps {
   onSelectLocation: (loc: LocationItem) => void;
   onOpenHelp: () => void;
   onOpenChat?: () => void;
+  onOpenSihDemo?: () => void;
   isBackendOnline?: boolean | null;
   lastUpdated?: string;
   monitoringScope?: "NER" | "INDIA";
@@ -32,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectLocation,
   onOpenHelp,
   onOpenChat,
+  onOpenSihDemo,
   isBackendOnline = true,
   lastUpdated = "4 min ago",
   monitoringScope = "NER",
@@ -73,8 +75,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="text-xl font-black text-[#0B1F33] tracking-tight leading-none font-mono">
               MOSAIC
             </div>
-            <div className="text-[9px] font-bold text-[#64748B] tracking-[0.16em] uppercase mt-1">
-              WEATHERFUSION AI
+            <div className="text-[9px] font-bold text-[#64748B] tracking-[0.12em] uppercase mt-1">
+              MoES / NCMRWF &bull; SIH26081
             </div>
           </div>
         </div>
@@ -211,6 +213,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
         </div>
+
+        {/* SIH26081 Guided Jury Demonstration Trigger */}
+        {onOpenSihDemo && (
+          <button
+            onClick={onOpenSihDemo}
+            className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-600 hover:from-blue-800 hover:to-indigo-800 text-white text-xs font-bold font-mono shadow-sm transition border border-blue-400/40"
+            title="Launch SIH26081 Multi-Model Forecast Blending System Jury Tour"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="tracking-wide">SIH26081 DEMO</span>
+          </button>
+        )}
 
         {/* Meteorological Copilot Quick Button */}
         {onOpenChat && (
