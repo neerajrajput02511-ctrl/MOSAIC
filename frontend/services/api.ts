@@ -355,20 +355,42 @@ export async function fetchSystemHealth(): Promise<any> {
   }
 }
 
+const _clientSpatialMapCache: Map<string, { ts: number; data: any }> = new Map();
+
 export async function fetchSpatialWeightMap(
   leadTimeHours: number = 72,
   season: string = "Monsoon",
   regime: string = "Normal",
   scope: "NER" | "INDIA" = "NER",
-  variable: string = "precipitation_mm"
+  variable: string = "precipitation_mm",
+  resolution: number = 0.25
 ): Promise<any> {
+  const cacheKey = `${scope}_${variable}_${leadTimeHours}_${season}_${regime}_${resolution}`;
+  const cached = _clientSpatialMapCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && now - cached.ts < 300000) { // 5-minute memory cache
+    return cached.data;
+  }
+
   try {
-    const res = await apiFetch(
-      `/spatial/weight-map?lead_time_hours=${leadTimeHours}&season=${season}&regime=${regime}&scope=${scope}&variable=${variable}`,
-      { cache: "no-store" }
-    );
+    // Primary: Call Section 24 endpoint
+    const url = `/model-weights/spatial?scope=${scope.toLowerCase()}&variable=${variable}&leadTime=${leadTimeHours}&season=${season}&weatherRegime=${regime}&resolution=${resolution}`;
+    let res = await apiFetch(url, { cache: "no-store" });
+    
+    // Fallback: Legacy /spatial/weight-map
+    if (!res.ok) {
+      res = await apiFetch(
+        `/spatial/weight-map?lead_time_hours=${leadTimeHours}&season=${season}&regime=${regime}&scope=${scope}&variable=${variable}&resolution=${resolution}`,
+        { cache: "no-store" }
+      );
+    }
+
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    return await res.json();
+    const data = await res.json();
+    if (data) {
+      _clientSpatialMapCache.set(cacheKey, { ts: now, data });
+    }
+    return data;
   } catch (err) {
     console.error("Failed to fetch spatial weight map:", err);
     return null;

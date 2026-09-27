@@ -473,29 +473,38 @@ def get_data_sources(db: Session = Depends(get_db)):
     ]
 
 # ==========================================
-# SCREEN 1: SPATIAL MODEL WEIGHT MAP (HERO VISUAL)
+# SCREEN 1: SPATIAL MODEL WEIGHT MAP (HERO VISUAL / SECTION 24 PIPELINE)
 # ==========================================
 @router.get("/spatial/weight-map", summary="Spatial Model Weight Distribution across India's MoES Climate Zones")
 @router.get("/models/dominant-map", summary="Who Should We Trust Here? Spatial Dominant Model Intelligence (Section 11)")
+@router.get("/model-weights/spatial", summary="Spatial Weight Map Standardized Endpoint (Section 24)")
 def get_spatial_weight_map(
-    lead_time_hours: int = Query(72, description="Forecast lead time in hours (6, 12, 24, 48, 72, 120, 168)"),
+    lead_time_hours: Optional[int] = Query(None, description="Forecast lead time in hours (6, 12, 24, 48, 72, 120, 168)"),
+    leadTime: Optional[int] = Query(None, description="Alias for lead_time_hours"),
     season: str = Query("Monsoon", description="Monsoon, Post-Monsoon, Winter, Pre-Monsoon"),
-    regime: str = Query("Normal", description="Weather regime (Normal, Active Monsoon, Break Monsoon, Heavy Rainfall, Squall)"),
+    regime: Optional[str] = Query(None, description="Weather regime (Normal, Active Monsoon, Break Monsoon, Heavy Rainfall, Squall)"),
+    weatherRegime: Optional[str] = Query(None, description="Alias for regime"),
     scope: Optional[str] = Query("NER", description="Monitoring scope: NER or INDIA"),
     variable: str = Query("precipitation_mm", description="Meteorological variable: precipitation_mm, temperature_c, wind_speed_ms"),
+    resolution: float = Query(0.25, description="Grid resolution in degrees (0.25, 0.5)"),
+    bbox: Optional[str] = Query(None, description="Optional bounding box min_lon,min_lat,max_lon,max_lat"),
     db: Session = Depends(get_db)
 ):
     """
     Powers Spatial Weight Map & "Who Should We Trust Here?" signature view.
-    Supports both NER Regional and Pan-India MoES climate zones.
+    Supports both NER Regional (8 states) and Pan-India MoES climate zones.
+    Conforms strictly to Section 24 of the MOSAIC specification.
     """
+    effective_lead = leadTime if leadTime is not None else (lead_time_hours if lead_time_hours is not None else 72)
+    effective_regime = weatherRegime if weatherRegime is not None else (regime or "Normal")
     service = WeatherService(db)
     return service.get_spatial_weight_map(
-        lead_time_hours=lead_time_hours,
+        lead_time_hours=effective_lead,
         season=season,
-        weather_regime=regime,
+        weather_regime=effective_regime,
         scope=scope or "NER",
-        variable=variable
+        variable=variable,
+        resolution=resolution
     )
 
 # ==========================================

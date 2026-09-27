@@ -1213,7 +1213,8 @@ class WeatherService:
         season: str = "Monsoon",
         weather_regime: str = "Normal",
         scope: str = "NER",
-        variable: str = "precipitation_mm"
+        variable: str = "precipitation_mm",
+        resolution: float = 0.25
     ) -> Dict[str, Any]:
         """
         Generates the spatial model weight distribution across India's MoES climate zones and real stations.
@@ -1225,6 +1226,7 @@ class WeatherService:
             weather_regime=weather_regime,
             scope=scope,
             variable=variable,
+            resolution=resolution,
             db=self.db
         )
 

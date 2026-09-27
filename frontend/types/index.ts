@@ -142,6 +142,35 @@ export interface ModelPerformanceBenchmark {
   evaluation_period?: string;
 }
 
+export interface SpatialGridCell {
+  latitude: number;
+  longitude: number;
+  leadTime: number;
+  variable: string;
+  season: string;
+  weatherRegime: string;
+  weights: {
+    ECMWF_AIFS: number;
+    ECMWF_IFS: number;
+    NOAA_GFS: number;
+    NOAA_GEFS: number;
+    [key: string]: number;
+  };
+  dominantModel: string;
+  dominant_weight_pct?: number;
+  entropy: number;
+  confidence: number;
+  disagreement?: number;
+  source: string;
+  generatedAt: string;
+  sample_size?: number;
+  elevation_m?: number;
+  region_code?: string;
+  region_name?: string;
+  reasons?: string[];
+  bbox?: [number, number, number, number];
+}
+
 export interface SpatialRegionCell {
   region_code: string;
   region_name: string;
@@ -158,6 +187,8 @@ export interface SpatialRegionCell {
   dominant_weight_pct: number;
   color: string;
   bma_entropy?: number;
+  confidence?: number;
+  disagreement?: number;
   model_disagreement_spread?: number;
   physics_vs_ai_ratio?: {
     ai_pct: number;
@@ -167,6 +198,8 @@ export interface SpatialRegionCell {
   contingency_threat_score?: number;
   rationale: string;
   tactical_advisory?: string;
+  reasons?: string[];
+  sample_size?: number;
   historical_era5_mae?: Record<string, number>;
   geometry?: {
     type: string;
@@ -215,12 +248,27 @@ export interface SpatialNationalSummary {
 }
 
 export interface SpatialWeightMapResponse {
+  scope?: string;
+  variable?: string;
   lead_time_hours: number;
   season: string;
   weather_regime: string;
+  resolution?: number;
   generated_at: string;
+  is_available?: boolean;
+  status?: string;
+  provenance?: {
+    engine?: string;
+    verification_dataset?: string;
+    observation_dataset?: string;
+    models?: string[];
+    resolution?: string;
+    active_stations?: number;
+    total_grid_cells?: number;
+  };
   national_summary?: SpatialNationalSummary;
   regions: SpatialRegionCell[];
+  cells?: SpatialGridCell[];
   stations?: SpatialStationItem[];
 }
 
