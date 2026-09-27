@@ -3,10 +3,17 @@
 import React, { useState } from "react";
 import { 
   Cpu, 
+  Brain, 
   Layers, 
+  Globe2, 
+  Activity, 
+  Info, 
+  Sparkles, 
   Sliders, 
+  CheckCircle2, 
   ChevronRight, 
-  Zap
+  Zap, 
+  ShieldCheck 
 } from "lucide-react";
 import { ModelWeightMapView } from "./ModelWeightMapView";
 import { InfoTooltip } from "./InfoTooltip";
@@ -93,31 +100,31 @@ export const ModelsView: React.FC<ModelsViewProps> = ({
   const activeModelObj = models.find(m => m.code === selectedModel) || models[0];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto select-none">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top Header & Sub-Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1E293B] pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D9E0E7] pb-4">
         <div>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-950/60 border border-cyan-800/40 flex items-center justify-center text-[#00B8E6]">
+            <div className="w-8 h-8 rounded-lg bg-[#E0F2FE] border border-[#BAE6FD] flex items-center justify-center text-[#1769AA]">
               <Layers className="w-4 h-4" />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
+            <h1 className="text-xl font-bold text-[#0B1F33] tracking-tight">
               Constituent NWP & AI Weather Models
             </h1>
           </div>
-          <p className="text-xs text-[#9DAFC4] mt-1">
+          <p className="text-xs text-[#64748B] mt-1">
             Explore the multi-model architecture powering MOSAIC's dynamically weighted consensus forecast.
           </p>
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center bg-[#081426] border border-[#1E293B] rounded-xl p-1">
+        <div className="flex items-center bg-[#F1F5F9] border border-[#D9E0E7] rounded-xl p-1">
           <button
             onClick={() => setViewMode("cards")}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               viewMode === "cards"
-                ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm font-bold"
-                : "text-[#9DAFC4] hover:text-white"
+                ? "bg-[#0B1F33] text-white shadow-sm"
+                : "text-[#64748B] hover:text-[#0F172A]"
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
@@ -127,8 +134,8 @@ export const ModelsView: React.FC<ModelsViewProps> = ({
             onClick={() => setViewMode("weights")}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               viewMode === "weights"
-                ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm font-bold"
-                : "text-[#9DAFC4] hover:text-white"
+                ? "bg-[#0B1F33] text-white shadow-sm"
+                : "text-[#64748B] hover:text-[#0F172A]"
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -139,7 +146,7 @@ export const ModelsView: React.FC<ModelsViewProps> = ({
 
       {viewMode === "weights" ? (
         <div className="space-y-4">
-          <div className="p-3 bg-[#0D1B2E] border border-[#1E293B] rounded-xl text-xs text-[#9DAFC4] flex items-center justify-between shadow-md">
+          <div className="p-3 bg-white border border-[#D9E0E7] rounded-xl text-xs text-[#64748B] flex items-center justify-between shadow-sm">
             <span>
               Interactive spatial weight distribution across India and the North Eastern Region.
             </span>
@@ -162,36 +169,36 @@ export const ModelsView: React.FC<ModelsViewProps> = ({
                   onClick={() => setSelectedModel(m.code)}
                   className={`p-4 rounded-xl border transition-all cursor-pointer space-y-3 ${
                     isSelected
-                      ? "bg-[#0D1B2E] border-[#00B8E6] ring-1 ring-[#00B8E6]/40 shadow-lg text-white"
-                      : "bg-[#0D1B2E] border-[#1E293B] hover:border-[#233852] text-white shadow-sm"
+                      ? "bg-white border-[#1769AA] ring-2 ring-[#1769AA]/20 shadow-md"
+                      : "bg-white border-[#D9E0E7] hover:border-[#94A3B8] shadow-sm"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-[#081426] text-[#9DAFC4] border border-[#1E293B]">
+                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0]">
                       {m.category}
                     </span>
-                    <span className="flex items-center space-x-1 text-[10px] font-mono font-semibold text-emerald-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-xs shadow-emerald-400/50" />
+                    <span className="flex items-center space-x-1 text-[10px] font-mono font-semibold text-[#16A34A]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
                       <span>OPERATIONAL</span>
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-white text-base">{m.name}</h3>
-                    <p className="text-[11px] text-[#9DAFC4] line-clamp-1">{m.fullName}</p>
+                    <h3 className="font-bold text-[#0B1F33] text-base">{m.name}</h3>
+                    <p className="text-[11px] text-[#64748B] line-clamp-1">{m.fullName}</p>
                   </div>
 
-                  <div className="pt-2 border-t border-[#1E293B] flex items-center justify-between text-xs">
-                    <span className="text-[#667B94] text-[10px] font-mono">RESOLUTION</span>
-                    <span className="font-mono text-white text-[11px] font-semibold">{m.resolution}</span>
+                  <div className="pt-2 border-t border-[#EDF2F7] flex items-center justify-between text-xs">
+                    <span className="text-[#64748B] text-[10px] font-mono">RESOLUTION</span>
+                    <span className="font-mono text-[#0F172A] text-[11px] font-semibold">{m.resolution}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#667B94] text-[10px] font-mono">AVG CONTRIBUTION</span>
-                    <span className="font-mono text-[#00B8E6] text-[11px] font-bold">{m.currentWeightContribution.split(" ")[0]}</span>
+                    <span className="text-[#64748B] text-[10px] font-mono">AVG CONTRIBUTION</span>
+                    <span className="font-mono text-[#1769AA] text-[11px] font-bold">{m.currentWeightContribution.split(" ")[0]}</span>
                   </div>
 
-                  <div className="pt-1 flex items-center justify-end text-[11px] text-[#00B8E6] font-semibold">
+                  <div className="pt-1 flex items-center justify-end text-[11px] text-[#1769AA] font-semibold">
                     <span>{isSelected ? "Inspecting" : "Click to Inspect"}</span>
                     <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                   </div>
@@ -202,60 +209,60 @@ export const ModelsView: React.FC<ModelsViewProps> = ({
 
           {/* Detailed Model Inspector */}
           {activeModelObj && (
-            <div className="bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-6 space-y-6 shadow-lg">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1E293B] pb-4">
+            <div className="bg-white border border-[#D9E0E7] rounded-xl p-6 space-y-6 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#EDF2F7] pb-4">
                 <div>
                   <div className="flex items-center space-x-3">
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-xl font-bold text-[#0B1F33]">
                       {activeModelObj.fullName}
                     </h2>
-                    <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-800/60">
+                    <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-[#E0F2FE] text-[#1769AA] border border-[#BAE6FD]">
                       {activeModelObj.code}
                     </span>
                   </div>
-                  <p className="text-xs text-[#9DAFC4] mt-1">
+                  <p className="text-xs text-[#64748B] mt-1">
                     Operating Agency: {activeModelObj.institution}
                   </p>
                 </div>
 
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
-                    <div className="text-[10px] text-[#667B94] font-mono uppercase">Typical Contribution</div>
-                    <div className="text-sm font-bold font-mono text-[#00B8E6]">{activeModelObj.currentWeightContribution}</div>
+                    <div className="text-[10px] text-[#64748B] font-mono uppercase">Typical Contribution</div>
+                    <div className="text-sm font-bold font-mono text-[#1769AA]">{activeModelObj.currentWeightContribution}</div>
                   </div>
                 </div>
               </div>
 
               {/* Technical Profile Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-[#081426] border border-[#1E293B] space-y-1">
-                  <div className="text-[10px] text-[#667B94] font-mono uppercase">Model Architecture</div>
-                  <div className="text-xs font-semibold text-white">{activeModelObj.typeDescription}</div>
+                <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
+                  <div className="text-[10px] text-[#64748B] font-mono uppercase">Model Architecture</div>
+                  <div className="text-xs font-semibold text-[#0F172A]">{activeModelObj.typeDescription}</div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#081426] border border-[#1E293B] space-y-1">
-                  <div className="text-[10px] text-[#667B94] font-mono uppercase">Forecast Horizon & Grid</div>
-                  <div className="text-xs font-semibold text-white">{activeModelObj.resolution} · {activeModelObj.leadTime}</div>
+                <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
+                  <div className="text-[10px] text-[#64748B] font-mono uppercase">Forecast Horizon & Grid</div>
+                  <div className="text-xs font-semibold text-[#0F172A]">{activeModelObj.resolution} · {activeModelObj.leadTime}</div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#081426] border border-[#1E293B] space-y-1">
-                  <div className="text-[10px] text-[#667B94] font-mono uppercase">Regional Historical Skill</div>
-                  <div className="text-xs font-semibold text-emerald-400">{activeModelObj.historicalSkill}</div>
+                <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-1">
+                  <div className="text-[10px] text-[#64748B] font-mono uppercase">Regional Historical Skill</div>
+                  <div className="text-xs font-semibold text-[#16A34A]">{activeModelObj.historicalSkill}</div>
                 </div>
               </div>
 
               {/* How MOSAIC uses this model */}
-              <div className="p-5 rounded-xl bg-[#081426] border border-[#1E293B] space-y-2">
-                <div className="flex items-center space-x-2 text-xs font-bold text-white uppercase tracking-wider font-mono">
-                  <Zap className="w-4 h-4 text-[#00B8E6]" />
+              <div className="p-5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2">
+                <div className="flex items-center space-x-2 text-xs font-bold text-[#0B1F33] uppercase tracking-wider">
+                  <Zap className="w-4 h-4 text-[#1769AA]" />
                   <span>How MOSAIC Leverages {activeModelObj.name} in Consensus Blending</span>
                 </div>
-                <p className="text-xs text-[#9DAFC4] leading-relaxed">
+                <p className="text-xs text-[#475569] leading-relaxed">
                   {activeModelObj.howMosaicUses}
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-xs text-[#667B94] font-mono">
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-xs text-[#64748B] font-mono">
                 <span>Cycles: {activeModelObj.updateCadence}</span>
                 <span>Regridded via 0.25° Bilinear Interpolation onto Common Grid</span>
               </div>

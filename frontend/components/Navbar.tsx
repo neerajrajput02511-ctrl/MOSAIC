@@ -6,8 +6,11 @@ import {
   Clock, 
   Calendar, 
   MapPin, 
+  CheckCircle2, 
   HelpCircle, 
-  Bot
+  Bot, 
+  ChevronDown, 
+  Cloud 
 } from "lucide-react";
 import { LocationItem } from "@/types";
 
@@ -58,30 +61,30 @@ export const Navbar: React.FC<NavbarProps> = ({
   );
 
   return (
-    <header className="h-[72px] bg-[#070D18] border-b border-[#1E293B] sticky top-0 z-40 flex items-center justify-between px-6 select-none shadow-md backdrop-blur-md">
+    <header className="h-[72px] bg-white border-b border-[#D9E0E7] sticky top-0 z-40 flex items-center justify-between px-6 select-none shadow-sm">
       {/* 1. LEFT: Brand Wordmark (Reference Image) */}
       <div className="flex items-center space-x-6 shrink-0">
         <div className="flex items-center space-x-3 cursor-pointer">
           {/* Custom Stylized Weather Wave/Cloud Icon */}
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00B8E6] via-[#0284c7] to-[#1687FF] flex items-center justify-center shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] flex items-center justify-center shadow-sm">
             <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-white" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
             </svg>
           </div>
           <div>
-            <div className="text-xl font-black text-white tracking-tight leading-none font-mono">
+            <div className="text-xl font-black text-[#0B1F33] tracking-tight leading-none font-mono">
               MOSAIC
             </div>
-            <div className="text-[9px] font-bold text-[#667B94] tracking-[0.12em] uppercase mt-1">
+            <div className="text-[9px] font-bold text-[#64748B] tracking-[0.12em] uppercase mt-1">
               MoES / NCMRWF &bull; SIH26081
             </div>
           </div>
         </div>
 
-        {/* 2. Search Field */}
+        {/* 2. Search Field (Reference Image center/left) */}
         <div className="relative w-80 lg:w-96 hidden md:block">
           <div className="relative flex items-center">
-            <Search className="w-4 h-4 text-[#667B94] absolute left-3 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#64748B] absolute left-3 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -90,15 +93,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setIsDropdownOpen(true);
               }}
               onFocus={() => setIsDropdownOpen(true)}
-              placeholder={monitoringScope === "INDIA" ? "Search any Indian city/station (e.g. Delhi, Mumbai, Kolkata...)" : "Search NER station (e.g. Guwahati, Shillong, Agartala...)"}
-              className="w-full bg-[#0D1B2E] border border-[#233852] hover:border-[#00B8E6]/40 focus:border-[#00B8E6] focus:bg-[#111F33] text-xs text-[#F4F8FC] rounded-lg pl-9 pr-4 py-2 outline-none transition-all placeholder:text-[#667B94]"
+              placeholder={monitoringScope === "INDIA" ? "Search any Indian city/station (e.g. Delhi, Mumbai, Kolkata, Chennai...)" : "Search NER station (e.g. Guwahati, Shillong, Agartala, Dibrugarh...)"}
+              className="w-full bg-[#F8FAFC] border border-[#D9E0E7] hover:border-[#CBD5E1] focus:border-[#1769AA] focus:bg-white text-xs text-[#0F172A] rounded-lg pl-9 pr-4 py-2 outline-none transition-all placeholder:text-[#94A3B8]"
             />
           </div>
 
           {/* Autocomplete Dropdown */}
           {isDropdownOpen && searchQuery.length > 0 && (
             <div 
-              className="absolute left-0 right-0 top-full mt-1.5 bg-[#0D1B2E] border border-[#233852] rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 p-1.5"
+              className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-[#D9E0E7] rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 p-1.5"
               onMouseLeave={() => setIsDropdownOpen(false)}
             >
               {filteredLocations.slice(0, 8).map((loc) => (
@@ -109,22 +112,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setSearchQuery("");
                     setIsDropdownOpen(false);
                   }}
-                  className="px-3 py-2 text-xs rounded-lg hover:bg-[#172A43] cursor-pointer flex items-center justify-between text-[#F4F8FC]"
+                  className="px-3 py-2 text-xs rounded-lg hover:bg-[#EEF2F6] cursor-pointer flex items-center justify-between text-[#0F172A]"
                 >
                   <div className="flex items-center space-x-2">
-                    <MapPin className="w-3.5 h-3.5 text-[#00B8E6]" />
+                    <MapPin className="w-3.5 h-3.5 text-[#1769AA]" />
                     <span className="font-semibold">{loc.name}</span>
-                    <span className="text-[11px] text-[#9DAFC4]">· {loc.state}</span>
+                    <span className="text-[11px] text-[#64748B]">· {loc.state}</span>
                   </div>
                   {loc.is_ner && (
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/60">
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200">
                       NER
                     </span>
                   )}
                 </div>
               ))}
               {filteredLocations.length === 0 && (
-                <div className="p-3 text-xs text-center text-[#667B94]">
+                <div className="p-3 text-xs text-center text-[#64748B]">
                   No matching station found
                 </div>
               )}
@@ -132,80 +135,80 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
 
-        {/* PRIMARY MONITORING SCOPE CONTROL */}
-        <div className="flex items-center gap-1 bg-[#0D1B2E] p-1 rounded-xl border border-[#233852] shadow-inner shrink-0">
-          <span className="text-[10px] font-bold text-[#667B94] uppercase tracking-wider px-2 hidden xl:inline">
+        {/* PRIMARY MONITORING SCOPE CONTROL (Requirement 1 & 28) */}
+        <div className="flex items-center gap-1 bg-[#F1F5F9] p-1 rounded-xl border border-[#D9E0E7] shadow-inner shrink-0">
+          <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider px-2 hidden xl:inline">
             Scope
           </span>
           <button
             onClick={() => onToggleScope && onToggleScope("NER")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
               monitoringScope === "NER"
-                ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm font-bold"
-                : "text-[#9DAFC4] hover:text-white"
+                ? "bg-white text-[#1769AA] shadow-xs border border-[#CBD5E1]"
+                : "text-[#64748B] hover:text-[#0F172A]"
             }`}
             title="North Eastern Region & Brahmaputra Basin"
           >
-            <span className={`w-2 h-2 rounded-full ${monitoringScope === "NER" ? "bg-white" : "bg-slate-500"}`} />
+            <span className={`w-2 h-2 rounded-full ${monitoringScope === "NER" ? "bg-[#1769AA]" : "bg-slate-300"}`} />
             <span>NER</span>
           </button>
           <button
             onClick={() => onToggleScope && onToggleScope("INDIA")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
               monitoringScope === "INDIA"
-                ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm font-bold"
-                : "text-[#9DAFC4] hover:text-white"
+                ? "bg-[#0B1F33] text-white shadow-xs"
+                : "text-[#64748B] hover:text-[#0F172A]"
             }`}
             title="All India National Meteorological Domain"
           >
-            <span className={`w-2 h-2 rounded-full ${monitoringScope === "INDIA" ? "bg-white" : "bg-slate-500"}`} />
+            <span className={`w-2 h-2 rounded-full ${monitoringScope === "INDIA" ? "bg-emerald-400" : "bg-slate-300"}`} />
             <span>ALL INDIA</span>
           </button>
         </div>
       </div>
 
-      {/* 3. RIGHT: Operational Status Telemetry & Profile */}
+      {/* 3. RIGHT: Operational Status Telemetry & Profile (Reference Image) */}
       <div className="flex items-center space-x-6 shrink-0">
         {/* Operational Status */}
         <div className="flex items-center space-x-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 shadow-sm shadow-emerald-400/50" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] shrink-0" />
           <div className="text-left leading-tight hidden sm:block">
-            <div className="text-xs font-bold text-[#F4F8FC]">
+            <div className="text-xs font-bold text-[#0F172A]">
               Operational
             </div>
-            <div className="text-[10px] text-[#667B94]">
+            <div className="text-[10px] text-[#64748B]">
               All systems normal
             </div>
           </div>
         </div>
 
         {/* Divider */}
-        <div className="h-7 w-[1px] bg-[#1E293B] hidden md:block" />
+        <div className="h-7 w-[1px] bg-[#D9E0E7] hidden md:block" />
 
         {/* Last updated */}
         <div className="hidden lg:flex items-center space-x-2">
-          <Clock className="w-4 h-4 text-[#00B8E6]" />
+          <Clock className="w-4 h-4 text-[#64748B]" />
           <div className="text-left leading-tight">
-            <div className="text-[10px] text-[#667B94]">
+            <div className="text-[10px] text-[#64748B]">
               Telemetry Sync
             </div>
-            <div className="text-xs font-bold text-[#F4F8FC] font-mono">
+            <div className="text-xs font-bold text-[#0F172A] font-mono">
               {currentTime}
             </div>
           </div>
         </div>
 
         {/* Divider */}
-        <div className="h-7 w-[1px] bg-[#1E293B] hidden lg:block" />
+        <div className="h-7 w-[1px] bg-[#D9E0E7] hidden lg:block" />
 
         {/* Forecast initialized */}
         <div className="hidden lg:flex items-center space-x-2">
-          <Calendar className="w-4 h-4 text-[#00B8E6]" />
+          <Calendar className="w-4 h-4 text-[#64748B]" />
           <div className="text-left leading-tight">
-            <div className="text-[10px] text-[#667B94]">
+            <div className="text-[10px] text-[#64748B]">
               Forecast Cycle
             </div>
-            <div className="text-xs font-bold text-[#F4F8FC] font-mono">
+            <div className="text-xs font-bold text-[#0F172A] font-mono">
               00Z Operational Run
             </div>
           </div>
@@ -215,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {onOpenSihDemo && (
           <button
             onClick={onOpenSihDemo}
-            className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#0D1B2E] hover:bg-[#172A43] text-white text-xs font-bold font-mono shadow-sm transition border border-[#233852]"
+            className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#0B1F33] hover:bg-[#17253a] text-white text-xs font-bold font-mono shadow-sm transition border border-cyan-500/30"
             title="Inspect SIH26081 Multi-Model Forecast Blending System Architecture & Verification"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
@@ -227,10 +230,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         {onOpenChat && (
           <button
             onClick={onOpenChat}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#0D1B2E] hover:bg-[#172A43] border border-[#233852] text-[#F4F8FC] text-xs font-semibold transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#F1F5F9] hover:bg-[#E2E8F0] border border-[#CBD5E1] text-[#0F172A] text-xs font-semibold transition"
             title="Ask Meteorological Intelligence Copilot"
           >
-            <Bot className="w-3.5 h-3.5 text-[#00B8E6]" />
+            <Bot className="w-3.5 h-3.5 text-[#1769AA]" />
             <span className="hidden sm:inline">Copilot</span>
           </button>
         )}
@@ -238,16 +241,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Global Help System Button */}
         <button
           onClick={onOpenHelp}
-          className="w-8 h-8 rounded-lg bg-[#0D1B2E] hover:bg-[#172A43] border border-[#233852] text-[#9DAFC4] hover:text-[#F4F8FC] flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg bg-[#F8FAFC] hover:bg-[#EEF2F6] border border-[#D9E0E7] text-[#475569] hover:text-[#0F172A] flex items-center justify-center transition-colors"
           title="MOSAIC System Guide & Glossary"
           aria-label="MOSAIC System Guide and Help"
         >
           <HelpCircle className="w-4 h-4" />
         </button>
 
-        {/* User Profile Avatar */}
+        {/* User Profile Avatar (Reference Image) */}
         <div 
-          className="w-9 h-9 rounded-full bg-[#111F33] border border-[#233852] text-[#00B8E6] font-bold text-xs flex items-center justify-center shadow-sm cursor-pointer select-none"
+          className="w-9 h-9 rounded-full bg-[#0B1F33] text-white font-bold text-xs flex items-center justify-center shadow-sm cursor-pointer select-none"
           title="Meteorological Operations Specialist"
         >
           SK

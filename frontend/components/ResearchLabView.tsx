@@ -148,7 +148,7 @@ export const ResearchLabView: React.FC<ResearchLabViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-black text-white tracking-tight font-mono">
-                  RESEARCH & EXPERIMENTATION LAB
+                  RESEARCH & EXPERIMENTATION
                 </h1>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-900/40 text-cyan-300 border border-cyan-700/50">
                   SIH26081 MANDATE SECTION 32 & 33

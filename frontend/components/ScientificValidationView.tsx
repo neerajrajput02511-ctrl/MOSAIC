@@ -1,12 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { SkillTrendsResponse } from "@/types";
+import { SkillTrendsResponse, SkillTrendPoint } from "@/types";
 import { fetchSkillTrends } from "@/services/api";
 import { 
   FileCheck2, 
-  CheckCircle2, 
-  AlertTriangle 
+  TrendingDown, 
+  ShieldCheck, 
+  AlertTriangle, 
+  Info,
+  CheckCircle2,
+  Sliders,
+  Target
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -16,7 +21,9 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  Legend
+  Legend,
+  BarChart,
+  Bar
 } from "recharts";
 
 interface ScientificValidationViewProps {
@@ -49,34 +56,34 @@ export const ScientificValidationView: React.FC<ScientificValidationViewProps> =
   const curve = trendData?.curve || [];
 
   return (
-    <div className="space-y-6 select-none">
+    <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-5 shadow-md">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-[#D9E0E7] rounded-xl p-5 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <FileCheck2 className="w-5 h-5 text-[#00B8E6]" />
-            <h2 className="text-base font-bold text-white uppercase tracking-wider font-mono">
+            <FileCheck2 className="w-5 h-5 text-[#1769AA]" />
+            <h2 className="text-base font-bold text-[#0B1F33] uppercase tracking-wider">
               SKILL SCORE TRENDS & SCIENTIFIC VERIFICATION
             </h2>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 font-bold border border-cyan-800/60">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E0F2FE] text-[#1769AA] font-bold border border-[#BAE6FD]">
               GROUND TRUTH BENCHMARKS
             </span>
           </div>
-          <p className="text-xs text-[#9DAFC4] mt-1">
-            Verified walk-forward hindcasts against genuine <strong className="text-white">ECMWF Copernicus ERA5 reanalysis</strong> and IMD AWS ground telemetry.
+          <p className="text-xs text-[#64748B] mt-1">
+            Verified walk-forward hindcasts against genuine <strong className="text-[#0F172A]">ECMWF Copernicus ERA5 reanalysis</strong> and IMD AWS ground telemetry.
           </p>
         </div>
 
-        {/* Verification Scope & Variable Selectors */}
+        {/* Verification Scope & Variable Selectors (Requirement 18) */}
         <div className="flex flex-wrap items-center gap-3 text-xs">
           {/* Segmented Scope Selector */}
-          <div className="flex items-center gap-1 bg-[#081426] p-1 rounded-xl border border-[#1E293B]">
+          <div className="flex items-center gap-1 bg-[#F1F5F9] p-1 rounded-xl border border-[#D9E0E7]">
             <button
               onClick={() => setSelectedRegion("NER")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 selectedRegion === "NER"
-                  ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm font-bold"
-                  : "text-[#9DAFC4] hover:text-white"
+                  ? "bg-white text-[#1769AA] shadow-xs border border-[#CBD5E1]"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
               NER (N=980)
@@ -85,8 +92,8 @@ export const ScientificValidationView: React.FC<ScientificValidationViewProps> =
               onClick={() => setSelectedRegion("INDIA")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 selectedRegion === "INDIA"
-                  ? "bg-gradient-to-r from-[#00B8E6] to-[#1687FF] text-white shadow-sm font-bold"
-                  : "text-[#9DAFC4] hover:text-white"
+                  ? "bg-[#0B1F33] text-white shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
               ALL INDIA (N=4,410)
@@ -94,11 +101,11 @@ export const ScientificValidationView: React.FC<ScientificValidationViewProps> =
           </div>
 
           <div className="flex items-center space-x-2">
-            <span className="text-[#9DAFC4] font-medium font-mono text-[11px]">Division:</span>
+            <span className="text-[#64748B] font-medium">Sub-division:</span>
             <select
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
-              className="bg-[#081426] border border-[#233852] rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#00B8E6]"
+              className="bg-[#F8FAFC] border border-[#D9E0E7] rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1769AA]"
             >
               <option value="NER">North Eastern Region (NER)</option>
               <option value="INDIA">All India (National Benchmark)</option>
@@ -110,11 +117,11 @@ export const ScientificValidationView: React.FC<ScientificValidationViewProps> =
           </div>
 
           <div className="flex items-center space-x-2">
-            <span className="text-[#9DAFC4] font-medium font-mono text-[11px]">Variable:</span>
+            <span className="text-[#64748B] font-medium">Variable:</span>
             <select
               value={selectedVariable}
               onChange={(e) => setSelectedVariable(e.target.value)}
-              className="bg-[#081426] border border-[#233852] rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#00B8E6]"
+              className="bg-[#F8FAFC] border border-[#D9E0E7] rounded-lg px-2.5 py-1.5 text-xs text-[#0F172A] focus:outline-none focus:border-[#1769AA]"
             >
               <option value="precipitation_mm">Rainfall (mm)</option>
               <option value="temperature_c">Temperature (°C)</option>
@@ -125,67 +132,67 @@ export const ScientificValidationView: React.FC<ScientificValidationViewProps> =
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-4 space-y-1 shadow-md">
-          <span className="text-[10px] font-mono text-[#667B94] uppercase tracking-wider block font-semibold">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 space-y-1 shadow-sm">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-wider block font-semibold">
             AVERAGE RMSE REDUCTION
           </span>
-          <div className="text-2xl font-extrabold font-mono text-emerald-400">
+          <div className="text-2xl font-extrabold font-mono text-[#16A34A]">
             {trendData?.average_rmse_reduction_pct ?? "18.5"}%
           </div>
-          <span className="text-[11px] text-[#9DAFC4]">
+          <span className="text-[11px] text-[#64748B]">
             Against equal-weighted mean across Day 1–7
           </span>
         </div>
 
-        <div className="bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-4 space-y-1 shadow-md">
-          <span className="text-[10px] font-mono text-[#667B94] uppercase tracking-wider block font-semibold">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 space-y-1 shadow-sm">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-wider block font-semibold">
             DAY 3–5 PEAK ADVANTAGE
           </span>
-          <div className="text-2xl font-extrabold font-mono text-[#00B8E6]">
+          <div className="text-2xl font-extrabold font-mono text-[#1769AA]">
             +23.5%
           </div>
-          <span className="text-[11px] text-[#9DAFC4]">
+          <span className="text-[11px] text-[#64748B]">
             AIFS deep learning planetary wave retention
           </span>
         </div>
 
-        <div className="bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-4 space-y-1 shadow-md">
-          <span className="text-[10px] font-mono text-[#667B94] uppercase tracking-wider block font-semibold">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 space-y-1 shadow-sm">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-wider block font-semibold">
             EXTREME RAIN CSI SCORE
           </span>
-          <div className="text-2xl font-extrabold font-mono text-purple-400">
-            0.82 <span className="text-xs font-normal text-[#9DAFC4]">vs 0.72 baseline</span>
+          <div className="text-2xl font-extrabold font-mono text-[#7C3AED]">
+            0.82 <span className="text-xs font-normal text-[#64748B]">vs 0.72 baseline</span>
           </div>
-          <span className="text-[11px] text-[#9DAFC4]">
+          <span className="text-[11px] text-[#64748B]">
             Threat score for rain &ge; 15.6 mm/h
           </span>
         </div>
 
-        <div className="bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-4 space-y-1 shadow-md">
-          <span className="text-[10px] font-mono text-[#667B94] uppercase tracking-wider block font-semibold">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-4 space-y-1 shadow-sm">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-wider block font-semibold">
             VERIFICATION GROUND TRUTH
           </span>
-          <div className="text-sm font-bold font-mono text-white mt-1">
+          <div className="text-sm font-bold font-mono text-[#0B1F33] mt-1">
             ECMWF Copernicus ERA5
           </div>
-          <span className="text-[10px] text-[#9DAFC4] font-mono">
+          <span className="text-[10px] text-[#64748B] font-mono">
             0.25° Archive Benchmark
           </span>
         </div>
       </div>
 
       {/* Main Chart: Error Degradation Across Lead Time (Day 1 to Day 7) */}
-      <div className="bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-5 space-y-4 shadow-md">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1E293B] pb-3">
+      <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 space-y-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EDF2F7] pb-3">
           <div>
-            <h3 className="font-bold text-xs uppercase tracking-wider text-white font-mono">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-[#0B1F33]">
               RMSE ERROR GROWTH ACROSS LEAD TIME (DAY 1 TO DAY 7)
             </h3>
-            <p className="text-[11px] text-[#9DAFC4]">
-              Lower curve indicates superior accuracy. Note the smart blend (cyan) staying beneath both the equal-weighted baseline (gray) and best single constituent (purple).
+            <p className="text-[11px] text-[#64748B]">
+              Lower curve indicates superior accuracy. Note the smart blend (blue) staying beneath both the equal-weighted baseline (gray) and best single constituent (purple).
             </p>
           </div>
-          <span className="text-xs font-mono text-[#667B94]">
+          <span className="text-xs font-mono text-[#64748B]">
             Ground Truth: ERA5 Verified Hindcast
           </span>
         </div>
@@ -193,29 +200,22 @@ export const ScientificValidationView: React.FC<ScientificValidationViewProps> =
         <div className="h-[340px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={curve}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="label" stroke="#64748B" tick={{ fontSize: 11, fill: "#9DAFC4" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#EDF2F7" />
+              <XAxis dataKey="label" stroke="#64748b" tick={{ fontSize: 11 }} />
               <YAxis 
-                stroke="#64748B" 
-                tick={{ fontSize: 11, fill: "#9DAFC4" }} 
+                stroke="#64748b" 
+                tick={{ fontSize: 11 }} 
                 unit={selectedVariable === "precipitation_mm" ? " mm" : " °C"} 
               />
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: "#081426", 
-                  borderColor: "#233852", 
-                  borderRadius: "10px", 
-                  fontSize: "12px", 
-                  boxShadow: "0 10px 25px -5px rgba(0,0,0,0.5)",
-                  color: "#F4F8FC"
-                }}
+                contentStyle={{ backgroundColor: "#FFFFFF", borderColor: "#D9E0E7", borderRadius: "8px", fontSize: "12px", boxShadow: "0 4px 12px rgba(15,23,42,0.08)" }}
               />
               <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
               <Line 
                 type="monotone" 
                 dataKey="smart_blend_rmse" 
                 name="MOSAIC Adaptive Blend" 
-                stroke="#00B8E6" 
+                stroke="#1769AA" 
                 strokeWidth={3} 
                 dot={{ r: 5 }}
               />
@@ -243,22 +243,22 @@ export const ScientificValidationView: React.FC<ScientificValidationViewProps> =
 
       {/* Honest Scientific Evaluation & Overfitting Risk Management */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-5 space-y-2 shadow-md">
-          <div className="flex items-center space-x-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 space-y-2 shadow-sm">
+          <div className="flex items-center space-x-2 text-[#16A34A] text-xs font-bold uppercase tracking-wider">
             <CheckCircle2 className="w-4 h-4" />
             <span>Empirical Finding ({selectedRegion})</span>
           </div>
-          <p className="text-xs text-[#9DAFC4] leading-relaxed">
+          <p className="text-xs text-[#475569] leading-relaxed">
             {trendData?.key_finding}
           </p>
         </div>
 
-        <div className="bg-[#0D1B2E] border border-[#1E293B] rounded-xl p-5 space-y-2 shadow-md">
-          <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
+        <div className="bg-white border border-[#D9E0E7] rounded-xl p-5 space-y-2 shadow-sm">
+          <div className="flex items-center space-x-2 text-[#D97706] text-xs font-bold uppercase tracking-wider">
             <AlertTriangle className="w-4 h-4" />
             <span>Scientific Limitations & Overfitting Risk Defense</span>
           </div>
-          <p className="text-xs text-[#9DAFC4] leading-relaxed">
+          <p className="text-xs text-[#64748B] leading-relaxed">
             {trendData?.honest_limitations}
           </p>
         </div>

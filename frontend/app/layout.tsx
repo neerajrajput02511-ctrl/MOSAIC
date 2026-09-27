@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MOSAIC | Hybrid AI–NWP Forecast Blending System",
+  title: "WEATHERFUSION AI | Hybrid AI–NWP Forecast Blending Platform",
   description: "Operational meteorological decision-support system dynamically combining NOAA GFS, ECMWF IFS, and ECMWF AIFS with quantified uncertainty (SIH26081).",
   icons: {
     icon: "/favicon.ico",
@@ -30,22 +30,22 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#07111F] text-[#F4F8FC]">
+      <body className="min-h-full flex flex-col bg-[#F5F7FA] text-[#0F172A]">
         <div className="flex-1 flex flex-col">{children}</div>
-        <footer className="w-full border-t border-[#1E293B] bg-[#070D18] px-6 py-4 text-xs text-[#9DAFC4] flex flex-col md:flex-row items-center justify-between gap-3 select-none">
+        <footer className="w-full border-t border-[#D9E0E7] bg-[#FFFFFF] px-6 py-4 text-xs text-[#64748B] flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="text-left space-y-0.5">
-            <div className="font-bold text-white tracking-wide text-xs font-mono">
+            <div className="font-semibold text-[#0B1F33] tracking-wide text-xs">
               MOSAIC / WEATHERFUSION AI
             </div>
-            <div className="text-[11px] text-[#667B94]">
+            <div className="text-[11px] text-[#64748B]">
               Hybrid AI–NWP Forecast Blending System · SIH26081 Meteorological Intelligence Platform
             </div>
           </div>
-          <div className="text-right text-[11px] text-[#9DAFC4] space-y-0.5">
+          <div className="text-right text-[11px] text-[#64748B] space-y-0.5">
             <div>
-              Data sources: <span className="text-[#00B8E6] font-medium font-mono">ECMWF IFS/AIFS, NOAA GFS, IMD/NCMRWF Guidance</span>
+              Data sources: <span className="text-[#0F172A] font-medium">ECMWF IFS/AIFS, NOAA GFS, IMD/NCMRWF Guidance</span>
             </div>
-            <div className="text-amber-400 font-medium">
+            <div className="text-[#D97706] font-medium">
               Forecasts are multi-model guidance and should not replace official meteorological agency warnings.
             </div>
           </div>
