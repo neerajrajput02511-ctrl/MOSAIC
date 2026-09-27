@@ -26,6 +26,7 @@ import { LocationItem, BlendedForecastResponse, TimelinePoint } from "@/types";
 import { WeatherMap } from "@/components/WeatherMap";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { buildSingleForecastTruth, SingleForecastTruth } from "@/utils/forecastTruth";
+import { getScopeConfig } from "@/utils/scopeConfig";
 
 interface ForecastHeroViewProps {
   locations: LocationItem[];
@@ -60,14 +61,20 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
   const [activeMode, setActiveMode] = useState<"live" | "forecast">("live");
   const [showLayerDropdown, setShowLayerDropdown] = useState(false);
 
+  const scopeConfig = getScopeConfig(monitoringScope);
+
   const currentPoint: TimelinePoint | null = forecastData?.timeline?.find(
     pt => pt.lead_time_hours === selectedLeadTime
   ) || (forecastData?.timeline ? forecastData.timeline[0] : null);
 
+  const regionLabel = selectedLocation
+    ? `${selectedLocation.name}, ${selectedLocation.state || (monitoringScope === "INDIA" ? "India" : "NER")}`
+    : scopeConfig.domainName;
+
   const forecastTruth: SingleForecastTruth = buildSingleForecastTruth(
     currentPoint,
     selectedLeadTime,
-    selectedLocation?.name || "Mumbai",
+    regionLabel,
     null
   );
 
@@ -102,10 +109,9 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
   const timelineLeads = [0, 6, 12, 18, 24];
   const timelineSteps = timelineLeads.map((lead) => {
     const pt = forecastData?.timeline?.find(p => p.lead_time_hours === lead);
-    const val = pt?.blended_precipitation_mm !== undefined && pt?.blended_precipitation_mm !== null
-      ? pt.blended_precipitation_mm.toFixed(1)
-      : (pt ? "0.0" : "—");
-    const rainNum = parseFloat(val) || 0;
+    const hasVal = pt?.blended_precipitation_mm !== undefined && pt?.blended_precipitation_mm !== null;
+    const val = hasVal ? pt!.blended_precipitation_mm.toFixed(1) : "N/A";
+    const rainNum = hasVal ? pt!.blended_precipitation_mm : 0;
     const Icon = rainNum > 5.0 ? CloudRain : (rainNum > 0.1 ? Cloud : Sun);
     return {
       label: lead === 0 ? "Now" : `+${lead}h`,
@@ -171,13 +177,11 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
                 ? "bg-slate-900 text-emerald-400 border border-slate-700" 
                 : "bg-blue-50 text-[#1769AA] border border-blue-200"
             }`}>
-              {monitoringScope === "INDIA" ? "ALL INDIA DOMAIN" : "NORTH EASTERN REGION"}
+              {scopeConfig.badgeText}
             </span>
           </div>
           <p className="text-xs lg:text-sm text-[#64748B]">
-            {monitoringScope === "INDIA" 
-              ? "Pan-India multi-model AI-NWP hybrid operational blending & verification" 
-              : "Advanced AI-driven weather intelligence for North East India & Brahmaputra Basin"}
+            {scopeConfig.heroSubtitle}
           </p>
         </div>
 
@@ -224,10 +228,14 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
             </div>
             <div className="text-left leading-tight">
               <div className="text-xs font-bold text-[#0F172A]">
-                {selectedLocation?.name || "Mumbai"}, {selectedLocation?.state || "Maharashtra, India"}
+                {selectedLocation
+                  ? `${selectedLocation.name}, ${selectedLocation.state || (monitoringScope === "INDIA" ? "India" : "NER")}`
+                  : (monitoringScope === "INDIA" ? "All India (Select on Map)" : "NER (Select a Station)")}
               </div>
               <div className="text-[11px] font-mono text-[#64748B] mt-0.5">
-                {selectedLocation?.latitude.toFixed(4)}° N, {selectedLocation?.longitude.toFixed(4)}° E
+                {selectedLocation && selectedLocation.latitude !== undefined && selectedLocation.longitude !== undefined
+                  ? `${selectedLocation.latitude.toFixed(4)}° N, ${selectedLocation.longitude.toFixed(4)}° E`
+                  : `Domain Grid [${scopeConfig.geographicBounds}]`}
               </div>
             </div>
           </div>
@@ -528,13 +536,13 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
             <div className="absolute bottom-4 left-4 z-20">
               <div className="bg-[#0B1F33] text-white rounded-xl px-3.5 py-2 shadow-xl border border-[#1e2f4d] flex items-center space-x-3 text-xs font-mono">
                 <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span className="font-bold uppercase tracking-wider">{selectedLocation?.name || "MUMBAI"}</span>
+                <span className="font-bold uppercase tracking-wider">{selectedLocation ? selectedLocation.name : scopeConfig.badgeText}</span>
                 <span className="text-slate-500">|</span>
-                <span className="text-cyan-300 font-bold">{rainValue} mm</span>
+                <span className="text-cyan-300 font-bold">{rainValue !== null ? `${rainValue} mm` : "N/A"}</span>
                 <span className="text-slate-500">|</span>
-                <span>{tempValue}°C</span>
+                <span>{tempValue !== null ? `${tempValue}°C` : "N/A"}</span>
                 <span className="text-slate-500">|</span>
-                <span>{windValue} km/h</span>
+                <span>{windValue !== null ? `${windValue} km/h` : "N/A"}</span>
               </div>
             </div>
 
@@ -583,75 +591,82 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
             </div>
 
             {/* Model Weight Horizontal Progress Bars (Blue family) */}
-            <div className="space-y-3 font-mono text-xs">
-              {/* IFS */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-[#0F172A]">
-                  <span className="flex items-center space-x-2 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-[#1769AA]" />
-                    <span>IFS (ECMWF)</span>
-                  </span>
-                  <span className="font-bold">{ifsWeight}%</span>
+            {forecastTruth.is_data_available ? (
+              <div className="space-y-3 font-mono text-xs">
+                {/* IFS */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[#0F172A]">
+                    <span className="flex items-center space-x-2 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-[#1769AA]" />
+                      <span>IFS (ECMWF)</span>
+                    </span>
+                    <span className="font-bold">{ifsWeight}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#1769AA] rounded-full transition-all duration-500" 
+                      style={{ width: `${ifsWeight}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-[#1769AA] rounded-full transition-all duration-500" 
-                    style={{ width: `${ifsWeight}%` }}
-                  />
-                </div>
-              </div>
 
-              {/* AIFS */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-[#0F172A]">
-                  <span className="flex items-center space-x-2 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-[#2D8CFF]" />
-                    <span>AIFS (ECMWF)</span>
-                  </span>
-                  <span className="font-bold">{aifsWeight}%</span>
+                {/* AIFS */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[#0F172A]">
+                    <span className="flex items-center space-x-2 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-[#2D8CFF]" />
+                      <span>AIFS (ECMWF)</span>
+                    </span>
+                    <span className="font-bold">{aifsWeight}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#2D8CFF] rounded-full transition-all duration-500" 
+                      style={{ width: `${aifsWeight}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-[#2D8CFF] rounded-full transition-all duration-500" 
-                    style={{ width: `${aifsWeight}%` }}
-                  />
-                </div>
-              </div>
 
-              {/* GFS */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-[#0F172A]">
-                  <span className="flex items-center space-x-2 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-[#38BDF8]" />
-                    <span>GFS (NOAA)</span>
-                  </span>
-                  <span className="font-bold">{gfsWeight}%</span>
+                {/* GFS */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[#0F172A]">
+                    <span className="flex items-center space-x-2 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-[#38BDF8]" />
+                      <span>GFS (NOAA)</span>
+                    </span>
+                    <span className="font-bold">{gfsWeight}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#38BDF8] rounded-full transition-all duration-500" 
+                      style={{ width: `${gfsWeight}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-[#38BDF8] rounded-full transition-all duration-500" 
-                    style={{ width: `${gfsWeight}%` }}
-                  />
-                </div>
-              </div>
 
-              {/* GEFS */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-[#0F172A]">
-                  <span className="flex items-center space-x-2 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />
-                    <span>GEFS (NOAA)</span>
-                  </span>
-                  <span className="font-bold">{gefsWeight}%</span>
-                </div>
-                <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-[#60A5FA] rounded-full transition-all duration-500" 
-                    style={{ width: `${gefsWeight}%` }}
-                  />
+                {/* GEFS */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[#0F172A]">
+                    <span className="flex items-center space-x-2 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-[#60A5FA]" />
+                      <span>GEFS (NOAA)</span>
+                    </span>
+                    <span className="font-bold">{gefsWeight}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-[#60A5FA] rounded-full transition-all duration-500" 
+                      style={{ width: `${gefsWeight}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-500 space-y-1 font-sans">
+                <div className="font-bold text-slate-700">Weights: N/A</div>
+                <p>Insufficient valid upstream forecast data. Adaptive weighting is inactive until upstream model feeds report.</p>
+              </div>
+            )}
           </div>
 
           {/* Card 2: FORECAST CONFIDENCE */}
@@ -666,26 +681,38 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
                   ? "text-[#16A34A] bg-emerald-50 border-emerald-200"
                   : forecastTruth.confidence === "MODERATE"
                   ? "text-[#D97706] bg-amber-50 border-amber-200"
-                  : "text-[#DC2626] bg-red-50 border-red-200"
+                  : forecastTruth.confidence === "LOW"
+                  ? "text-[#DC2626] bg-red-50 border-red-200"
+                  : "text-slate-600 bg-slate-100 border-slate-300"
               }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${
-                  forecastTruth.confidence === "HIGH" ? "bg-[#16A34A]" : forecastTruth.confidence === "MODERATE" ? "bg-[#D97706]" : "bg-[#DC2626]"
+                  forecastTruth.confidence === "HIGH" ? "bg-[#16A34A]" : forecastTruth.confidence === "MODERATE" ? "bg-[#D97706]" : forecastTruth.confidence === "LOW" ? "bg-[#DC2626]" : "bg-slate-400"
                 }`} />
-                <span>{forecastTruth.confidence} ({forecastTruth.confidence_score}%)</span>
+                <span>
+                  {forecastTruth.is_data_available && forecastTruth.confidence_score !== null
+                    ? `${forecastTruth.confidence} (${forecastTruth.confidence_score}%)`
+                    : "N/A"}
+                </span>
               </div>
             </div>
 
             <div className="text-xs text-[#64748B]">
-              Model agreement: <strong className="text-[#0F172A]">{forecastTruth.spread < 3.0 ? "High Agreement" : forecastTruth.spread < 7.0 ? "Moderate Agreement" : "High Disagreement"}</strong> (Spread: &plusmn;{forecastTruth.uncertainty_pm} mm)
+              {forecastTruth.is_data_available && forecastTruth.spread !== null ? (
+                <>Model agreement: <strong className="text-[#0F172A]">{forecastTruth.agreement_label}</strong> (Spread: &plusmn;{forecastTruth.uncertainty_pm} mm)</>
+              ) : (
+                <>Model agreement: <strong className="text-slate-700">N/A</strong> (Spread: N/A — Insufficient upstream data)</>
+              )}
             </div>
 
             {/* Dynamic agreement progress indicator */}
             <div className="w-full h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
               <div 
                 className={`h-full rounded-full transition-all duration-500 ${
-                  forecastTruth.confidence === "HIGH" ? "bg-[#16A34A]" : forecastTruth.confidence === "MODERATE" ? "bg-[#D97706]" : "bg-[#DC2626]"
+                  !forecastTruth.is_data_available
+                    ? "bg-slate-200"
+                    : forecastTruth.confidence === "HIGH" ? "bg-[#16A34A]" : forecastTruth.confidence === "MODERATE" ? "bg-[#D97706]" : "bg-[#DC2626]"
                 }`}
-                style={{ width: `${Math.min(100, Math.max(15, forecastTruth.confidence_score))}%` }}
+                style={{ width: `${forecastTruth.is_data_available && forecastTruth.confidence_score ? Math.min(100, Math.max(15, forecastTruth.confidence_score)) : 0}%` }}
               />
             </div>
           </div>
@@ -738,72 +765,44 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
                   ? "bg-slate-900 text-emerald-400 border border-slate-700"
                   : "bg-blue-50 text-[#1769AA] border border-blue-200"
               }`}>
-                {monitoringScope === "INDIA" ? "ALL INDIA" : "NER DOMAIN"}
+                {scopeConfig.badgeText}
               </span>
             </div>
 
-            {monitoringScope === "INDIA" ? (
-              <div className="space-y-2.5 text-xs text-[#334155]">
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">Monitoring Scope</span>
-                  <span className="font-bold text-[#0F172A]">Pan-India (36 MoES Subdivisions)</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">Domain Bounding Box</span>
-                  <span className="font-mono text-[#0F172A]">[68.0°E, 6.5°N] – [97.5°E, 37.5°N]</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">Common Grid Resolution</span>
-                  <span className="font-mono text-[#0F172A]">0.25° (~25 km Bilinear Interp)</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">Contributing Models</span>
-                  <span className="font-medium text-[#0F172A]">ECMWF IFS, AIFS, NOAA GFS, GEFS</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">National Stations Monitored</span>
-                  <span className="font-bold font-mono text-[#1769AA]">27 Synoptic Stations Active</span>
-                </div>
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-[#64748B]">Data Lineage / QC</span>
-                  <span className="font-bold text-emerald-600 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    WMO-Standard QC Passed
-                  </span>
-                </div>
+            <div className="space-y-2.5 text-xs text-[#334155]">
+              <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Monitoring Scope</span>
+                <span className="font-bold text-[#0F172A]">{scopeConfig.statesCountLabel}</span>
               </div>
-            ) : (
-              <div className="space-y-2.5 text-xs text-[#334155]">
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">Target Basin</span>
-                  <span className="font-bold text-[#0F172A]">Brahmaputra & Barak Basins</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">States Monitored (8)</span>
-                  <span className="font-medium text-[#0F172A] truncate max-w-[200px]" title="Assam, Arunachal Pradesh, Meghalaya, Manipur, Mizoram, Nagaland, Tripura, Sikkim">
-                    Assam, Meghalaya, Arunachal + 5
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">Mean Elevation</span>
-                  <span className="font-mono text-[#0F172A]">1,120 m ASL (Khasi Escarpment)</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">Terrain Forcing</span>
-                  <span className="font-medium text-[#0F172A]">Steep Orographic Funneling</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
-                  <span className="text-[#64748B]">NER Doppler Stations</span>
-                  <span className="font-bold font-mono text-[#1769AA]">11 AWS Radar Gates Active</span>
-                </div>
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-[#64748B]">Regional Weather Regime</span>
-                  <span className="font-bold text-[#0F172A]">
-                    {currentPoint?.weather_regime || "Active Convection & Uplift"}
-                  </span>
-                </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Domain Bounding Box</span>
+                <span className="font-mono text-[#0F172A]">{scopeConfig.geographicBounds}</span>
               </div>
-            )}
+              <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Major River Basins</span>
+                <span className="font-medium text-[#0F172A] truncate max-w-[210px]" title={scopeConfig.riverBasins}>
+                  {scopeConfig.riverBasins}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Elevation Range</span>
+                <span className="font-mono text-[#0F172A] truncate max-w-[210px]" title={scopeConfig.elevationContext}>
+                  {scopeConfig.elevationContext}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Doppler Radar Gates</span>
+                <span className="font-bold font-mono text-[#1769AA]">
+                  {scopeConfig.radarStationsCount} Operational DWR Sites
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-[#64748B]">Active Weather Regime</span>
+                <span className="font-bold text-[#0F172A]">
+                  {currentPoint?.weather_regime || (monitoringScope === "INDIA" ? "Normal Tropical Synoptic Flow" : "Active Orographic Convection")}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -123,15 +123,18 @@ export default function Home() {
       }
       setLocations(cleanedLocs);
 
-      // If switching scope and current station does not match scope domain
-      if (isNer && selectedLocation && !selectedLocation.is_ner) {
-        const guwahati = cleanedLocs.find(l => l.name === "Guwahati") || cleanedLocs[0];
-        if (guwahati) setSelectedLocation(guwahati);
-      } else if (!selectedLocation && cleanedLocs.length > 0) {
-        const defaultLoc = isNer 
-          ? (cleanedLocs.find(l => l.name === "Guwahati") || cleanedLocs[0])
-          : (cleanedLocs.find(l => l.name === "New Delhi") || cleanedLocs[0]);
-        setSelectedLocation(defaultLoc);
+      // Scope transition and initial location selection (Phase 1 & 2)
+      if (isNer) {
+        if (!selectedLocation || !selectedLocation.is_ner) {
+          const guwahati = cleanedLocs.find(l => l.name === "Guwahati") || cleanedLocs[0];
+          if (guwahati) setSelectedLocation(guwahati);
+        }
+      } else {
+        // In ALL INDIA mode: initially show ALL INDIA domain overview unless user selected a station
+        if (selectedLocation && selectedLocation.is_ner) {
+          setSelectedLocation(null);
+          setForecastData(null);
+        }
       }
     }
     init();

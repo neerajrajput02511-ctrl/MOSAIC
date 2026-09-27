@@ -46,6 +46,7 @@ export interface SingleForecastTruth {
   };
   model_list: IndividualModelData[];
   active_models: IndividualModelData[];
+  is_data_available: boolean;
   
   // Two distinct weight concepts: RAW and NORMALIZED
   raw_weights: Record<string, number>;
@@ -55,9 +56,9 @@ export interface SingleForecastTruth {
   weight_sum: number; // Normalized weight sum (strictly 1.0000)
   
   // Mathematical Aggregates
-  equal_mean: number;
-  mosaic_blend: number;
-  weighted_sum: number;
+  equal_mean: number | null;
+  mosaic_blend: number | null;
+  weighted_sum: number | null;
   is_valid_weight_sum: boolean;
   is_valid_blend: boolean;
   is_identity_match: boolean;
@@ -65,7 +66,7 @@ export interface SingleForecastTruth {
   
   // System Health & Pipeline Operational Status
   system_status: "HEALTHY" | "DEGRADED" | "ERROR";
-  system_status_label: "OPERATIONAL" | "FALLBACK ACTIVE" | "SYSTEM DEGRADED" | "INTEGRITY ERROR";
+  system_status_label: "OPERATIONAL" | "FALLBACK ACTIVE" | "SYSTEM DEGRADED" | "INTEGRITY ERROR" | "INSUFFICIENT UPSTREAM DATA";
   system_status_reason: string;
   fallback_count: number;
   fallback_label: string;
@@ -77,15 +78,17 @@ export interface SingleForecastTruth {
   ingested_label: string;
   
   // Ensemble Consensus & Dispersion
-  spread: number;
-  std_dev: number;
+  spread: number | null;
+  spread_label: string;
+  std_dev: number | null;
   avg_mae: number;
-  agreement_pct: number;
-  uncertainty_pm: number;
+  agreement_pct: number | null;
+  agreement_label: string;
+  uncertainty_pm: number | null;
   
   // Confidence
-  confidence: "HIGH" | "MODERATE" | "LOW";
-  confidence_score: number;
+  confidence: "HIGH" | "MODERATE" | "LOW" | "N/A";
+  confidence_score: number | null;
   confidence_method: string;
   is_calibrated: boolean;
   
@@ -287,6 +290,12 @@ export function buildSingleForecastTruth(
   const modelList = [gfsModel, ifsModel, aifsModel, gefsModel];
   const activeModels = modelList.filter(m => m.status === "HEALTHY");
 
+  // 4b. DATA AVAILABILITY TRUTH GATE (Phase 3 Strict Scientific Mandate)
+  const isDataAvailable = currentPoint !== null && 
+    (currentPoint.blended_precipitation_mm !== null && currentPoint.blended_precipitation_mm !== undefined || 
+     currentPoint.blended_temperature_c !== null && currentPoint.blended_temperature_c !== undefined) &&
+    (currentPoint.contributing_models?.length ?? 0) > 0;
+
   // 5. MATHEMATICAL AGGREGATES (Requirement 1, 3, & 4)
   // Equal Mean: sum(valid_models) / count(valid_models)
   const equalMean = Number((activeModels.reduce((acc, m) => acc + m.value, 0) / Math.max(1, activeModels.length)).toFixed(1));
@@ -295,13 +304,20 @@ export function buildSingleForecastTruth(
   const exactWeightedSum = activeModels.reduce((acc, m) => acc + (m.value * m.normalized_weight), 0);
   const mosaicBlend = Number(exactWeightedSum.toFixed(1));
 
+  // Phase 3 Scientific Gate: honest N/A when upstream data is missing
+  const safeMosaicBlend = isDataAvailable ? mosaicBlend : null;
+  const safeEqualMean = isDataAvailable ? equalMean : null;
+  const safeWeightedSum = isDataAvailable ? Number(exactWeightedSum.toFixed(2)) : null;
+
   // 6. MATHEMATICAL AUDIT VALIDATION
   const isValidWeightSum = canNormalize && Math.abs(normalizedWeightSum - 1.0) < 0.0001;
-  const isBlendValid = Math.abs(exactWeightedSum - mosaicBlend) < 0.05;
-  const isIdentityMatch = isValidWeightSum && isBlendValid;
+  const isBlendValid = !isDataAvailable || Math.abs(exactWeightedSum - mosaicBlend) < 0.05;
+  const isIdentityMatch = isValidWeightSum && isBlendValid && isDataAvailable;
 
   let validationError: string | null = null;
-  if (!canNormalize) {
+  if (!isDataAvailable) {
+    validationError = "INSUFFICIENT UPSTREAM DATA: Upstream gridded models not yet reporting";
+  } else if (!canNormalize) {
     validationError = `ERROR: WEIGHT NORMALIZATION FAILED (Raw weight sum is zero)`;
   } else if (!isValidWeightSum) {
     validationError = `ERROR: INVALID MODEL WEIGHTS (Sum = ${normalizedWeightSum.toFixed(4)}, expected 1.0000)`;
@@ -322,10 +338,14 @@ export function buildSingleForecastTruth(
   const ingestedLabel = `${availableCount} / ${totalCount} INGESTED`;
 
   let systemStatus: "HEALTHY" | "DEGRADED" | "ERROR" = "HEALTHY";
-  let systemStatusLabel: "OPERATIONAL" | "FALLBACK ACTIVE" | "SYSTEM DEGRADED" | "INTEGRITY ERROR" = "OPERATIONAL";
+  let systemStatusLabel: "OPERATIONAL" | "FALLBACK ACTIVE" | "SYSTEM DEGRADED" | "INTEGRITY ERROR" | "INSUFFICIENT UPSTREAM DATA" = "OPERATIONAL";
   let systemStatusReason = "All 4 model streams operational, normalized weights verified (Σw=1.0000), blend identity confirmed";
 
-  if (!isValidWeightSum || !isBlendValid || !canNormalize) {
+  if (!isDataAvailable) {
+    systemStatus = "DEGRADED";
+    systemStatusLabel = "INSUFFICIENT UPSTREAM DATA";
+    systemStatusReason = "Insufficient valid upstream forecast data for target coordinate";
+  } else if (!isValidWeightSum || !isBlendValid || !canNormalize) {
     systemStatus = "ERROR";
     systemStatusLabel = "INTEGRITY ERROR";
     systemStatusReason = validationError || "Critical integrity check failed";
@@ -338,32 +358,45 @@ export function buildSingleForecastTruth(
   }
 
   // 8. UNCERTAINTY & DISPERSION (Requirement 11 - Dynamic from actual active models)
-  const activeValues = activeModels.map(m => m.value);
-  const maxVal = activeValues.length > 0 ? Math.max(...activeValues) : 0.0;
-  const minVal = activeValues.length > 0 ? Math.min(...activeValues) : 0.0;
-  const spread = Number((maxVal - minVal).toFixed(1));
+  let spread: number | null = null;
+  let spreadLabel = "N/A";
+  let stdDev: number | null = null;
+  let uncertaintyPm: number | null = null;
+  let confidenceLevel: "HIGH" | "MODERATE" | "LOW" | "N/A" = "N/A";
+  let confidenceScore: number | null = null;
+  let agreementPct: number | null = null;
+  let agreementLabel = "N/A";
 
-  // Weighted variance around mosaicBlend
-  const variance = activeModels.reduce(
-    (sum, m) => sum + (m.normalized_weight * Math.pow(m.value - mosaicBlend, 2)),
-    0
-  );
-  const stdDev = Number(Math.sqrt(Math.max(0, variance)).toFixed(2));
-  const uncertaintyPm = Number((stdDev * 1.645).toFixed(1));
-
-  // 9. PROVISIONAL CONFIDENCE (Requirement 10 - Dynamically calculated heuristic)
   const avgMae = activeModels.length > 0
     ? activeModels.reduce((acc, m) => acc + m.historical_mae, 0) / activeModels.length
     : 2.5;
-  const missingCount = totalCount - activeModels.length;
 
-  let rawConfidenceScore = 100 - (stdDev * 4.0) - (spread * 1.5) - (avgMae * 3.0) - (missingCount * 15.0);
-  const confidenceScore = Math.max(15, Math.min(95, Math.round(rawConfidenceScore)));
+  if (isDataAvailable) {
+    const activeValues = activeModels.map(m => m.value);
+    const maxVal = activeValues.length > 0 ? Math.max(...activeValues) : 0.0;
+    const minVal = activeValues.length > 0 ? Math.min(...activeValues) : 0.0;
+    spread = Number((maxVal - minVal).toFixed(1));
+    spreadLabel = `±${spread} mm`;
 
-  const confidenceLevel: "HIGH" | "MODERATE" | "LOW" =
-    confidenceScore >= 75 ? "HIGH" : (confidenceScore >= 50 ? "MODERATE" : "LOW");
+    // Weighted variance around mosaicBlend
+    const variance = activeModels.reduce(
+      (sum, m) => sum + (m.normalized_weight * Math.pow(m.value - (mosaicBlend ?? 0), 2)),
+      0
+    );
+    stdDev = Number(Math.sqrt(Math.max(0, variance)).toFixed(2));
+    uncertaintyPm = Number((stdDev * 1.645).toFixed(1));
 
-  const agreementPct = Math.max(10, Math.min(99, Math.round(100 - (stdDev / (equalMean + 1.0)) * 60)));
+    // 9. PROVISIONAL CONFIDENCE (Requirement 10 - Dynamically calculated heuristic)
+    const missingCount = totalCount - activeModels.length;
+    let rawConfidenceScore = 100 - (stdDev * 4.0) - (spread * 1.5) - (avgMae * 3.0) - (missingCount * 15.0);
+    confidenceScore = Math.max(15, Math.min(95, Math.round(rawConfidenceScore)));
+
+    confidenceLevel =
+      confidenceScore >= 75 ? "HIGH" : (confidenceScore >= 50 ? "MODERATE" : "LOW");
+
+    agreementPct = Math.max(10, Math.min(99, Math.round(100 - (stdDev / ((equalMean ?? 0) + 1.0)) * 60)));
+    agreementLabel = spread < 3.0 ? "High Agreement" : spread < 7.0 ? "Moderate Agreement" : "High Disagreement";
+  }
 
   // 10. DOMINANT MODEL & EXPLANATION (Requirement 8 - Dynamically updated after normalization)
   const dominantModel = activeModels.reduce(
@@ -380,7 +413,9 @@ export function buildSingleForecastTruth(
   );
 
   const domPctFormatted = `${(dominantModel.normalized_weight * 100).toFixed(1)}%`;
-  const explanationText = `${dominantModel.shortName} received the highest normalized weight (${domPctFormatted}) because its verified historical skill (MAE: ${dominantModel.historical_mae} mm) was highest for ${regionName} at +${selectedLeadTime}h lead time under the ${weatherRegime} regime, stabilized via λ=0.12 Dirichlet shrinkage.`;
+  const explanationText = isDataAvailable
+    ? `${dominantModel.shortName} received the highest normalized weight (${domPctFormatted}) because its verified historical skill (MAE: ${dominantModel.historical_mae} mm) was highest for ${regionName} at +${selectedLeadTime}h lead time under the ${weatherRegime} regime, stabilized via λ=0.12 Dirichlet shrinkage.`
+    : `Insufficient valid upstream forecast data available to compute model weighting.`;
 
   return {
     models: {
@@ -391,14 +426,15 @@ export function buildSingleForecastTruth(
     },
     model_list: modelList,
     active_models: activeModels,
+    is_data_available: isDataAvailable,
     raw_weights: rawWeightsRecord,
     normalized_weights: normalizedWeightsMap,
     raw_weight_sum: rawWeightSum,
     normalized_weight_sum: normalizedWeightSum,
     weight_sum: 1.0000,
-    equal_mean: equalMean,
-    mosaic_blend: mosaicBlend,
-    weighted_sum: Number(exactWeightedSum.toFixed(2)),
+    equal_mean: safeEqualMean,
+    mosaic_blend: safeMosaicBlend,
+    weighted_sum: safeWeightedSum,
     is_valid_weight_sum: isValidWeightSum,
     is_valid_blend: isBlendValid,
     is_identity_match: isIdentityMatch,
@@ -413,13 +449,17 @@ export function buildSingleForecastTruth(
     availability_label: `${availableCount} / ${totalCount} MODELS AVAILABLE`,
     ingested_label: ingestedLabel,
     spread,
+    spread_label: spreadLabel,
     std_dev: stdDev,
     avg_mae: Number(avgMae.toFixed(2)),
     agreement_pct: agreementPct,
+    agreement_label: agreementLabel,
     uncertainty_pm: uncertaintyPm,
     confidence: confidenceLevel,
     confidence_score: confidenceScore,
-    confidence_method: "Provisional Confidence (Heuristic derived from ensemble spread σ, range, verified MAE, and stream availability)",
+    confidence_method: isDataAvailable 
+      ? "Calculated from ensemble spread σ, range, verified MAE, and stream availability" 
+      : "N/A (Upstream data unavailable)",
     is_calibrated: false,
     dominant_model: dominantModel,
     dominant_explanation: {

@@ -199,10 +199,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
           </div>
           <div className="text-sm font-bold text-cyan-300 font-mono">
-            {forecastTruth.confidence} ({forecastTruth.confidence_score}%)
+            {forecastTruth.confidence} {forecastTruth.confidence_score !== null ? `(${forecastTruth.confidence_score}%)` : "(N/A)"}
           </div>
           <div className="text-[10px] text-slate-400 font-mono" title={forecastTruth.confidence_method}>
-            Provisional &middot; Spread &sigma;: {forecastTruth.std_dev.toFixed(1)} mm
+            Provisional &middot; Spread &sigma;: {forecastTruth.std_dev !== null ? `${forecastTruth.std_dev.toFixed(1)} mm` : "N/A"}
           </div>
         </div>
 
@@ -566,7 +566,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           <div className="bg-[#F4F7FA] border border-[#D9E2EC] rounded-xl p-3.5 space-y-1">
             <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">EQUAL MEAN</span>
             <div className="text-lg font-bold text-[#102A43]">
-              {forecastTruth.equal_mean.toFixed(1)} mm
+              {forecastTruth.equal_mean !== null ? `${forecastTruth.equal_mean.toFixed(1)} mm` : "N/A"}
             </div>
             <span className="text-[10px] text-[#52667A] block font-sans">{forecastTruth.ingested_label}</span>
           </div>
@@ -578,7 +578,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <span>MOSAIC BLEND</span>
             </span>
             <div className="text-xl font-bold text-[#1677FF]">
-              {forecastTruth.mosaic_blend.toFixed(1)} mm
+              {forecastTruth.mosaic_blend !== null ? `${forecastTruth.mosaic_blend.toFixed(1)} mm` : "N/A"}
             </div>
             <span className="text-[10px] text-[#15966B] font-semibold block font-sans">
               {currentPoint?.improvement_vs_baseline_pct !== undefined 
@@ -593,18 +593,18 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           <div className="flex items-center space-x-2 flex-wrap">
             <span className="text-[#1677FF] font-bold uppercase text-[10px] font-sans">MATHEMATICAL AUDIT:</span>
             <span>
-              &Sigma;(w<sub>i</sub> &times; x<sub>i</sub>) = {forecastTruth.active_models.map(m => `${m.value.toFixed(1)} × ${(m.normalized_weight * 100).toFixed(1)}%`).join(" + ")} = <strong className="text-[#102A43] font-bold">{forecastTruth.weighted_sum.toFixed(2)} mm</strong>
+              &Sigma;(w<sub>i</sub> &times; x<sub>i</sub>) = {forecastTruth.active_models.map(m => `${m.value.toFixed(1)} × ${(m.normalized_weight * 100).toFixed(1)}%`).join(" + ")} = <strong className="text-[#102A43] font-bold">{forecastTruth.weighted_sum !== null ? `${forecastTruth.weighted_sum.toFixed(2)} mm` : "N/A"}</strong>
             </span>
           </div>
           {forecastTruth.is_identity_match ? (
             <span className="text-[#15966B] font-semibold flex items-center space-x-1 font-sans">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#15966B] shrink-0" />
-              <span>Identity Verified: MOSAIC Blend = {forecastTruth.mosaic_blend.toFixed(1)} mm</span>
+              <span>Identity Verified: MOSAIC Blend = {forecastTruth.mosaic_blend !== null ? `${forecastTruth.mosaic_blend.toFixed(1)} mm` : "N/A"}</span>
             </span>
           ) : (
             <span className="text-[#C53030] font-semibold flex items-center space-x-1 font-sans">
               <AlertCircle className="w-3.5 h-3.5 text-[#C53030] shrink-0" />
-              <span>Difference: &Delta; = {Math.abs(forecastTruth.weighted_sum - forecastTruth.mosaic_blend).toFixed(3)} mm</span>
+              <span>Difference: &Delta; = {forecastTruth.weighted_sum !== null && forecastTruth.mosaic_blend !== null ? `${Math.abs(forecastTruth.weighted_sum - forecastTruth.mosaic_blend).toFixed(3)} mm` : "N/A"}</span>
             </span>
           )}
         </div>

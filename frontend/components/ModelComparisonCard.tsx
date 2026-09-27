@@ -44,9 +44,9 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
         <div className="bg-[#EAF3FF] border border-[#BFD9FF] rounded-xl px-4 py-2.5 text-right">
           <span className="text-[10px] font-bold text-[#52667A] block uppercase tracking-wider">MOSAIC BLENDED RAINFALL</span>
           <div className="text-xl font-bold font-mono text-[#1677FF] flex items-center justify-end gap-1.5">
-            <span>{truth.mosaic_blend.toFixed(1)}</span>
+            <span>{truth.mosaic_blend !== null ? truth.mosaic_blend.toFixed(1) : "N/A"}</span>
             <span className="text-xs font-normal text-[#52667A]">mm</span>
-            <span className="text-xs text-[#B7791F] font-semibold">(&plusmn;{truth.uncertainty_pm} mm)</span>
+            <span className="text-xs text-[#B7791F] font-semibold">{truth.uncertainty_pm !== null ? `(±${truth.uncertainty_pm} mm)` : "(N/A)"}</span>
           </div>
         </div>
       </div>
@@ -63,9 +63,11 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
               ? "bg-[#E6F4EA] text-[#15966B] border-[#CEEAD6]" 
               : truth.confidence === "MODERATE" 
               ? "bg-[#FFF8E8] text-[#B7791F] border-[#F4D58D]" 
-              : "bg-[#FDE8E8] text-[#C53030] border-[#F8B4B4]"
+              : truth.confidence === "LOW"
+              ? "bg-[#FDE8E8] text-[#C53030] border-[#F8B4B4]"
+              : "bg-slate-100 text-slate-500 border-slate-200"
           }`}>
-            PROVISIONAL CONFIDENCE: {truth.confidence} ({truth.confidence_score}%)
+            PROVISIONAL CONFIDENCE: {truth.confidence} {truth.confidence_score !== null ? `(${truth.confidence_score}%)` : "(N/A)"}
           </span>
         </div>
 
@@ -73,19 +75,19 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
           <div className="bg-white p-2.5 rounded-lg border border-[#D9E2EC]">
             <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">NOAA GFS</span>
-            <span className="text-[#102A43] font-bold text-sm">{truth.models.gfs.value.toFixed(1)} mm</span>
+            <span className="text-[#102A43] font-bold text-sm">{truth.models.gfs.value !== null ? `${truth.models.gfs.value.toFixed(1)} mm` : "N/A"}</span>
           </div>
           <div className="bg-white p-2.5 rounded-lg border border-[#D9E2EC]">
             <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">ECMWF IFS</span>
-            <span className="text-[#1677FF] font-bold text-sm">{truth.models.ifs.value.toFixed(1)} mm</span>
+            <span className="text-[#1677FF] font-bold text-sm">{truth.models.ifs.value !== null ? `${truth.models.ifs.value.toFixed(1)} mm` : "N/A"}</span>
           </div>
           <div className="bg-white p-2.5 rounded-lg border border-[#D9E2EC]">
             <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">ECMWF AIFS</span>
-            <span className="text-[#356AE6] font-bold text-sm">{truth.models.aifs.value.toFixed(1)} mm</span>
+            <span className="text-[#356AE6] font-bold text-sm">{truth.models.aifs.value !== null ? `${truth.models.aifs.value.toFixed(1)} mm` : "N/A"}</span>
           </div>
           <div className="bg-white p-2.5 rounded-lg border border-[#D9E2EC]">
             <span className="text-[10px] text-[#52667A] block uppercase font-sans font-bold">NOAA GEFS</span>
-            <span className="text-[#B7791F] font-bold text-sm">{truth.models.gefs.value.toFixed(1)} mm</span>
+            <span className="text-[#B7791F] font-bold text-sm">{truth.models.gefs.value !== null ? `${truth.models.gefs.value.toFixed(1)} mm` : "N/A"}</span>
           </div>
         </div>
 
@@ -93,23 +95,23 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] font-mono pt-2 border-t border-[#D9E2EC]">
           <div>
             <span className="text-[#52667A] text-[9px] uppercase block font-sans font-bold">EQUAL MEAN</span>
-            <span className="text-[#102A43] font-bold">{truth.equal_mean.toFixed(1)} mm</span>
+            <span className="text-[#102A43] font-bold">{truth.equal_mean !== null ? `${truth.equal_mean.toFixed(1)} mm` : "N/A"}</span>
           </div>
           <div>
             <span className="text-[#52667A] text-[9px] uppercase block font-sans font-bold">SPREAD RANGE</span>
-            <span className="text-[#102A43] font-bold">{truth.spread.toFixed(1)} mm</span>
+            <span className="text-[#102A43] font-bold">{truth.spread !== null ? `${truth.spread.toFixed(1)} mm` : "N/A"}</span>
           </div>
           <div>
             <span className="text-[#52667A] text-[9px] uppercase block font-sans font-bold">STD DEV (&sigma;)</span>
-            <span className="text-[#1677FF] font-bold">{truth.std_dev.toFixed(2)} mm</span>
+            <span className="text-[#1677FF] font-bold">{truth.std_dev !== null ? `${truth.std_dev.toFixed(2)} mm` : "N/A"}</span>
           </div>
           <div>
             <span className="text-[#52667A] text-[9px] uppercase block font-sans font-bold">AGREEMENT</span>
-            <span className="text-[#15966B] font-bold">{truth.agreement_pct}%</span>
+            <span className="text-[#15966B] font-bold">{truth.agreement_pct !== null ? `${truth.agreement_pct}%` : "N/A"}</span>
           </div>
           <div>
             <span className="text-[#52667A] text-[9px] uppercase block font-sans font-bold">90% UNCERTAINTY</span>
-            <span className="text-[#B7791F] font-bold">&plusmn;{truth.uncertainty_pm} mm</span>
+            <span className="text-[#B7791F] font-bold">{truth.uncertainty_pm !== null ? `±${truth.uncertainty_pm} mm` : "N/A"}</span>
           </div>
         </div>
       </div>
@@ -174,7 +176,7 @@ export const ModelComparisonCard: React.FC<ModelComparisonCardProps> = ({
       <div className="pt-3 border-t border-[#D9E2EC] flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center space-x-2 text-[11px] text-[#52667A]">
           <AlertCircle className="w-3.5 h-3.5 text-[#B7791F] shrink-0" />
-          <span>Mathematical Identity: <strong className="text-[#102A43] font-mono">&Sigma;(w &times; x) = {truth.weighted_sum.toFixed(2)} mm &equiv; Blend {truth.mosaic_blend.toFixed(1)} mm</strong></span>
+          <span>Mathematical Identity: <strong className="text-[#102A43] font-mono">{truth.weighted_sum !== null && truth.mosaic_blend !== null ? `Σ(w × x) = ${truth.weighted_sum.toFixed(2)} mm ≡ Blend ${truth.mosaic_blend.toFixed(1)} mm` : "Σ(w × x) = N/A (Awaiting Upstream Runs)"}</strong></span>
         </div>
 
         <button

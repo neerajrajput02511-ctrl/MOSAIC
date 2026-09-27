@@ -93,7 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setIsDropdownOpen(true);
               }}
               onFocus={() => setIsDropdownOpen(true)}
-              placeholder="Search location (e.g. Mumbai, Delhi, Guwahati...)"
+              placeholder={monitoringScope === "INDIA" ? "Search any Indian city/station (e.g. Delhi, Mumbai, Kolkata, Chennai...)" : "Search NER station (e.g. Guwahati, Shillong, Agartala, Dibrugarh...)"}
               className="w-full bg-[#F8FAFC] border border-[#D9E0E7] hover:border-[#CBD5E1] focus:border-[#1769AA] focus:bg-white text-xs text-[#0F172A] rounded-lg pl-9 pr-4 py-2 outline-none transition-all placeholder:text-[#94A3B8]"
             />
           </div>

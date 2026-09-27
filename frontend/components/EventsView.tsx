@@ -81,7 +81,7 @@ export const EventsView: React.FC<EventsViewProps> = ({
       {/* Main Events Dashboard Component */}
       <ExtremeWeatherPanel
         events={events}
-        locationName={selectedLocation?.name || "Northeast India"}
+        locationName={selectedLocation?.name || (monitoringScope === "INDIA" ? "All India National Domain" : "Northeast India")}
         probHeavyRain={probHeavyRain}
         probVeryHeavyRain={probVeryHeavyRain}
       />
