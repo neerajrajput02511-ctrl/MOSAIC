@@ -1430,6 +1430,120 @@ async def export_forecast(
         
     return forecast
 
+# =========================================================================
+# PHASE 3: MULTI-SOURCE EARTH OBSERVATION & WEATHER DATA FUSION ENDPOINTS
+# =========================================================================
+from backend.app.services.observation_service import ObservationService
+
+_obs_service = ObservationService()
+
+@router.get("/imd/stations", summary="IMD Surface Observatories & AWS Station Catalog (Phase 3)")
+async def get_imd_stations(ner_only: bool = Query(False, description="Filter for North Eastern Region")):
+    return await _obs_service.get_imd_stations(ner_only=ner_only)
+
+@router.get("/imd/observations", summary="Real-Time Ground Truth Observations from IMD Stations (Phase 3)")
+async def get_imd_observations(
+    station_id: Optional[str] = Query(None, description="IMD Station ID (e.g. 42410 for Guwahati Borjhar)"),
+    latitude: Optional[float] = Query(None, description="Target Latitude"),
+    longitude: Optional[float] = Query(None, description="Target Longitude")
+):
+    return await _obs_service.get_imd_observations(station_id=station_id, lat=latitude, lon=longitude)
+
+@router.get("/imd/rainfall", summary="IMD Official 24h & 1h Precipitation Telemetry & Classification (Phase 3)")
+async def get_imd_rainfall(station_id: Optional[str] = Query(None, description="IMD Station ID")):
+    return await _obs_service.get_imd_rainfall(station_id=station_id)
+
+@router.get("/imd/forecast", summary="Official IMD City Forecast Mapping & Bulletin (Phase 3)")
+async def get_imd_forecast(
+    station_id: Optional[str] = Query("42182", description="Station ID (e.g. 42182 for Delhi Safdarjung)"),
+    latitude: Optional[float] = Query(None),
+    longitude: Optional[float] = Query(None)
+):
+    service = _obs_service.imd_provider
+    return await service.get_city_forecast_7days(station_id=station_id, latitude=latitude, longitude=longitude)
+
+@router.get("/imd/warnings", summary="Official IMD Color-Coded Severe Weather Warnings (Phase 3)")
+async def get_imd_warnings(
+    latitude: Optional[float] = Query(26.1061),
+    longitude: Optional[float] = Query(91.5859)
+):
+    return await _obs_service.get_imd_warnings(latitude=latitude, longitude=longitude)
+
+@router.get("/satellite/products", summary="ISRO MOSDAC & International Satellite Product Catalog (Phase 3)")
+def get_satellite_products():
+    return _obs_service.get_satellite_products_catalog()
+
+@router.get("/satellite/insat-cloud", summary="INSAT-3DR Thermal IR Cloud Cover & Top Brightness Temperature (Phase 3)")
+async def get_satellite_cloud_view(
+    latitude: float = Query(26.1061, description="Target Latitude"),
+    longitude: float = Query(91.5859, description="Target Longitude")
+):
+    return await _obs_service.get_satellite_cloud_view(latitude=latitude, longitude=longitude)
+
+@router.get("/satellite/gsmap-rainfall", summary="GSMaP-ISRO High-Resolution Satellite Precipitation Grid (Phase 3)")
+async def get_satellite_rainfall(
+    latitude: float = Query(26.1061, description="Target Latitude"),
+    longitude: float = Query(91.5859, description="Target Longitude")
+):
+    return await _obs_service.get_satellite_rainfall(latitude=latitude, longitude=longitude)
+
+@router.get("/radar/stations", summary="IMD Doppler Weather Radar (DWR) Operational Network (Phase 3)")
+def get_radar_stations():
+    return _obs_service.get_radar_stations()
+
+@router.get("/radar/nowcast", summary="IMD DWR Reflectivity & 0-3h Extrapolated Radar Nowcast (Phase 3)")
+async def get_radar_nowcast(
+    latitude: float = Query(26.1061, description="Target Latitude"),
+    longitude: float = Query(91.5859, description="Target Longitude")
+):
+    return await _obs_service.get_radar_nowcast(latitude=latitude, longitude=longitude)
+
+@router.get("/observations/lightning", summary="IITM Damini Lightning Detection & Flash Density (Phase 3)")
+async def get_lightning_observations(
+    latitude: float = Query(26.1061, description="Target Latitude"),
+    longitude: float = Query(91.5859, description="Target Longitude")
+):
+    return await _obs_service.get_lightning_observations(latitude=latitude, longitude=longitude)
+
+@router.get("/observations/qc", summary="Meteorological Physical Quality Control Validator (Phase 3)")
+def validate_observation_qc(
+    variable: str = Query("temperature_c", description="Variable: temperature_c, precipitation_mm, humidity_pct, wind_speed_ms"),
+    value: Optional[float] = Query(None, description="Observed value"),
+    latitude: float = Query(26.1061),
+    longitude: float = Query(91.5859)
+):
+    return _obs_service.quality_control(variable=variable, value=value, latitude=latitude, longitude=longitude)
+
+@router.get("/observations/consistency", summary="Multi-Sensor Observation Consistency: Station vs Satellite vs Radar (Phase 3)")
+async def get_observation_consistency(
+    latitude: float = Query(26.1061, description="Target Latitude"),
+    longitude: float = Query(91.5859, description="Target Longitude")
+):
+    return await _obs_service.get_observation_consistency(latitude=latitude, longitude=longitude)
+
+@router.get("/extremes/fusion", summary="Multi-Evidence Extreme Weather Fusion: Observational + Model Signals (Phase 3)")
+async def get_extreme_rainfall_fusion(
+    latitude: float = Query(26.1061, description="Target Latitude"),
+    longitude: float = Query(91.5859, description="Target Longitude")
+):
+    return await _obs_service.get_extreme_rainfall_fusion(latitude=latitude, longitude=longitude)
+
+@router.get("/sources/health", summary="Operational Health Telemetry for All 12 Observation & Forecast Feeds (Phase 3)")
+async def get_sources_health():
+    return await _obs_service.get_all_sources_health()
+
+@router.get("/sources/ingestion-log", summary="Operational Multi-Source Data Ingestion Audit Trail (Phase 3)")
+def get_sources_ingestion_log():
+    return _obs_service.get_ingestion_log()
+
+@router.get("/fusion/location", summary="Comprehensive Fusion Dossier: What MOSAIC Sees vs What MOSAIC Predicts (Phase 3)")
+async def get_fusion_dossier(
+    latitude: float = Query(26.1061, description="Target Latitude"),
+    longitude: float = Query(91.5859, description="Target Longitude")
+):
+    return await _obs_service.get_fusion_dossier(latitude=latitude, longitude=longitude)
+
+
 
 
 

@@ -20,6 +20,7 @@ export type NavTab =
   | "verify" 
   | "extremes" 
   | "research" 
+  | "observations"
   | "system"
   | "verification"
   | "events";
@@ -43,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems: { id: NavTab; label: string; icon: any; count?: number; badge?: string }[] = [
     { id: "forecast", label: "Forecast", icon: Home },
     { id: "map", label: "Dominant Map", icon: Globe, badge: "WHO TO TRUST" },
+    { id: "observations", label: "Earth Obs", icon: Activity, badge: "FUSION" },
     { id: "models", label: "Models", icon: Layers },
     { id: "verify", label: "Verify", icon: CheckCircle2 },
     { id: "extremes", label: "Extremes", icon: ShieldAlert, count: extremeEventsCount },

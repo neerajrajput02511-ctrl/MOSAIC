@@ -529,3 +529,170 @@ export function getExportUrl(locationId: number, format: "csv" | "json" = "csv")
   return `${backendUrl}/api/v1/export/forecast?location_id=${locationId}&format=${format}`;
 }
 
+// =========================================================================
+// PHASE 3: MULTI-SOURCE EARTH OBSERVATION & FUSION CLIENT SERVICES
+// =========================================================================
+
+export async function fetchImdStations(nerOnly: boolean = false): Promise<any[]> {
+  try {
+    const res = await apiFetch(`/imd/stations?ner_only=${nerOnly}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchImdStations error:", err);
+    return [];
+  }
+}
+
+export async function fetchImdObservations(stationId?: string, lat?: number, lon?: number): Promise<any[]> {
+  try {
+    let url = "/imd/observations";
+    const params = new URLSearchParams();
+    if (stationId) params.append("station_id", stationId);
+    if (lat !== undefined) params.append("latitude", lat.toString());
+    if (lon !== undefined) params.append("longitude", lon.toString());
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const res = await apiFetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchImdObservations error:", err);
+    return [];
+  }
+}
+
+export async function fetchImdRainfall(stationId?: string): Promise<any> {
+  try {
+    const url = stationId ? `/imd/rainfall?station_id=${stationId}` : "/imd/rainfall";
+    const res = await apiFetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchImdRainfall error:", err);
+    return null;
+  }
+}
+
+export async function fetchSatelliteProducts(): Promise<any[]> {
+  try {
+    const res = await apiFetch("/satellite/products", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchSatelliteProducts error:", err);
+    return [];
+  }
+}
+
+export async function fetchSatelliteCloudView(lat: number, lon: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/satellite/insat-cloud?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchSatelliteCloudView error:", err);
+    return null;
+  }
+}
+
+export async function fetchSatelliteRainfall(lat: number, lon: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/satellite/gsmap-rainfall?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchSatelliteRainfall error:", err);
+    return null;
+  }
+}
+
+export async function fetchRadarStations(): Promise<any[]> {
+  try {
+    const res = await apiFetch("/radar/stations", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchRadarStations error:", err);
+    return [];
+  }
+}
+
+export async function fetchRadarNowcast(lat: number, lon: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/radar/nowcast?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchRadarNowcast error:", err);
+    return null;
+  }
+}
+
+export async function fetchLightningObservations(lat: number, lon: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/observations/lightning?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchLightningObservations error:", err);
+    return null;
+  }
+}
+
+export async function fetchObservationConsistency(lat: number, lon: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/observations/consistency?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchObservationConsistency error:", err);
+    return null;
+  }
+}
+
+export async function fetchExtremeRainfallFusion(lat: number, lon: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/extremes/fusion?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchExtremeRainfallFusion error:", err);
+    return null;
+  }
+}
+
+export async function fetchSourcesHealthTelemetry(): Promise<any> {
+  try {
+    const res = await apiFetch("/sources/health", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchSourcesHealthTelemetry error:", err);
+    return null;
+  }
+}
+
+export async function fetchSourcesIngestionLog(): Promise<any[]> {
+  try {
+    const res = await apiFetch("/sources/ingestion-log", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchSourcesIngestionLog error:", err);
+    return [];
+  }
+}
+
+export async function fetchFusionDossier(lat: number, lon: number): Promise<any> {
+  try {
+    const res = await apiFetch(`/fusion/location?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchFusionDossier error:", err);
+    return null;
+  }
+}
+
+

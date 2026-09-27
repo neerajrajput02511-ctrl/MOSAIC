@@ -22,6 +22,7 @@ import { VerificationView } from "@/components/VerificationView";
 import { EventsView } from "@/components/EventsView";
 import { ResearchLabView } from "@/components/ResearchLabView";
 import { SystemView } from "@/components/SystemView";
+import EarthObservationView from "@/components/EarthObservationView";
 import { ExplainabilityDrawer } from "@/components/ExplainabilityDrawer";
 import { HelpGuideModal } from "@/components/HelpGuideModal";
 import { MeteorologicalChatModal } from "@/components/MeteorologicalChatModal";
@@ -275,6 +276,15 @@ export default function Home() {
             />
           )}
 
+          {/* TAB: EARTH OBSERVATION & MULTI-SENSOR DATA FUSION */}
+          {activeTab === "observations" && (
+            <EarthObservationView
+              currentLat={selectedLocation?.latitude}
+              currentLon={selectedLocation?.longitude}
+              locationName={selectedLocation?.name}
+            />
+          )}
+
           {/* TAB 7: SYSTEM (HEALTH, PIPELINE, DATA SOURCES & MATH AUDIT) */}
           {activeTab === "system" && (
             <SystemView />
@@ -287,6 +297,7 @@ export default function Home() {
         {[
           { id: "forecast", label: "Forecast" },
           { id: "map", label: "Map" },
+          { id: "observations", label: "Obs" },
           { id: "models", label: "Models" },
           { id: "verify", label: "Verify" },
           { id: "extremes", label: "Extremes" },
