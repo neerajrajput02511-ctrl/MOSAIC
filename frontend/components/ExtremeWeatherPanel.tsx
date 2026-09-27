@@ -126,10 +126,15 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
         </div>
       )}
 
-      {/* Official IMD Reference Scale Footer */}
-      <div className="pt-2 border-t border-[#EDF2F7] text-[10px] text-[#64748B] flex flex-wrap justify-between items-center gap-2">
-        <span>IMD Rain Scale: Moderate (15.6–64.4mm) · Heavy (64.5–115.5mm) · Very Heavy (115.6–204.4mm) · Squall (&ge;15 m/s)</span>
-        <span className="font-mono text-[#0F172A] font-medium">MoES Disaster Management Guidance Track</span>
+      {/* Official IMD Reference Scale Footer & Statutory Distinction */}
+      <div className="pt-2 border-t border-[#EDF2F7] space-y-1.5 text-[10px] text-[#64748B]">
+        <div className="flex flex-wrap justify-between items-center gap-2">
+          <span>IMD Rain Scale: Moderate (15.6–64.4mm) · Heavy (64.5–115.5mm) · Very Heavy (115.6–204.4mm) · Squall (&ge;15 m/s)</span>
+          <span className="font-mono text-[#0F172A] font-medium">MoES Disaster Management Advisory</span>
+        </div>
+        <p className="text-[10px] text-[#94A3B8] italic">
+          Disclaimer: MOSAIC provides automated multi-model synthesis for research & disaster planning. Official statutory weather warnings are exclusively promulgated by the India Meteorological Department (IMD/MoES).
+        </p>
       </div>
     </div>
   );

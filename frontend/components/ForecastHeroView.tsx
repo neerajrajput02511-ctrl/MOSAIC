@@ -247,10 +247,14 @@ export const ForecastHeroView: React.FC<ForecastHeroViewProps> = ({
             </div>
             <div className="text-left leading-tight">
               <div className="text-xs font-bold text-[#0F172A]">
-                27 Sep 2026
+                {currentPoint?.forecast_time
+                  ? new Date(currentPoint.forecast_time).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })
+                  : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })}
               </div>
               <div className="text-[11px] font-mono text-[#64748B] mt-0.5">
-                12:00 UTC (Next {selectedLeadTime}h)
+                {currentPoint?.forecast_time
+                  ? `${new Date(currentPoint.forecast_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })} UTC (Lead +${selectedLeadTime}h)`
+                  : `12:00 UTC (Next +${selectedLeadTime}h)`}
               </div>
             </div>
             <ChevronDown className="w-4 h-4 text-[#64748B] ml-1" />

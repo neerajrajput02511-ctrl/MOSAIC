@@ -38,7 +38,7 @@ export const SCOPE_CONFIGS: Record<"INDIA" | "NER", ScopeConfig> = {
     domainName: "National Indian Subcontinent & EEZ",
     geographicBounds: "6.5°N – 37.5°N, 68.0°E – 97.5°E",
     centerCoordinates: { lat: 21.7679, lng: 78.8718, zoom: 4.5 },
-    riverBasins: "Indo-Gangetic, Brahmaputra & Peninsular River Systems",
+    riverBasins: "Indo-Gangetic, Godavari, Krishna, Mahanadi & Peninsular Basins",
     elevationContext: "Sea Level (Coastal) to 8,586 m ASL (Himalayan Arc)",
     statesCountLabel: "36 Meteorological Subdivisions (28 States + 8 UTs)",
     statesListSummary: "All-India Coverage (North, South, East, West, Central, Northeast)",

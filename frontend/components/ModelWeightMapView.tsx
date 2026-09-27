@@ -907,7 +907,9 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             <div className="space-y-0.5">
               <span className="font-bold text-[#0B1F33]">Satellite Grounding & Atmospheric Physics:</span>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                Rendered over high-resolution GIS topography. Steep orographic barriers (Khasi Hills, Himalayas, Western Ghats) dictate localized convective physics at short horizons, while AI Deep Learning neural operators take over large-scale field tracking at medium ranges.
+                {monitoringScope === "INDIA"
+                  ? "Rendered over high-resolution GIS topography. Steep orographic barriers (Western Ghats, Himalayan Arc, Vindhya-Satpura) dictate localized convective physics at short horizons, while AI Deep Learning neural operators take over large-scale field tracking at medium ranges."
+                  : "Rendered over high-resolution GIS topography. Steep orographic barriers (Khasi-Garo Hills, Eastern Himalayas, Patkai Range) dictate localized convective physics at short horizons, while AI Deep Learning neural operators take over large-scale field tracking at medium ranges."}
               </p>
             </div>
           </div>

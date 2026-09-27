@@ -129,8 +129,8 @@ export const ProvenanceDrawer: React.FC<ProvenanceDrawerProps> = ({
               <span>ACTIVE FORECAST QUERY</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-[#334155]">
-              <div>Station / Point: <strong className="text-[#0B1F33]">{selectedLocation?.name}, {selectedLocation?.state}</strong></div>
-              <div>Coordinates: <strong className="text-[#0B1F33]">{selectedLocation?.latitude.toFixed(4)}°N, {selectedLocation?.longitude.toFixed(4)}°E</strong></div>
+              <div>Station / Point: <strong className="text-[#0B1F33]">{selectedLocation ? `${selectedLocation.name}, ${selectedLocation.state || "India"}` : "National Domain Grid (All India)"}</strong></div>
+              <div>Coordinates: <strong className="text-[#0B1F33]">{selectedLocation && selectedLocation.latitude !== undefined && selectedLocation.longitude !== undefined ? `${selectedLocation.latitude.toFixed(4)}°N, ${selectedLocation.longitude.toFixed(4)}°E` : "National Grid Bounding Box"}</strong></div>
               <div>Lead Horizon: <strong className="text-[#0B1F33]">+{leadHours}h</strong></div>
               <div>Valid Time: <strong className="text-[#0B1F33]">{validTimeStr}</strong></div>
               <div>Primary Variable: <strong className="text-[#0B1F33]">Total Precipitation (mm) & 2m Temp (°C)</strong></div>

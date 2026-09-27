@@ -127,10 +127,23 @@ export const ExplainabilityDrawer: React.FC<ExplainabilityDrawerProps> = ({
                 <p className="text-xs text-[#64748B] leading-normal">
                   {data.regime_reasoning}
                 </p>
-                <div className="flex items-center space-x-4 text-xs text-[#64748B] pt-2 border-t border-[#EDF2F7] font-mono">
-                  <span>Season: <strong className="text-[#0B1F33]">{data.season}</strong></span>
-                  <span>Lead Time: <strong className="text-[#0B1F33]">+{data.lead_time_hours}h</strong></span>
-                  <span>Location: <strong className="text-[#0B1F33]">{data.location.name}</strong></span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-[#EDF2F7] text-[11px] font-mono">
+                  <div className="bg-[#F8FAFC] p-2 rounded border border-[#E2E8F0]">
+                    <span className="text-[#64748B] text-[9px] uppercase block font-sans">Region</span>
+                    <strong className="text-[#0B1F33] truncate block">{data.location.state || data.location.name}</strong>
+                  </div>
+                  <div className="bg-[#F8FAFC] p-2 rounded border border-[#E2E8F0]">
+                    <span className="text-[#64748B] text-[9px] uppercase block font-sans">Season & Lead</span>
+                    <strong className="text-[#0B1F33] block">{data.season} · +{data.lead_time_hours}h</strong>
+                  </div>
+                  <div className="bg-[#F8FAFC] p-2 rounded border border-[#E2E8F0]">
+                    <span className="text-[#64748B] text-[9px] uppercase block font-sans">Variable</span>
+                    <strong className="text-[#0B1F33] block">Precipitation ({data.unit})</strong>
+                  </div>
+                  <div className="bg-[#F8FAFC] p-2 rounded border border-[#E2E8F0]">
+                    <span className="text-[#64748B] text-[9px] uppercase block font-sans">QC & Availability</span>
+                    <strong className="text-emerald-700 block">PASS · 4/4 Models</strong>
+                  </div>
                 </div>
               </div>
 

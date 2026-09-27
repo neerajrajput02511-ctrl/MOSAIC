@@ -11,17 +11,25 @@ export interface TooltipProps {
   className?: string;
 }
 
-// Canonical definitions as mandated by SIH26081 Section 5
+// Canonical definitions as mandated by SIH26081 Section 25
 export const DICTIONARY: Record<string, string> = {
-  "adaptive_weight": "The percentage of influence dynamically assigned to each forecast model based on how well it has performed for this specific location, weather regime, lead time, and season.",
-  "model_agreement": "Measures how closely the different forecasting systems agree with each other. Higher disagreement indicates greater atmospheric uncertainty.",
-  "ensemble_spread": "Measures the divergence between the 31 ensemble members of NOAA GEFS, indicating the range of possible weather outcomes.",
-  "forecast_lead": "The time horizon into the future for which the prediction is generated (e.g. +24h, +48h, +72h, +120h).",
-  "weather_regime": "The prevailing synoptic atmospheric pattern (such as Active Monsoon, Deep Convection, Break Monsoon, or Heatwave) governing regional flow.",
-  "bias_correction": "A systematic calibration applied when an individual numerical model historically exhibits persistent over-forecasting or under-forecasting.",
-  "regridding": "The mathematical transformation (e.g. bilinear interpolation) that maps disparate model resolutions (0.25°, 0.5°) onto a unified 0.25° common coordinate grid.",
-  "mae": "Mean Absolute Error: The average magnitude of errors between predicted and observed values. Lower values indicate superior accuracy.",
+  "adaptive_weight": "How much influence this forecast model currently has in the MOSAIC blend, dynamically computed from historical error and weather regime.",
+  "model_agreement": "How closely the available forecast models agree with each other. High agreement increases confidence.",
+  "forecast_uncertainty": "How uncertain the blended forecast is based on multi-model spread, standard deviation σ, and verified MAE.",
+  "lead_time": "The forecast horizon into the future (e.g. +6h, +24h, +48h, +120h) from model initialization.",
+  "nwp": "Numerical Weather Prediction: Traditional physics-based atmospheric modeling solving hydrodynamic and thermodynamic equations on supercomputers.",
+  "ai_forecast": "Deep neural network planetary weather model (e.g., ECMWF AIFS) trained on 40+ years of atmospheric reanalysis data.",
+  "observation": "Direct empirical ground-truth measurements recorded at surface weather stations (IMD AWS/ARG) or atmospheric soundings.",
+  "satellite": "Remote sensing earth observation from geostationary (INSAT-3D/3DR) and microwave satellites providing cloud top temperature and precipitation.",
+  "bias_correction": "A systematic calibration applied when an individual model historically exhibits persistent over-forecasting or under-forecasting.",
+  "verification": "Rigorous scientific comparison of forecast predictions against actual ground observations to evaluate operational skill.",
+  "crps": "Continuous Ranked Probability Score: A metric evaluating probabilistic forecasts by measuring distance between predicted and observed cumulative distributions.",
   "rmse": "Root Mean Square Error: Measures prediction error while penalizing larger errors more heavily. Lower values represent higher fidelity.",
+  "mae": "Mean Absolute Error: The average magnitude of errors between predicted and observed values. Lower values indicate superior accuracy.",
+  "model_dominance": "The individual forecast model that received the highest weight (argmax w_i) for a specific geographic region or grid cell.",
+  "ensemble_spread": "Measures the divergence between the 31 ensemble members of NOAA GEFS, indicating the range of possible weather outcomes.",
+  "weather_regime": "The prevailing synoptic atmospheric pattern (such as Active Monsoon, Deep Convection, Break Monsoon, or Heatwave) governing regional flow.",
+  "regridding": "The mathematical transformation (e.g. bilinear interpolation) that maps disparate model resolutions (0.25°, 0.5°) onto a unified 0.25° common coordinate grid.",
   "probability": "The calibrated likelihood (0–100%) that an atmospheric threshold (e.g. rainfall >15mm or >50mm) will be exceeded.",
   "forecast_certainty": "An objective assessment of predictability derived from inter-model consensus, ensemble spread, and historical verification skill — never an arbitrary score.",
   "bma": "Bayesian Model Averaging: A statistical framework combining predictions from multiple models weighted by their posterior probabilities given historical skill.",
