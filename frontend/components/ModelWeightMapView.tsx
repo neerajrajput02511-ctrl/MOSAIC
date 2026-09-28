@@ -200,6 +200,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const hoverPopup = useRef<maplibregl.Popup | null>(null);
+  const mapReadyRef = useRef<boolean>(false);
 
   // References to avoid stale closures in MapLibre event handlers
   const mapDataRef = useRef<SpatialWeightMapResponse | null>(null);
@@ -357,26 +358,8 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     const currentData = mapDataRef.current;
     if (!m || !currentData) return;
 
-    // In MapLibre GL, raster tile sources stream tiles continuously, so isStyleLoaded()
-    // can return false and never emits 'styledata'. Instead, we check if map is loaded and style is ready.
-    if (!m.loaded()) {
-      const onMapReady = () => {
-        m.off("load", onMapReady);
-        m.off("style.load", onMapReady);
-        syncLayers();
-      };
-      m.once("load", onMapReady);
-      m.once("style.load", onMapReady);
-      return;
-    }
-
-    try {
-      if (!m.getStyle()) {
-        m.once("style.load", () => syncLayers());
-        return;
-      }
-    } catch {
-      m.once("style.load", () => syncLayers());
+    if (!mapReadyRef.current) {
+      console.log("[MOSAIC Map] syncLayers waiting for map load event...");
       return;
     }
 
@@ -874,12 +857,15 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
 
     m.on("load", () => {
       console.log("[MOSAIC Map] Initial map load event fired.");
+      mapReadyRef.current = true;
+      m.resize();
       syncLayers();
     });
 
     return () => {
       m.remove();
       map.current = null;
+      mapReadyRef.current = false;
     };
   }, []);
 
@@ -915,9 +901,11 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
   const handleToggleStyle = (newStyle: BaseMapStyle) => {
     if (newStyle === mapStyleType || !map.current) return;
     setMapStyleType(newStyle);
+    mapReadyRef.current = false;
     map.current.setStyle(MAP_STYLES[newStyle].style as any);
     map.current.once("style.load", () => {
       console.log("[MOSAIC Map] Style switched to:", newStyle);
+      mapReadyRef.current = true;
       syncLayers();
     });
   };

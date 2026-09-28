@@ -11,9 +11,9 @@ const DEFAULT_PUBLIC_BACKEND = "https://mosaic-mgbt.onrender.com/api/v1";
 
 export function getApiBase(): string {
   if (typeof window !== "undefined") {
-    // If running on local dev over HTTP (localhost or 127.0.0.1), always connect to local backend
+    // If running on local dev over HTTP (localhost or 127.0.0.1), always connect to local backend on 127.0.0.1
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      return "http://localhost:8000/api/v1";
+      return "http://127.0.0.1:8000/api/v1";
     }
   }
 
