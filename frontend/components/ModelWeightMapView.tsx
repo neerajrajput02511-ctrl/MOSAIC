@@ -195,7 +195,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [mapStyleType, setMapStyleType] = useState<BaseMapStyle>("satellite");
   const [overlayViewMode, setOverlayViewMode] = useState<OverlayViewMode>("dominant");
-  const [overlayOpacity, setOverlayOpacity] = useState<number>(0.60);
+  const [overlayOpacity, setOverlayOpacity] = useState<number>(0.70);
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -357,8 +357,26 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     const currentData = mapDataRef.current;
     if (!m || !currentData) return;
 
-    if (!m.isStyleLoaded()) {
-      m.once("styledata", () => syncLayers());
+    // In MapLibre GL, raster tile sources stream tiles continuously, so isStyleLoaded()
+    // can return false and never emits 'styledata'. Instead, we check if map is loaded and style is ready.
+    if (!m.loaded()) {
+      const onMapReady = () => {
+        m.off("load", onMapReady);
+        m.off("style.load", onMapReady);
+        syncLayers();
+      };
+      m.once("load", onMapReady);
+      m.once("style.load", onMapReady);
+      return;
+    }
+
+    try {
+      if (!m.getStyle()) {
+        m.once("style.load", () => syncLayers());
+        return;
+      }
+    } catch {
+      m.once("style.load", () => syncLayers());
       return;
     }
 
@@ -391,42 +409,42 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                 : domModel.includes("GFS") 
                 ? "#3b82f6" 
                 : "#f59e0b";
-              cellOpacity = Math.max(0.20, Math.min(0.92, (0.28 + domWeight * 0.55) * currentOpacity));
+              cellOpacity = Math.max(0.30, Math.min(0.95, (0.35 + domWeight * 0.55) * Math.max(0.45, currentOpacity)));
               break;
             case "aifs":
               cellColor = "#8b5cf6";
               const aifsW = w["ECMWF_AIFS"] || 0;
-              cellOpacity = Math.max(0.12, Math.min(0.95, (0.15 + aifsW * 0.85) * currentOpacity));
+              cellOpacity = Math.max(0.18, Math.min(0.95, (0.20 + aifsW * 0.80) * currentOpacity));
               break;
             case "ifs":
               cellColor = "#06b6d4";
               const ifsW = w["ECMWF_IFS"] || 0;
-              cellOpacity = Math.max(0.12, Math.min(0.95, (0.15 + ifsW * 0.85) * currentOpacity));
+              cellOpacity = Math.max(0.18, Math.min(0.95, (0.20 + ifsW * 0.80) * currentOpacity));
               break;
             case "gfs":
               cellColor = "#3b82f6";
               const gfsW = w["NOAA_GFS"] || 0;
-              cellOpacity = Math.max(0.12, Math.min(0.95, (0.15 + gfsW * 0.85) * currentOpacity));
+              cellOpacity = Math.max(0.18, Math.min(0.95, (0.20 + gfsW * 0.80) * currentOpacity));
               break;
             case "gefs":
               cellColor = "#f59e0b";
               const gefsW = w["NOAA_GEFS"] || 0;
-              cellOpacity = Math.max(0.12, Math.min(0.95, (0.15 + gefsW * 0.85) * currentOpacity));
+              cellOpacity = Math.max(0.18, Math.min(0.95, (0.20 + gefsW * 0.80) * currentOpacity));
               break;
             case "disagreement":
               const dis = c.disagreement ?? 0.22;
               cellColor = dis < 0.20 ? "#10b981" : (dis < 0.35 ? "#f59e0b" : "#ef4444");
-              cellOpacity = Math.max(0.20, Math.min(0.92, (0.30 + dis * 0.60) * currentOpacity));
+              cellOpacity = Math.max(0.28, Math.min(0.95, (0.32 + dis * 0.58) * currentOpacity));
               break;
             case "entropy":
               const ent = c.entropy ?? 0.82;
               cellColor = ent < 0.65 ? "#06b6d4" : (ent < 0.82 ? "#6366f1" : "#ec4899");
-              cellOpacity = Math.max(0.20, Math.min(0.92, (0.30 + ent * 0.55) * currentOpacity));
+              cellOpacity = Math.max(0.28, Math.min(0.95, (0.32 + ent * 0.55) * currentOpacity));
               break;
             case "confidence":
               const conf = c.confidence ?? 0.78;
               cellColor = conf > 0.75 ? "#10b981" : (conf > 0.55 ? "#3b82f6" : "#f97316");
-              cellOpacity = Math.max(0.20, Math.min(0.92, (0.30 + conf * 0.55) * currentOpacity));
+              cellOpacity = Math.max(0.28, Math.min(0.95, (0.32 + conf * 0.55) * currentOpacity));
               break;
           }
 
@@ -448,6 +466,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               cell_idx: idx,
               lat: c.latitude,
               lon: c.longitude,
+              region_code: c.region_code || "",
               region_name: c.region_name || "Meteorological Subdivision",
               dominant_model: domModel,
               dominant_weight_pct: c.dominant_weight_pct || Math.round(domWeight * 100),
@@ -566,7 +585,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           paint: {
             "line-color": "#ffffff",
             "line-width": 0.5,
-            "line-opacity": 0.18
+            "line-opacity": 0.22
           }
         });
 
@@ -622,6 +641,20 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           m.getCanvas().style.cursor = "";
           if (hoverPopup.current) hoverPopup.current.remove();
         });
+
+        // Grid Cell Click -> Select Region
+        m.on("click", "grid-cells-fill", (e) => {
+          if (!e.features || !e.features[0]) return;
+          const regCode = e.features[0].properties?.region_code;
+          const target = mapDataRef.current?.regions.find(r => r.region_code === regCode);
+          if (target) {
+            setSelectedRegion(target);
+            if (target.stations && target.stations.length > 0) {
+              setSelectedStation(target.stations[0]);
+            }
+            if (onSelectRegion) onSelectRegion(target.region_code);
+          }
+        });
       }
 
       // Upsert Subdivisions Source & Layers
@@ -634,7 +667,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           data: subdivisionsGeoJSON
         });
 
-        // Subtle subdivision tint
+        // Highlight for selected subdivision
         m.addLayer({
           id: "subdivisions-fill",
           type: "fill",
@@ -644,8 +677,8 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             "fill-opacity": [
               "case",
               ["==", ["get", "isSelected"], 1],
-              0.25,
-              0.05
+              0.35,
+              0.0
             ]
           }
         });
@@ -668,7 +701,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               3.5,
               2.0
             ],
-            "line-opacity": 0.85
+            "line-opacity": 0.90
           }
         });
 
@@ -716,7 +749,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               6.5
             ],
             "circle-color": ["get", "color"],
-            "circle-opacity": 0.90,
+            "circle-opacity": 0.95,
             "circle-stroke-width": 2.0,
             "circle-stroke-color": "#ffffff"
           }
@@ -749,12 +782,47 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             });
           }
         });
+
+        // Station Pin Hover
+        m.on("mousemove", "stations-circle-glow", (e) => {
+          m.getCanvas().style.cursor = "pointer";
+          if (e.features && e.features[0] && hoverPopup.current) {
+            const p = e.features[0].properties;
+            hoverPopup.current
+              .setLngLat(e.lngLat)
+              .setHTML(`
+                <div style="background:#090f1d; border:1px solid #1e2e4a; border-radius:8px; padding:10px 14px; color:#e2e8f0; font-family:ui-monospace, monospace; font-size:11px; min-width:210px; box-shadow:0 12px 35px rgba(0,0,0,0.9);">
+                  <div style="font-weight:bold; color:#38bdf8; font-size:12px; margin-bottom:2px;">${p.name}</div>
+                  <div style="color:#94a3b8; font-size:10px; margin-bottom:6px;">${p.state} &middot; Elev: ${p.elevation_m}m</div>
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:#94a3b8;">Dominant Model:</span>
+                    <span style="color:${p.color}; font-weight:bold;">${p.dominant_model} (${p.dominant_weight_pct}%)</span>
+                  </div>
+                </div>
+              `)
+              .addTo(m);
+          }
+        });
+
+        m.on("mouseleave", "stations-circle-glow", () => {
+          m.getCanvas().style.cursor = "";
+          if (hoverPopup.current) hoverPopup.current.remove();
+        });
       }
 
       // Refresh Dynamic Styling for Cells & Lines
       if (m.getLayer("grid-cells-fill")) {
         m.setPaintProperty("grid-cells-fill", "fill-color", ["get", "cell_color"]);
         m.setPaintProperty("grid-cells-fill", "fill-opacity", ["get", "cell_opacity"]);
+      }
+      if (m.getLayer("subdivisions-fill")) {
+        m.setPaintProperty("subdivisions-fill", "fill-color", ["get", "active_color"]);
+        m.setPaintProperty("subdivisions-fill", "fill-opacity", [
+          "case",
+          ["==", ["get", "isSelected"], 1],
+          0.35,
+          0.0
+        ]);
       }
       if (m.getLayer("subdivisions-line")) {
         m.setPaintProperty("subdivisions-line", "line-color", [
@@ -763,7 +831,14 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           "#ffffff",
           ["get", "active_color"]
         ]);
+        m.setPaintProperty("subdivisions-line", "line-width", [
+          "case",
+          ["==", ["get", "isSelected"], 1],
+          3.5,
+          2.0
+        ]);
       }
+      console.log(`[MOSAIC Map] Successfully synced ${gridCellsGeoJSON.features.length} grid cells, ${subdivisionsGeoJSON.features.length} regions, and ${stationsGeoJSON.features.length} stations.`);
     } catch (err) {
       console.error("[MOSAIC Spatial Map] Layer synchronization error:", err);
     }
@@ -798,6 +873,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     });
 
     m.on("load", () => {
+      console.log("[MOSAIC Map] Initial map load event fired.");
       syncLayers();
     });
 
@@ -805,7 +881,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
       m.remove();
       map.current = null;
     };
-  }, [mapStyleType]);
+  }, []);
 
 
   // 5. Trigger syncLayers whenever mapData, selectedRegion, overlayViewMode or overlayOpacity changes
@@ -840,7 +916,8 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     if (newStyle === mapStyleType || !map.current) return;
     setMapStyleType(newStyle);
     map.current.setStyle(MAP_STYLES[newStyle].style as any);
-    map.current.once("styledata", () => {
+    map.current.once("style.load", () => {
+      console.log("[MOSAIC Map] Style switched to:", newStyle);
       syncLayers();
     });
   };

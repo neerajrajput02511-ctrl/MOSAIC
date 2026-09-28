@@ -10,6 +10,13 @@ import {
 const DEFAULT_PUBLIC_BACKEND = "https://mosaic-mgbt.onrender.com/api/v1";
 
 export function getApiBase(): string {
+  if (typeof window !== "undefined") {
+    // If running on local dev over HTTP (localhost or 127.0.0.1), always connect to local backend
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return "http://localhost:8000/api/v1";
+    }
+  }
+
   let url = process.env.NEXT_PUBLIC_API_URL;
   if (url && url.trim().length > 0) {
     url = url.trim().replace(/\/$/, "");
@@ -18,16 +25,10 @@ export function getApiBase(): string {
     }
     return url;
   }
-  if (typeof window !== "undefined") {
-    // If the page is running on HTTPS (like GitHub Pages or production domain)
-    if (window.location.protocol === "https:") {
-      return DEFAULT_PUBLIC_BACKEND;
-    }
-    // If running on local dev over HTTP
-    return "http://localhost:8000/api/v1";
-  }
+
   return DEFAULT_PUBLIC_BACKEND;
 }
+
 
 const API_BASE = getApiBase();
 
