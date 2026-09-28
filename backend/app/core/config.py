@@ -34,20 +34,21 @@ class Settings(BaseSettings):
     # ISRO MOSDAC
     MOSDAC_API_BASE_URL: str = "https://mosdac.gov.in/api/v1"
     MOSDAC_BASE_URL: str = "https://mosdac.gov.in"
-    MOSDAC_USERNAME: Optional[str] = None
-    MOSDAC_PASSWORD: Optional[str] = None
+    MOSDAC_USERNAME: Optional[str] = "Neerajrajput02511@gmail.com"
+    MOSDAC_PASSWORD: Optional[str] = "Mosaic081#"
     MOSDAC_OPEN_DATA_MODE: bool = False
     
     # NOAA & ECMWF
     NOAA_NOMADS_URL: str = "https://nomads.ncep.noaa.gov"
-    ECMWF_API_KEY: Optional[str] = None
-    ECMWF_API_EMAIL: Optional[str] = None
+    ECMWF_API_KEY: Optional[str] = "df055df61ddd1b0a166792fa50eacc91"
+    ECMWF_API_EMAIL: Optional[str] = "neerajrajput02511@gmail.com"
     
     # Geospatial / Maps
-    MAPTILER_API_KEY: Optional[str] = None
+    MAPTILER_API_KEY: Optional[str] = "Pr9J7otpKZto27g0b9Fu"
     MAPBOX_ACCESS_TOKEN: Optional[str] = None
-    GOOGLE_MAPS_API_KEY: Optional[str] = None
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: Optional[str] = None
+    GOOGLE_MAPS_API_KEY: Optional[str] = "AIzaSyDMATo2x1vn0jGZ8WVvTgfXxa5SzaZm0WI"
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: Optional[str] = "AIzaSyDMATo2x1vn0jGZ8WVvTgfXxa5SzaZm0WI"
+
     
     # Gemini AI Agent Copilot
     GEMINI_API_KEY: Optional[str] = None
