@@ -67,6 +67,7 @@ const MAP_STYLES: Record<BaseMapStyle, { name: string; style: any }> = {
     name: "Satellite Hybrid",
     style: {
       version: 8 as const,
+      glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
       sources: {
         "google-sat": {
           type: "raster" as const,
@@ -97,6 +98,7 @@ const MAP_STYLES: Record<BaseMapStyle, { name: string; style: any }> = {
     name: "Dark Tactical",
     style: {
       version: 8 as const,
+      glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
       sources: {
         "esri-dark": {
           type: "raster" as const,
@@ -122,6 +124,7 @@ const MAP_STYLES: Record<BaseMapStyle, { name: string; style: any }> = {
     name: "Topographic Terrain",
     style: {
       version: 8 as const,
+      glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
       sources: {
         "esri-terrain": {
           type: "raster" as const,
@@ -147,6 +150,7 @@ const MAP_STYLES: Record<BaseMapStyle, { name: string; style: any }> = {
     name: "Street Cartography",
     style: {
       version: 8 as const,
+      glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
       sources: {
         "carto-street": {
           type: "raster" as const,
@@ -169,6 +173,7 @@ const MAP_STYLES: Record<BaseMapStyle, { name: string; style: any }> = {
     }
   }
 };
+
 
 export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({ 
   onSelectRegion,
@@ -350,10 +355,10 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
   const syncLayers = useCallback(() => {
     const m = map.current;
     const currentData = mapDataRef.current;
-    if (!m || !currentData?.regions) return;
+    if (!m || !currentData) return;
 
     if (!m.isStyleLoaded()) {
-      m.once("styledata", syncLayers);
+      m.once("styledata", () => syncLayers());
       return;
     }
 
@@ -361,297 +366,410 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     const currentMode = overlayViewModeRef.current;
     const currentOpacity = overlayOpacityRef.current;
 
-    // GeoJSON for Subdivisions
-    const subdivisionsGeoJSON: GeoJSON.FeatureCollection = {
-      type: "FeatureCollection",
-      features: currentData.regions
-        .filter(r => r.geometry && r.geometry.coordinates)
-        .map(r => {
-          const style = computeStyleForRegion(r, currentMode, currentOpacity);
-          const w = r.weights || {};
+    try {
+      // 1. GeoJSON for Discrete 0.25° Meteorological Grid Cells
+      const rawCells = (currentData as any).cells && (currentData as any).cells.length > 0 
+        ? (currentData as any).cells 
+        : [];
+
+      const gridCellsGeoJSON: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: rawCells.map((c: any, idx: number) => {
+          const w = c.weights || {};
+          const domModel = c.dominantModel || c.dominant_model || "ECMWF_AIFS";
+          const domWeight = (c.dominant_weight_pct || 40) / 100.0;
+          
+          let cellColor = "#8b5cf6";
+          let cellOpacity = 0.55;
+          
+          switch (currentMode) {
+            case "dominant":
+              cellColor = domModel.includes("AIFS") 
+                ? "#8b5cf6" 
+                : domModel.includes("IFS") 
+                ? "#06b6d4" 
+                : domModel.includes("GFS") 
+                ? "#3b82f6" 
+                : "#f59e0b";
+              cellOpacity = Math.max(0.20, Math.min(0.92, (0.28 + domWeight * 0.55) * currentOpacity));
+              break;
+            case "aifs":
+              cellColor = "#8b5cf6";
+              const aifsW = w["ECMWF_AIFS"] || 0;
+              cellOpacity = Math.max(0.12, Math.min(0.95, (0.15 + aifsW * 0.85) * currentOpacity));
+              break;
+            case "ifs":
+              cellColor = "#06b6d4";
+              const ifsW = w["ECMWF_IFS"] || 0;
+              cellOpacity = Math.max(0.12, Math.min(0.95, (0.15 + ifsW * 0.85) * currentOpacity));
+              break;
+            case "gfs":
+              cellColor = "#3b82f6";
+              const gfsW = w["NOAA_GFS"] || 0;
+              cellOpacity = Math.max(0.12, Math.min(0.95, (0.15 + gfsW * 0.85) * currentOpacity));
+              break;
+            case "gefs":
+              cellColor = "#f59e0b";
+              const gefsW = w["NOAA_GEFS"] || 0;
+              cellOpacity = Math.max(0.12, Math.min(0.95, (0.15 + gefsW * 0.85) * currentOpacity));
+              break;
+            case "disagreement":
+              const dis = c.disagreement ?? 0.22;
+              cellColor = dis < 0.20 ? "#10b981" : (dis < 0.35 ? "#f59e0b" : "#ef4444");
+              cellOpacity = Math.max(0.20, Math.min(0.92, (0.30 + dis * 0.60) * currentOpacity));
+              break;
+            case "entropy":
+              const ent = c.entropy ?? 0.82;
+              cellColor = ent < 0.65 ? "#06b6d4" : (ent < 0.82 ? "#6366f1" : "#ec4899");
+              cellOpacity = Math.max(0.20, Math.min(0.92, (0.30 + ent * 0.55) * currentOpacity));
+              break;
+            case "confidence":
+              const conf = c.confidence ?? 0.78;
+              cellColor = conf > 0.75 ? "#10b981" : (conf > 0.55 ? "#3b82f6" : "#f97316");
+              cellOpacity = Math.max(0.20, Math.min(0.92, (0.30 + conf * 0.55) * currentOpacity));
+              break;
+          }
+
+          const bbox = c.bbox || [c.longitude - 0.125, c.latitude - 0.125, c.longitude + 0.125, c.latitude + 0.125];
           return {
             type: "Feature",
-            id: r.region_code,
-            geometry: r.geometry as any,
+            id: `cell_${idx}`,
+            geometry: {
+              type: "Polygon",
+              coordinates: [[
+                [bbox[0], bbox[1]],
+                [bbox[2], bbox[1]],
+                [bbox[2], bbox[3]],
+                [bbox[0], bbox[3]],
+                [bbox[0], bbox[1]]
+              ]]
+            },
             properties: {
-              region_code: r.region_code,
-              region_name: r.region_name,
-              dominant_model: r.dominant_model,
-              dominant_weight_pct: r.dominant_weight_pct,
-              active_color: style.activeColor,
-              active_opacity: style.activeOpacity,
-              color: style.activeColor,
-              elevation_m: r.elevation_m || 0,
-              orographic_feature: r.orographic_feature || "",
-              bma_entropy: r.bma_entropy !== undefined ? r.bma_entropy : 0.82,
-              confidence: r.confidence !== undefined ? r.confidence : 0.80,
-              disagreement: r.disagreement !== undefined ? r.disagreement : 0.22,
-              sample_size: r.sample_size || 16,
+              cell_idx: idx,
+              lat: c.latitude,
+              lon: c.longitude,
+              region_name: c.region_name || "Meteorological Subdivision",
+              dominant_model: domModel,
+              dominant_weight_pct: c.dominant_weight_pct || Math.round(domWeight * 100),
+              cell_color: cellColor,
+              cell_opacity: cellOpacity,
               w_aifs: Math.round((w["ECMWF_AIFS"] || 0) * 100),
               w_ifs: Math.round((w["ECMWF_IFS"] || 0) * 100),
               w_gfs: Math.round((w["NOAA_GFS"] || 0) * 100),
               w_gefs: Math.round((w["NOAA_GEFS"] || 0) * 100),
-              center_lat: r.center ? r.center[0] : 0,
-              center_lon: r.center ? r.center[1] : 0,
-              lead_time_hours: r.lead_time_hours || leadTime,
-              variable_name: variable.replace("_", " ").toUpperCase(),
-              generated_at: currentData.generated_at,
-              states: r.states ? r.states.join(", ") : "",
-              isSelected: currentSelected?.region_code === r.region_code ? 1 : 0
+              elevation_m: Math.round(c.elevation_m || 0),
+              entropy: c.entropy || 0.82,
+              confidence: c.confidence || 0.78,
+              disagreement: c.disagreement || 0.22,
+              lead_time_hours: c.leadTime || leadTime
             }
           };
         })
-    };
+      };
 
-    // GeoJSON for Real Stations
-    const stationsGeoJSON: GeoJSON.FeatureCollection = {
-      type: "FeatureCollection",
-      features: (currentData.stations || []).map(st => ({
-        type: "Feature",
-        id: st.id,
-        geometry: {
-          type: "Point",
-          coordinates: [st.longitude, st.latitude]
-        },
-        properties: {
+      // 2. GeoJSON for Subdivisions
+      const subdivisionsGeoJSON: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: (currentData.regions || [])
+          .filter(r => r.geometry && r.geometry.coordinates)
+          .map(r => {
+            const style = computeStyleForRegion(r, currentMode, currentOpacity);
+            const w = r.weights || {};
+            return {
+              type: "Feature",
+              id: r.region_code,
+              geometry: r.geometry as any,
+              properties: {
+                region_code: r.region_code,
+                region_name: r.region_name,
+                dominant_model: r.dominant_model,
+                dominant_weight_pct: r.dominant_weight_pct,
+                active_color: style.activeColor,
+                active_opacity: style.activeOpacity,
+                color: style.activeColor,
+                elevation_m: r.elevation_m || 0,
+                orographic_feature: r.orographic_feature || "",
+                bma_entropy: r.bma_entropy !== undefined ? r.bma_entropy : 0.82,
+                confidence: r.confidence !== undefined ? r.confidence : 0.80,
+                disagreement: r.disagreement !== undefined ? r.disagreement : 0.22,
+                sample_size: r.sample_size || 16,
+                w_aifs: Math.round((w["ECMWF_AIFS"] || 0) * 100),
+                w_ifs: Math.round((w["ECMWF_IFS"] || 0) * 100),
+                w_gfs: Math.round((w["NOAA_GFS"] || 0) * 100),
+                w_gefs: Math.round((w["NOAA_GEFS"] || 0) * 100),
+                center_lat: r.center ? r.center[0] : 0,
+                center_lon: r.center ? r.center[1] : 0,
+                lead_time_hours: r.lead_time_hours || leadTime,
+                variable_name: variable.replace("_", " ").toUpperCase(),
+                generated_at: currentData.generated_at,
+                states: r.states ? r.states.join(", ") : "",
+                isSelected: currentSelected?.region_code === r.region_code ? 1 : 0
+              }
+            };
+          })
+      };
+
+      // 3. GeoJSON for Real Observation Stations
+      const stationsGeoJSON: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: (currentData.stations || []).map(st => ({
+          type: "Feature",
           id: st.id,
-          name: st.name,
-          state: st.state,
-          elevation_m: st.elevation_m || 0,
-          is_ner: st.is_ner ? 1 : 0,
-          dominant_model: st.dominant_model,
-          dominant_weight_pct: st.dominant_weight_pct,
-          color: st.dominant_model.includes("AIFS") 
-            ? "#8b5cf6" 
-            : (st.dominant_model.includes("IFS") ? "#06b6d4" : (st.dominant_model.includes("GFS") ? "#3b82f6" : "#f59e0b")),
-          precip_ifs: st.predictions?.ECMWF_IFS || 0,
-          precip_aifs: st.predictions?.ECMWF_AIFS || 0,
-          precip_gfs: st.predictions?.NOAA_GFS || 0
-        }
-      }))
-    };
-
-    // Upsert Subdivisions Source & Layers
-    const subSource = m.getSource("subdivisions-src") as maplibregl.GeoJSONSource;
-    if (subSource) {
-      subSource.setData(subdivisionsGeoJSON);
-    } else {
-      m.addSource("subdivisions-src", {
-        type: "geojson",
-        data: subdivisionsGeoJSON
-      });
-
-      // Fill Layer (Semi-transparent with dynamic analytical coloring)
-      m.addLayer({
-        id: "subdivisions-fill",
-        type: "fill",
-        source: "subdivisions-src",
-        paint: {
-          "fill-color": ["get", "active_color"],
-          "fill-opacity": [
-            "case",
-            ["==", ["get", "isSelected"], 1],
-            ["min", 0.95, ["+", ["get", "active_opacity"], 0.22]],
-            ["get", "active_opacity"]
-          ]
-        }
-      });
-
-      // Outline Layer (Dynamic Border)
-      m.addLayer({
-        id: "subdivisions-line",
-        type: "line",
-        source: "subdivisions-src",
-        paint: {
-          "line-color": [
-            "case",
-            ["==", ["get", "isSelected"], 1],
-            "#ffffff",
-            ["get", "active_color"]
-          ],
-          "line-width": [
-            "case",
-            ["==", ["get", "isSelected"], 1],
-            3.5,
-            1.8
-          ],
-          "line-opacity": 0.95
-        }
-      });
-
-      // Zone Click
-      m.on("click", "subdivisions-fill", (e) => {
-        if (!e.features || !e.features[0]) return;
-        const regCode = e.features[0].properties?.region_code;
-        const target = mapDataRef.current?.regions.find(r => r.region_code === regCode);
-        if (target) {
-          setSelectedRegion(target);
-          if (target.stations && target.stations.length > 0) {
-            setSelectedStation(target.stations[0]);
+          geometry: {
+            type: "Point",
+            coordinates: [st.longitude, st.latitude]
+          },
+          properties: {
+            id: st.id,
+            name: st.name,
+            state: st.state,
+            elevation_m: st.elevation_m || 0,
+            is_ner: st.is_ner ? 1 : 0,
+            dominant_model: st.dominant_model,
+            dominant_weight_pct: st.dominant_weight_pct,
+            color: st.dominant_model.includes("AIFS") 
+              ? "#8b5cf6" 
+              : (st.dominant_model.includes("IFS") ? "#06b6d4" : (st.dominant_model.includes("GFS") ? "#3b82f6" : "#f59e0b")),
+            precip_ifs: st.predictions?.ECMWF_IFS || 0,
+            precip_aifs: st.predictions?.ECMWF_AIFS || 0,
+            precip_gfs: st.predictions?.NOAA_GFS || 0
           }
-          if (onSelectRegion) onSelectRegion(target.region_code);
-          m.flyTo({
-            center: [target.center[1], target.center[0]],
-            zoom: 5.6,
-            pitch: 35,
-            duration: 1200
-          });
-        }
-      });
+        }))
+      };
 
-      // Zone Hover (Section 11 Full Tooltip)
-      m.on("mousemove", "subdivisions-fill", (e) => {
-        m.getCanvas().style.cursor = "pointer";
-        if (e.features && e.features[0] && hoverPopup.current) {
-          const p = e.features[0].properties;
-          hoverPopup.current
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div style="background:#090f1d; border:1px solid #1e2e4a; border-radius:10px; padding:12px 16px; color:#e2e8f0; font-family:ui-monospace, monospace; font-size:11px; min-width:270px; box-shadow:0 12px 35px rgba(0,0,0,0.9);">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:6px; margin-bottom:8px;">
-                  <span style="font-weight:bold; color:#38bdf8; font-size:12px; letter-spacing:0.05em;">SPATIAL MODEL WEIGHT</span>
-                  <span style="font-size:9px; background:#1e293b; color:#94a3b8; padding:2px 6px; border-radius:4px; font-weight:bold;">GRID: 0.25°</span>
-                </div>
-                <div style="color:#94a3b8; font-size:10px; margin-bottom:4px;">
-                  <strong>Location:</strong> <span style="color:#e2e8f0;">${p.region_name}</span> (${p.center_lat}°N, ${p.center_lon}°E)
-                </div>
-                <div style="color:#94a3b8; font-size:10px; margin-bottom:8px;">
-                  <strong>Lead:</strong> +${p.lead_time_hours}h &middot; <strong>Variable:</strong> ${p.variable_name} &middot; <strong>Elev:</strong> ${p.elevation_m}m
-                </div>
-                <div style="border-top:1px solid #1e293b; border-bottom:1px solid #1e293b; padding:6px 0; margin-bottom:8px; display:flex; flex-direction:column; gap:4px;">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="color:#8b5cf6; font-weight:bold;">ECMWF AIFS:</span>
-                    <span style="font-weight:bold; color:#e2e8f0;">${p.w_aifs}%</span>
+      // Upsert Grid Cells Source & Layers
+      const gridSource = m.getSource("grid-cells-src") as maplibregl.GeoJSONSource;
+      if (gridSource) {
+        gridSource.setData(gridCellsGeoJSON);
+      } else if (gridCellsGeoJSON.features.length > 0) {
+        m.addSource("grid-cells-src", {
+          type: "geojson",
+          data: gridCellsGeoJSON
+        });
+
+        // 0.25° Cell Semi-transparent analytical fill
+        m.addLayer({
+          id: "grid-cells-fill",
+          type: "fill",
+          source: "grid-cells-src",
+          paint: {
+            "fill-color": ["get", "cell_color"],
+            "fill-opacity": ["get", "cell_opacity"]
+          }
+        });
+
+        // 0.25° Discrete Cell Grid Boundary Wireframe
+        m.addLayer({
+          id: "grid-cells-line",
+          type: "line",
+          source: "grid-cells-src",
+          paint: {
+            "line-color": "#ffffff",
+            "line-width": 0.5,
+            "line-opacity": 0.18
+          }
+        });
+
+        // Cell Hover Tooltip
+        m.on("mousemove", "grid-cells-fill", (e) => {
+          m.getCanvas().style.cursor = "pointer";
+          if (e.features && e.features[0] && hoverPopup.current) {
+            const p = e.features[0].properties;
+            hoverPopup.current
+              .setLngLat(e.lngLat)
+              .setHTML(`
+                <div style="background:#090f1d; border:1px solid #1e2e4a; border-radius:10px; padding:12px 16px; color:#e2e8f0; font-family:ui-monospace, monospace; font-size:11px; min-width:270px; box-shadow:0 12px 35px rgba(0,0,0,0.9);">
+                  <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:6px; margin-bottom:8px;">
+                    <span style="font-weight:bold; color:#38bdf8; font-size:12px; letter-spacing:0.05em;">SPATIAL MODEL WEIGHT</span>
+                    <span style="font-size:9px; background:#1e293b; color:#94a3b8; padding:2px 6px; border-radius:4px; font-weight:bold;">0.25° GRID CELL</span>
                   </div>
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="color:#06b6d4; font-weight:bold;">ECMWF IFS:</span>
-                    <span style="font-weight:bold; color:#e2e8f0;">${p.w_ifs}%</span>
+                  <div style="color:#94a3b8; font-size:10px; margin-bottom:4px;">
+                    <strong>Coordinates:</strong> <span style="color:#e2e8f0;">${Number(p.lat).toFixed(2)}°N, ${Number(p.lon).toFixed(2)}°E</span>
                   </div>
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="color:#3b82f6; font-weight:bold;">NOAA GFS:</span>
-                    <span style="font-weight:bold; color:#e2e8f0;">${p.w_gfs}%</span>
+                  <div style="color:#94a3b8; font-size:10px; margin-bottom:8px;">
+                    <strong>Lead:</strong> +${p.lead_time_hours}h &middot; <strong>Elev:</strong> ${p.elevation_m}m &middot; <strong>Zone:</strong> ${p.region_name}
                   </div>
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="color:#f59e0b; font-weight:bold;">NOAA GEFS:</span>
-                    <span style="font-weight:bold; color:#e2e8f0;">${p.w_gefs}%</span>
+                  <div style="border-top:1px solid #1e293b; border-bottom:1px solid #1e293b; padding:6px 0; margin-bottom:8px; display:flex; flex-direction:column; gap:4px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="color:#8b5cf6; font-weight:bold;">ECMWF AIFS:</span>
+                      <span style="font-weight:bold; color:#e2e8f0;">${p.w_aifs}%</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="color:#06b6d4; font-weight:bold;">ECMWF IFS:</span>
+                      <span style="font-weight:bold; color:#e2e8f0;">${p.w_ifs}%</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="color:#3b82f6; font-weight:bold;">NOAA GFS:</span>
+                      <span style="font-weight:bold; color:#e2e8f0;">${p.w_gfs}%</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="color:#f59e0b; font-weight:bold;">NOAA GEFS:</span>
+                      <span style="font-weight:bold; color:#e2e8f0;">${p.w_gefs}%</span>
+                    </div>
+                  </div>
+                  <div style="font-size:10px; display:flex; flex-direction:column; gap:3px;">
+                    <div><strong>Dominant:</strong> <span style="color:${p.cell_color}; font-weight:bold;">${p.dominant_model}</span> (${p.dominant_weight_pct}%)</div>
+                    <div><strong>Entropy:</strong> H = ${Number(p.entropy).toFixed(3)}</div>
+                    <div><strong>Confidence:</strong> ${Number(p.confidence).toFixed(2)} &middot; <strong>Disagreement:</strong> ${Number(p.disagreement).toFixed(2)}</div>
                   </div>
                 </div>
-                <div style="font-size:10px; display:flex; flex-direction:column; gap:3px;">
-                  <div><strong>Dominant:</strong> <span style="color:${p.active_color}; font-weight:bold;">${p.dominant_model}</span> (${p.dominant_weight_pct}%)</div>
-                  <div><strong>Entropy:</strong> H = ${p.bma_entropy}</div>
-                  <div><strong>Confidence:</strong> ${p.confidence} &middot; <strong>Disagreement:</strong> ${p.disagreement}</div>
-                  <div style="color:#64748b; font-size:9px; margin-top:2px;">Last updated: ${p.generated_at} &middot; Verification sample: N = ${p.sample_size}</div>
-                </div>
-              </div>
-            `)
-            .addTo(m);
-        }
-      });
+              `)
+              .addTo(m);
+          }
+        });
 
-      m.on("mouseleave", "subdivisions-fill", () => {
-        m.getCanvas().style.cursor = "";
-        if (hoverPopup.current) hoverPopup.current.remove();
-      });
-    }
+        m.on("mouseleave", "grid-cells-fill", () => {
+          m.getCanvas().style.cursor = "";
+          if (hoverPopup.current) hoverPopup.current.remove();
+        });
+      }
 
-    // Upsert Stations Source & Layers
-    const stSource = m.getSource("stations-src") as maplibregl.GeoJSONSource;
-    if (stSource) {
-      stSource.setData(stationsGeoJSON);
-    } else {
-      m.addSource("stations-src", {
-        type: "geojson",
-        data: stationsGeoJSON
-      });
+      // Upsert Subdivisions Source & Layers
+      const subSource = m.getSource("subdivisions-src") as maplibregl.GeoJSONSource;
+      if (subSource) {
+        subSource.setData(subdivisionsGeoJSON);
+      } else if (subdivisionsGeoJSON.features.length > 0) {
+        m.addSource("subdivisions-src", {
+          type: "geojson",
+          data: subdivisionsGeoJSON
+        });
 
-      // Outer radar pulse circle
-      m.addLayer({
-        id: "stations-circle-glow",
-        type: "circle",
-        source: "stations-src",
-        paint: {
-          "circle-radius": [
-            "case",
-            ["==", ["get", "is_ner"], 1],
-            8.0,
-            6.5
-          ],
-          "circle-color": ["get", "color"],
-          "circle-opacity": 0.90,
-          "circle-stroke-width": 2.0,
-          "circle-stroke-color": "#ffffff"
-        }
-      });
+        // Subtle subdivision tint
+        m.addLayer({
+          id: "subdivisions-fill",
+          type: "fill",
+          source: "subdivisions-src",
+          paint: {
+            "fill-color": ["get", "active_color"],
+            "fill-opacity": [
+              "case",
+              ["==", ["get", "isSelected"], 1],
+              0.25,
+              0.05
+            ]
+          }
+        });
 
-      // Inner bright core
-      m.addLayer({
-        id: "stations-circle-core",
-        type: "circle",
-        source: "stations-src",
-        paint: {
-          "circle-radius": 3.0,
-          "circle-color": "#ffffff",
-          "circle-opacity": 1.0
-        }
-      });
+        // Prominent Subdivision Border Outline
+        m.addLayer({
+          id: "subdivisions-line",
+          type: "line",
+          source: "subdivisions-src",
+          paint: {
+            "line-color": [
+              "case",
+              ["==", ["get", "isSelected"], 1],
+              "#ffffff",
+              ["get", "active_color"]
+            ],
+            "line-width": [
+              "case",
+              ["==", ["get", "isSelected"], 1],
+              3.5,
+              2.0
+            ],
+            "line-opacity": 0.85
+          }
+        });
 
-      // Station Name Text Label on Map
-      m.addLayer({
-        id: "stations-text-label",
-        type: "symbol",
-        source: "stations-src",
-        layout: {
-          "text-field": ["get", "name"],
-          "text-size": 10,
-          "text-offset": [0, 1.2],
-          "text-anchor": "top",
-          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"]
-        },
-        paint: {
-          "text-color": "#ffffff",
-          "text-halo-color": "#000000",
-          "text-halo-width": 1.8
-        }
-      });
+        // Zone Click
+        m.on("click", "subdivisions-fill", (e) => {
+          if (!e.features || !e.features[0]) return;
+          const regCode = e.features[0].properties?.region_code;
+          const target = mapDataRef.current?.regions.find(r => r.region_code === regCode);
+          if (target) {
+            setSelectedRegion(target);
+            if (target.stations && target.stations.length > 0) {
+              setSelectedStation(target.stations[0]);
+            }
+            if (onSelectRegion) onSelectRegion(target.region_code);
+            m.flyTo({
+              center: [target.center[1], target.center[0]],
+              zoom: 5.6,
+              pitch: 35,
+              duration: 1200
+            });
+          }
+        });
+      }
 
-      // Station Pin Click
-      m.on("click", "stations-circle-glow", (e) => {
-        if (!e.features || !e.features[0]) return;
-        const stId = Number(e.features[0].properties?.id);
-        const stObj = (mapDataRef.current?.stations || []).find(s => s.id === stId);
-        if (stObj) {
-          setSelectedStation(stObj);
-          m.flyTo({
-            center: [stObj.longitude, stObj.latitude],
-            zoom: 6.8,
-            pitch: 45,
-            duration: 1000
-          });
-        }
-      });
-    }
+      // Upsert Stations Source & Layers
+      const stSource = m.getSource("stations-src") as maplibregl.GeoJSONSource;
+      if (stSource) {
+        stSource.setData(stationsGeoJSON);
+      } else if (stationsGeoJSON.features.length > 0) {
+        m.addSource("stations-src", {
+          type: "geojson",
+          data: stationsGeoJSON
+        });
 
-    // Refresh Dynamic Styling for Fill & Lines
-    if (m.getLayer("subdivisions-fill")) {
-      m.setPaintProperty("subdivisions-fill", "fill-color", ["get", "active_color"]);
-      m.setPaintProperty("subdivisions-fill", "fill-opacity", [
-        "case",
-        ["==", ["get", "isSelected"], 1],
-        ["min", 0.95, ["+", ["get", "active_opacity"], 0.22]],
-        ["get", "active_opacity"]
-      ]);
-    }
-    if (m.getLayer("subdivisions-line")) {
-      m.setPaintProperty("subdivisions-line", "line-color", [
-        "case",
-        ["==", ["get", "isSelected"], 1],
-        "#ffffff",
-        ["get", "active_color"]
-      ]);
+        // Outer radar pulse circle
+        m.addLayer({
+          id: "stations-circle-glow",
+          type: "circle",
+          source: "stations-src",
+          paint: {
+            "circle-radius": [
+              "case",
+              ["==", ["get", "is_ner"], 1],
+              8.0,
+              6.5
+            ],
+            "circle-color": ["get", "color"],
+            "circle-opacity": 0.90,
+            "circle-stroke-width": 2.0,
+            "circle-stroke-color": "#ffffff"
+          }
+        });
+
+        // Inner bright core
+        m.addLayer({
+          id: "stations-circle-core",
+          type: "circle",
+          source: "stations-src",
+          paint: {
+            "circle-radius": 3.0,
+            "circle-color": "#ffffff",
+            "circle-opacity": 1.0
+          }
+        });
+
+        // Station Pin Click
+        m.on("click", "stations-circle-glow", (e) => {
+          if (!e.features || !e.features[0]) return;
+          const stId = Number(e.features[0].properties?.id);
+          const stObj = (mapDataRef.current?.stations || []).find(s => s.id === stId);
+          if (stObj) {
+            setSelectedStation(stObj);
+            m.flyTo({
+              center: [stObj.longitude, stObj.latitude],
+              zoom: 6.8,
+              pitch: 45,
+              duration: 1000
+            });
+          }
+        });
+      }
+
+      // Refresh Dynamic Styling for Cells & Lines
+      if (m.getLayer("grid-cells-fill")) {
+        m.setPaintProperty("grid-cells-fill", "fill-color", ["get", "cell_color"]);
+        m.setPaintProperty("grid-cells-fill", "fill-opacity", ["get", "cell_opacity"]);
+      }
+      if (m.getLayer("subdivisions-line")) {
+        m.setPaintProperty("subdivisions-line", "line-color", [
+          "case",
+          ["==", ["get", "isSelected"], 1],
+          "#ffffff",
+          ["get", "active_color"]
+        ]);
+      }
+    } catch (err) {
+      console.error("[MOSAIC Spatial Map] Layer synchronization error:", err);
     }
   }, [computeStyleForRegion, onSelectRegion, variable, leadTime]);
 
-  // 4. Initialize MapLibre GL instance
+  // 4. Initialize MapLibre GL instance (Stable lifecycle)
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
@@ -668,6 +786,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
       bearing: -3,
       attributionControl: false
     });
+    map.current = m;
 
     m.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
 
@@ -679,7 +798,6 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     });
 
     m.on("load", () => {
-      map.current = m;
       syncLayers();
     });
 
@@ -687,7 +805,8 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
       m.remove();
       map.current = null;
     };
-  }, [mapStyleType, syncLayers, monitoringScope]);
+  }, [mapStyleType]);
+
 
   // 5. Trigger syncLayers whenever mapData, selectedRegion, overlayViewMode or overlayOpacity changes
   useEffect(() => {
