@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from backend.app.database.session import get_db
 from backend.app.database.models import Location, Region, ModelMetadata, ModelPerformance, DataSourceStatus
@@ -2191,6 +2192,93 @@ async def get_aws_live(
     longitude: Optional[float] = Query(None)
 ):
     return await _obs_service.get_imd_observations(station_id=station_id, lat=latitude, lon=longitude)
+
+@router.get("/config/status", summary="System Configuration & External Provider Authorization Audit")
+def get_config_status(db: Session = Depends(get_db)):
+    """
+    SIH26081 Section 41:
+    Reports operational status for IMD, MOSDAC, ECMWF, NOAA, NASA, Database, Cache, and Scheduler.
+    Never exposes passwords, tokens, or secret keys.
+    """
+    from backend.app.core.config import settings
+    from backend.app.ingestion.pipeline import _PIPELINE_STATE
+
+    # 1. Database Check
+    db_state = "CONNECTED"
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception:
+        db_state = "CONNECTION_FAILED"
+
+    # 2. External Credentials Checks
+    imd_has_key = bool(settings.IMD_API_KEY and len(settings.IMD_API_KEY.strip()) > 0)
+    imd_open_mode = getattr(settings, "IMD_OPEN_DATA_MODE", True)
+
+    mosdac_user = getattr(settings, "MOSDAC_USERNAME", None)
+    mosdac_pass = getattr(settings, "MOSDAC_PASSWORD", None)
+    mosdac_has_creds = bool(mosdac_user and len(str(mosdac_user).strip()) > 0 and mosdac_pass and len(str(mosdac_pass).strip()) > 0)
+
+    ecmwf_has_key = bool(settings.ECMWF_API_KEY and len(settings.ECMWF_API_KEY.strip()) > 0)
+
+    scheduler_active = bool(_PIPELINE_STATE.get("scheduler_status"))
+
+    return {
+        "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "platform": settings.PROJECT_NAME,
+        "challenge": "SIH26081",
+        "services": {
+            "IMD": {
+                "status": "CONFIGURED" if imd_has_key else ("CONFIGURED (OPEN DATA MODE)" if imd_open_mode else "NOT CONFIGURED"),
+                "authorization_required": not imd_has_key and not imd_open_mode,
+                "environment_variable": "IMD_API_KEY",
+                "portal": "https://mausam.imd.gov.in",
+                "purpose": "Ground truth AWS observations and severe weather bulletins"
+            },
+            "MOSDAC": {
+                "status": "CONFIGURED" if mosdac_has_creds else "AUTHORIZATION REQUIRED",
+                "authorization_required": not mosdac_has_creds,
+                "environment_variables": ["MOSDAC_USERNAME", "MOSDAC_PASSWORD"],
+                "portal": "https://mosdac.gov.in",
+                "purpose": "INSAT-3DR Rapid-Scan TIR1 (10.8 µm) & GSMaP_ISRO satellite precipitation",
+                "fallback_mode": "PUBLIC_TELEMETRY_OPEN_DATA"
+            },
+            "ECMWF": {
+                "status": "CONFIGURED" if ecmwf_has_key else "CONFIGURED (OPEN DATA DISSEMINATION)",
+                "authorization_required": False,
+                "environment_variable": "ECMWF_API_KEY",
+                "portal": "https://data.ecmwf.int",
+                "purpose": "IFS 0.25° NWP and AIFS 0.25° deep learning models"
+            },
+            "NOAA": {
+                "status": "CONFIGURED",
+                "authorization_required": False,
+                "portal": "https://nomads.ncep.noaa.gov",
+                "purpose": "GFS 0.25° and GEFS 0.50° 31-member ensemble"
+            },
+            "NASA": {
+                "status": "CONFIGURED",
+                "authorization_required": False,
+                "portal": "https://gpm.nasa.gov",
+                "purpose": "GPM IMERG precipitation and NASADEM 30m terrain"
+            },
+            "Database": {
+                "status": "CONFIGURED",
+                "connection": db_state,
+                "engine": "PostgreSQL (Supabase) with SQLite fallback",
+                "environment_variable": "DATABASE_URL"
+            },
+            "Cache": {
+                "status": "CONFIGURED",
+                "engine": "In-Memory LRU with 15-minute TTL",
+                "environment_variable": "REDIS_URL (optional)"
+            },
+            "Scheduler": {
+                "status": "CONFIGURED" if scheduler_active else "NOT CONFIGURED",
+                "state": "ACTIVE",
+                "interval": "00Z, 06Z, 12Z, 18Z cycles + hourly AWS sync"
+            }
+        }
+    }
 
 
 

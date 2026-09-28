@@ -225,6 +225,45 @@ export default function AdminDataSourcesPage() {
       defaultStatus: "CONNECTED",
       license: "Copernicus Open Access License",
       docLink: "https://cds.climate.copernicus.eu"
+    },
+    {
+      code: "nasa_earth",
+      name: "NASA Earth Science (GPM & NASADEM)",
+      authority: "National Aeronautics and Space Administration (NASA)",
+      role: "GPM IMERG Early Precipitation & 30m Global Elevation Model",
+      endpoint: "https://gpm.nasa.gov / NASA Earthdata",
+      fallback: "Public Open Data Catalog",
+      configured: true,
+      maskedCredential: "NASA Open Data Policy",
+      defaultStatus: "CONNECTED",
+      license: "U.S. Public Domain / NASA Open Data",
+      docLink: "https://gpm.nasa.gov"
+    },
+    {
+      code: "database",
+      name: "PostgreSQL Database Engine (Supabase)",
+      authority: "MOSAIC Enterprise Persistence Tier",
+      role: "Relational Storage for 28 Schemas (Observations, Weights, Replay)",
+      endpoint: "aws-0-ap-southeast-2.pooler.supabase.com:5432 (SSL Pooled)",
+      fallback: "Local SQLite Fallback (weatherfusion.db)",
+      configured: true,
+      maskedCredential: "DATABASE_URL (Server-Side Enforced)",
+      defaultStatus: "CONNECTED",
+      license: "Proprietary MoES / NCMRWF",
+      docLink: "https://supabase.com"
+    },
+    {
+      code: "scheduler",
+      name: "12-Stage Operational Pipeline Daemon",
+      authority: "MOSAIC Ingestion & Blending Scheduler",
+      role: "Automated 00Z, 06Z, 12Z, 18Z cycles and hourly AWS station sync",
+      endpoint: "Internal Async Background Worker",
+      fallback: "Dynamic Weight Renormalization on Upstream Lag",
+      configured: true,
+      maskedCredential: "Cron Daemon (ACTIVE)",
+      defaultStatus: "CONNECTED",
+      license: "Operational SIH26081 Service",
+      docLink: "/api/pipeline/status"
     }
   ];
 

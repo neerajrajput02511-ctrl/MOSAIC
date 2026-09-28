@@ -936,5 +936,16 @@ export async function fetchSoilMoisture(lat: number = 26.1061, lon: number = 91.
   }
 }
 
+export async function fetchConfigStatus(): Promise<any> {
+  try {
+    const res = await apiFetch("/config/status", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchConfigStatus error:", err);
+    return null;
+  }
+}
+
 
 
