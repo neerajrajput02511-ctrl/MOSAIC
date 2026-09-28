@@ -832,5 +832,109 @@ export async function fetchWeatherHealth(): Promise<any> {
   }
 }
 
+export async function fetchMosdacStatus(): Promise<any> {
+  try {
+    const res = await apiFetch("/mosdac/status", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchMosdacStatus error:", err);
+    return { status: "AUTHORIZATION REQUIRED", message: "Failed to connect to MOSDAC gateway." };
+  }
+}
+
+export async function fetchMosdacDatasets(): Promise<any> {
+  try {
+    const res = await apiFetch("/mosdac/datasets", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchMosdacDatasets error:", err);
+    return null;
+  }
+}
+
+export async function fetchMosdacSatellite(lat: number = 26.1061, lon: number = 91.5859): Promise<any> {
+  try {
+    const res = await apiFetch(`/mosdac/satellite?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchMosdacSatellite error:", err);
+    return null;
+  }
+}
+
+export async function fetchVerificationCompare(
+  variable: string = "rainfall",
+  leadTime: number = 24,
+  region: string = "NER",
+  season: string = "monsoon"
+): Promise<any> {
+  try {
+    const res = await apiFetch(
+      `/verification/compare?variable=${variable}&lead_time=${leadTime}&region=${region}&season=${season}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchVerificationCompare error:", err);
+    return null;
+  }
+}
+
+export async function fetchDataQualityCheck(
+  variable: string,
+  value: number,
+  lat: number = 26.1061,
+  lon: number = 91.5859
+): Promise<any> {
+  try {
+    const res = await apiFetch(
+      `/data-quality/check?variable=${variable}&value=${value}&latitude=${lat}&longitude=${lon}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchDataQualityCheck error:", err);
+    return null;
+  }
+}
+
+export async function fetchJobsStatus(): Promise<any> {
+  try {
+    const res = await apiFetch("/jobs/status", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchJobsStatus error:", err);
+    return null;
+  }
+}
+
+export async function fetchTerrainElevation(lat: number = 26.1061, lon: number = 91.5859): Promise<any> {
+  try {
+    const res = await apiFetch(`/terrain/elevation?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchTerrainElevation error:", err);
+    return null;
+  }
+}
+
+export async function fetchSoilMoisture(lat: number = 26.1061, lon: number = 91.5859): Promise<any> {
+  try {
+    const res = await apiFetch(`/soil/moisture?latitude=${lat}&longitude=${lon}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("fetchSoilMoisture error:", err);
+    return null;
+  }
+}
+
 
 

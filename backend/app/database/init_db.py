@@ -1,6 +1,7 @@
 import datetime
 from sqlalchemy.orm import Session
 from backend.app.database.session import engine, Base, SessionLocal
+from backend.app.database import models
 from backend.app.database.models import Region, Location, ModelMetadata, DataSourceStatus
 
 def init_db():

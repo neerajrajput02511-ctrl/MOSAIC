@@ -291,3 +291,187 @@ class HistoricalReplayCase(Base):
     synoptic_summary = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
+class SatelliteObservation(Base):
+    __tablename__ = "satellite_observations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    satellite_name = Column(String(50), nullable=False) # INSAT-3DR, INSAT-3D, GSMaP, GPM_IMERG
+    sensor = Column(String(50), nullable=False) # IMAGER, SOUNDER, DPR
+    product_code = Column(String(50), nullable=False, index=True) # TIR1_CTBT, GSMAP_RAIN, OLR
+    observation_time = Column(DateTime, nullable=False, index=True)
+    latitude = Column(Float, nullable=False, index=True)
+    longitude = Column(Float, nullable=False, index=True)
+    value = Column(Float, nullable=True)
+    unit = Column(String(20), nullable=False)
+    quality_flag = Column(String(20), default="VALID", nullable=False) # VALID, SUSPECT, CLOUD_MASKED
+    processing_level = Column(String(10), default="L2", nullable=False)
+    source = Column(String(50), default="MOSDAC", nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class RadarObservation(Base):
+    __tablename__ = "radar_observations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    radar_station = Column(String(50), nullable=False, index=True) # GUWAHATI_BORJHAR, AGARTALA, SOHRA
+    band = Column(String(10), nullable=False) # S-Band, C-Band, X-Band
+    sweep_time = Column(DateTime, nullable=False, index=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    reflectivity_dbz = Column(Float, nullable=True)
+    radial_velocity_ms = Column(Float, nullable=True)
+    spectral_width = Column(Float, nullable=True)
+    rain_rate_mm_hr = Column(Float, nullable=True)
+    quality_flag = Column(String(20), default="VALID", nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class LightningObservation(Base):
+    __tablename__ = "lightning_observations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    network = Column(String(50), default="IITM_DAMINI", nullable=False)
+    strike_time = Column(DateTime, nullable=False, index=True)
+    latitude = Column(Float, nullable=False, index=True)
+    longitude = Column(Float, nullable=False, index=True)
+    peak_current_ka = Column(Float, nullable=True)
+    strike_type = Column(String(20), default="CG", nullable=False) # Cloud-to-Ground (CG) or Intra-Cloud (IC)
+    flash_density_per_km2 = Column(Float, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class EnsembleMember(Base):
+    __tablename__ = "ensemble_members"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    forecast_id = Column(Integer, ForeignKey("weather_forecasts.id"), nullable=True)
+    model_code = Column(String(50), default="NOAA_GEFS", nullable=False, index=True)
+    member_number = Column(Integer, nullable=False) # 1 to 31
+    initialization_time = Column(DateTime, nullable=False)
+    forecast_valid_time = Column(DateTime, nullable=False)
+    lead_time_hours = Column(Integer, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    precipitation_mm = Column(Float, nullable=True)
+    temperature_c = Column(Float, nullable=True)
+    wind_speed_ms = Column(Float, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class VerificationCase(Base):
+    __tablename__ = "verification_cases"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False, index=True)
+    model_code = Column(String(50), nullable=False, index=True) # ECMWF_IFS, ECMWF_AIFS, NOAA_GFS, MOSAIC_BLEND
+    variable = Column(String(50), nullable=False)
+    valid_time = Column(DateTime, nullable=False, index=True)
+    lead_time_hours = Column(Integer, nullable=False)
+    forecast_value = Column(Float, nullable=False)
+    observed_value = Column(Float, nullable=False)
+    error_residual = Column(Float, nullable=False) # forecast - observed
+    absolute_error = Column(Float, nullable=False) # abs(forecast - observed)
+    squared_error = Column(Float, nullable=False)
+    season = Column(String(30), nullable=False)
+    weather_regime = Column(String(50), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class VerificationMetric(Base):
+    __tablename__ = "verification_metrics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    model_code = Column(String(50), nullable=False, index=True)
+    region_code = Column(String(50), nullable=False, index=True)
+    variable = Column(String(50), nullable=False)
+    lead_time_hours = Column(Integer, nullable=False)
+    season = Column(String(30), nullable=False)
+    mae = Column(Float, nullable=False)
+    rmse = Column(Float, nullable=False)
+    bias = Column(Float, nullable=False)
+    csi = Column(Float, nullable=True)
+    pod = Column(Float, nullable=True)
+    far = Column(Float, nullable=True)
+    ets = Column(Float, nullable=True)
+    sample_size = Column(Integer, nullable=False)
+    period_start = Column(DateTime, nullable=False)
+    period_end = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class SpatialWeightCell(Base):
+    __tablename__ = "spatial_weights"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    latitude = Column(Float, nullable=False, index=True)
+    longitude = Column(Float, nullable=False, index=True)
+    variable = Column(String(50), default="precipitation_mm", nullable=False)
+    lead_time_hours = Column(Integer, nullable=False)
+    season = Column(String(30), nullable=False)
+    weather_regime = Column(String(50), nullable=True)
+    weights = Column(JSON, nullable=False) # {"ECMWF_AIFS": 0.45, "ECMWF_IFS": 0.32, ...}
+    dominant_model = Column(String(50), nullable=False)
+    entropy = Column(Float, nullable=False)
+    confidence = Column(Float, nullable=False)
+    calculated_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class ForecastRevision(Base):
+    __tablename__ = "forecast_revisions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
+    variable = Column(String(50), nullable=False)
+    target_time = Column(DateTime, nullable=False)
+    previous_blend_value = Column(Float, nullable=False)
+    new_blend_value = Column(Float, nullable=False)
+    difference_value = Column(Float, nullable=False)
+    reason = Column(String(255), nullable=False) # e.g. "Updated ECMWF 12Z cycle + IMD Borjhar AWS telemetry"
+    revised_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class ProvenanceRecord(Base):
+    __tablename__ = "provenance_records"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    entity_type = Column(String(50), nullable=False) # FORECAST, OBSERVATION, BLEND, WEIGHT
+    entity_id = Column(String(100), nullable=False, index=True)
+    source_agency = Column(String(100), nullable=False) # IMD, ECMWF, NOAA, ISRO
+    model_or_sensor = Column(String(100), nullable=False)
+    initialization_or_observation_time = Column(DateTime, nullable=False)
+    valid_time = Column(DateTime, nullable=False)
+    spatial_resolution = Column(String(50), nullable=False)
+    retrieval_timestamp = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    processing_pipeline = Column(String(255), nullable=False)
+    quality_status = Column(String(50), default="VALID", nullable=False)
+
+class TerrainGrid(Base):
+    __tablename__ = "terrain_grid"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    latitude = Column(Float, nullable=False, index=True)
+    longitude = Column(Float, nullable=False, index=True)
+    elevation_m = Column(Float, nullable=False)
+    slope_deg = Column(Float, nullable=False)
+    aspect_deg = Column(Float, nullable=True)
+    ruggedness_index = Column(Float, nullable=True)
+    source = Column(String(50), default="SRTM_NASADEM_30M", nullable=False)
+
+class SoilMoistureRecord(Base):
+    __tablename__ = "soil_moisture_records"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    latitude = Column(Float, nullable=False, index=True)
+    longitude = Column(Float, nullable=False, index=True)
+    valid_time = Column(DateTime, nullable=False, index=True)
+    layer1_topsoil_pct = Column(Float, nullable=True) # 0-7 cm
+    layer2_rootzone_pct = Column(Float, nullable=True) # 7-28 cm
+    saturation_fraction = Column(Float, nullable=True)
+    source = Column(String(50), default="ERA5_LAND_SAC_ISRO", nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class ClimatologyBaseline(Base):
+    __tablename__ = "climatology_baselines"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    region_code = Column(String(50), nullable=False, index=True)
+    month = Column(Integer, nullable=False) # 1 to 12
+    normal_precipitation_mm = Column(Float, nullable=False)
+    normal_tmax_c = Column(Float, nullable=False)
+    normal_tmin_c = Column(Float, nullable=False)
+    heavy_rain_threshold_p95_mm = Column(Float, nullable=False)
+    source = Column(String(100), default="IMD_1981_2010_CLIMATOLOGY", nullable=False)
+
+
