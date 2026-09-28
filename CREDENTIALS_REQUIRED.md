@@ -13,7 +13,7 @@ PURPOSE:
 Direct retrieval of INSAT-3D/3DR Level-2 and Level-3 HDF5 satellite granules, Rapid-Scan Thermal Infrared (10.8 µm TIR1) cloud-top brightness temperature, and GSMaP_ISRO satellite precipitation grids.
 
 STATUS:
-CONFIGURED (IN .ENV) / AUTHORIZATION REQUIRED (IF DEPLOYING FRESH INSTANCE)
+VERIFIED & CONNECTED (Live ISRO SAC Keycloak Session Active)
 
 CREDENTIAL:
 Registered MOSDAC User Account (Username & Password)

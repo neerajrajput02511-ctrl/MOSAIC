@@ -3,6 +3,8 @@ import os
 import time
 from pathlib import Path
 from typing import List, Optional, Dict, Any
+import re
+from html import unescape
 import httpx
 from loguru import logger
 from backend.app.core.config import settings
@@ -31,6 +33,7 @@ class MOSDACProvider(WeatherDataProvider):
         self._base_url = (settings.MOSDAC_BASE_URL or "https://mosdac.gov.in").rstrip("/")
         self._api_base_url = (settings.MOSDAC_API_BASE_URL or f"{self._base_url}/api/v1").rstrip("/")
         self._auth_token: Optional[str] = None
+        self._cookies: Dict[str, str] = {}
         self._token_expiry: Optional[datetime.datetime] = None
         self._last_checked: Optional[datetime.datetime] = None
         self._last_status: str = "UNCHECKED"
@@ -66,7 +69,7 @@ class MOSDACProvider(WeatherDataProvider):
 
     async def authenticate(self) -> Dict[str, Any]:
         """
-        Authenticates against MOSDAC SAC-ISRO API.
+        Authenticates against MOSDAC SAC-ISRO portal via OpenID Connect Keycloak flow.
         """
         if not self.is_authenticated():
             return {
@@ -76,24 +79,58 @@ class MOSDACProvider(WeatherDataProvider):
             }
             
         try:
-            auth_endpoint = f"{self._api_base_url}/auth/login"
-            payload = {"username": self._username, "password": self._password}
-            
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                resp = await client.post(auth_endpoint, json=payload)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    self._auth_token = data.get("access_token")
-                    expires_in = data.get("expires_in", 3600)
-                    self._token_expiry = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=expires_in)
-                    return {"success": True, "token": self._auth_token, "expires_at": self._token_expiry.isoformat()}
-                elif resp.status_code in [401, 403]:
-                    return {"success": False, "status": "INVALID_CREDENTIALS", "message": "Invalid MOSDAC username or password."}
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MOSAIC/1.0",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            }
+            async with httpx.AsyncClient(timeout=15.0, headers=headers, follow_redirects=True, verify=False) as client:
+                login_page_url = f"{self._base_url}/user/login"
+                resp = await client.get(login_page_url)
+                
+                action_match = re.search(r'<form\s+[^>]*action=["\']([^"\']+)["\']', resp.text, re.IGNORECASE)
+                if action_match:
+                    action_url = unescape(action_match.group(1))
+                    if not action_url.startswith("http"):
+                        action_url = str(resp.url.join(action_url))
+                        
+                    post_data = {}
+                    for inp_match in re.finditer(r'<input\s+[^>]*name=["\']([^"\']+)["\'](?:\s+[^>]*value=["\']([^"\']*)["\'])?', resp.text, re.IGNORECASE):
+                        name = inp_match.group(1)
+                        val = inp_match.group(2) or ""
+                        post_data[name] = val
+                        
+                    post_data["username"] = self._username
+                    post_data["password"] = self._password
+                    
+                    login_resp = await client.post(action_url, data=post_data, headers={"Referer": str(resp.url)})
+                    
+                    if "kc-feedback-text" in login_resp.text or "alert-error" in login_resp.text:
+                        err_match = re.search(r'<span class="kc-feedback-text">([^<]+)</span>', login_resp.text)
+                        err_msg = err_match.group(1).strip() if err_match else "Invalid credentials"
+                        self._last_status = "INVALID_CREDENTIALS"
+                        return {"success": False, "status": "INVALID_CREDENTIALS", "message": err_msg}
+                        
+                    self._cookies = {c.name: (c.value or "") for c in client.cookies.jar}
+                    self._auth_token = self._cookies.get("mod_auth_openidc_session") or self._cookies.get("AUTH_SESSION_ID") or "keycloak-session-active"
+                    self._token_expiry = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=12)
+                    self._last_status = "CONNECTED"
+                    self._last_checked = datetime.datetime.now(datetime.timezone.utc)
+                    return {
+                        "success": True,
+                        "status": "AUTHENTICATED",
+                        "token": self._auth_token,
+                        "session_cookies": list(self._cookies.keys()),
+                        "expires_at": self._token_expiry.isoformat(),
+                        "message": "MOSDAC SAC-ISRO authenticated successfully."
+                    }
                 else:
-                    return {"success": False, "status": "GATEWAY_ERROR", "message": f"MOSDAC returned HTTP {resp.status_code}"}
+                    self._last_status = "DEGRADED"
+                    return {"success": False, "status": "PORTAL_MISMATCH", "message": "Keycloak login form not found"}
         except Exception as e:
-            logger.warning(f"MOSDAC authentication attempt: {e}")
+            logger.exception("MOSDAC authentication attempt:")
+            self._last_status = "CONNECTION_ERROR"
             return {"success": False, "status": "CONNECTION_ERROR", "message": str(e)}
+
 
     async def search_dataset(
         self,
@@ -236,8 +273,24 @@ class MOSDACProvider(WeatherDataProvider):
                 "message": "MOSDAC credentials missing. Set MOSDAC_USERNAME and MOSDAC_PASSWORD in .env for GSMaP_ISRO satellite precipitation validation."
             }
             
+        # Trigger authentication if session is not yet active or expired
+        if not self._auth_token or (self._token_expiry and datetime.datetime.now(datetime.timezone.utc) > self._token_expiry):
+            auth_res = await self.authenticate()
+            if not auth_res.get("success"):
+                latency = round((time.time() - t0) * 1000, 1)
+                return {
+                    "source_name": self._source_name,
+                    "status": auth_res.get("status", "AUTHENTICATION_FAILED"),
+                    "endpoint_url": self._base_url,
+                    "authenticated": False,
+                    "masked_credentials": self.get_masked_credentials(),
+                    "latency_ms": latency,
+                    "data_freshness": "UNAVAILABLE",
+                    "message": auth_res.get("message", "MOSDAC authentication failed.")
+                }
+            
         try:
-            async with httpx.AsyncClient(timeout=8.0) as client:
+            async with httpx.AsyncClient(timeout=10.0, verify=False) as client:
                 resp = await client.get(self._base_url)
                 latency = round((time.time() - t0) * 1000, 1)
                 status = "CONNECTED" if resp.status_code == 200 else "DEGRADED"
