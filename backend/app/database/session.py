@@ -1,5 +1,6 @@
 import os
-from sqlalchemy import create_engine
+from loguru import logger
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from backend.app.core.config import settings
 
@@ -16,19 +17,24 @@ engine_kwargs = {
 if db_url.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:
-    # Supabase / PostgreSQL enterprise pooling & auto-reconnect
+    # Supabase / PostgreSQL enterprise pooling & auto-reconnect with connect_timeout
     engine_kwargs["pool_size"] = 10
     engine_kwargs["max_overflow"] = 20
     engine_kwargs["pool_pre_ping"] = True
     engine_kwargs["pool_recycle"] = 300
+    connect_args = {"connect_timeout": 4}
     if "sslmode" not in db_url:
-        engine_kwargs["connect_args"] = {"sslmode": "require"}
+        connect_args["sslmode"] = "require"
+    engine_kwargs["connect_args"] = connect_args
 
-
-engine = create_engine(
-    db_url,
-    **engine_kwargs
-)
+try:
+    engine = create_engine(db_url, **engine_kwargs)
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+except Exception as e:
+    logger.warning(f"Primary database ({db_url.split('@')[-1] if '@' in db_url else db_url}) unreachable: {e}. Activating high-availability local SQLite fallback.")
+    db_url = "sqlite:///./weatherfusion.db"
+    engine = create_engine(db_url, connect_args={"check_same_thread": False}, future=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
