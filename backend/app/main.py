@@ -19,7 +19,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    # The API uses no cookie-based session. Wildcard origins must not be paired
+    # with credentialed CORS responses, which browsers reject on cross-origin
+    # requests such as localhost:3000 -> 127.0.0.1:8000.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

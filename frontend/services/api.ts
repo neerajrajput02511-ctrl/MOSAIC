@@ -11,9 +11,11 @@ const DEFAULT_PUBLIC_BACKEND = "https://mosaic-mgbt.onrender.com/api/v1";
 
 export function getApiBase(): string {
   if (typeof window !== "undefined") {
-    // If running on local dev over HTTP (localhost or 127.0.0.1), always connect to local backend on 127.0.0.1
+    // Keep the API on the same loopback hostname as the frontend. Mixing
+    // localhost and 127.0.0.1 can route browser requests through different
+    // loopback interfaces in desktop and embedded browser sessions.
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      return "http://127.0.0.1:8000/api/v1";
+      return `http://${window.location.hostname}:8000/api/v1`;
     }
   }
 
@@ -37,8 +39,10 @@ let _isBackendHealthy: boolean | null = null;
 export async function checkBackendHealth(): Promise<boolean> {
   const base = getApiBase();
   const headers: Record<string, string> = {
-    "bypass-tunnel-reminder": "true",
   };
+  if (!base.includes("localhost") && !base.includes("127.0.0.1")) {
+    headers["bypass-tunnel-reminder"] = "true";
+  }
 
   // 1. Try fast /ping endpoint (instantaneous, avoids heavy external API sweeps)
   try {
@@ -103,11 +107,25 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   }
   const url = path.startsWith("http") ? path : `${base}${cleanPath}`;
   const headers = new Headers(options.headers || {});
-  headers.set("bypass-tunnel-reminder", "true");
-  return fetch(url, {
-    ...options,
-    headers,
-  });
+  // This header is only needed to bypass public tunnel interstitials. Sending
+  // it to localhost forces a cross-origin preflight for every API request.
+  if (!base.includes("localhost") && !base.includes("127.0.0.1")) {
+    headers.set("bypass-tunnel-reminder", "true");
+  }
+  const requestOptions: RequestInit = { ...options, headers };
+  try {
+    return await fetch(url, requestOptions);
+  } catch (error) {
+    const isLocalBase = base.includes("localhost") || base.includes("127.0.0.1");
+    if (!isLocalBase || !url.startsWith(base)) throw error;
+
+    // Some embedded browsers resolve one loopback name through a different
+    // interface than the desktop browser. Retry the other local alias once.
+    const alternateBase = base.includes("localhost")
+      ? base.replace("localhost", "127.0.0.1")
+      : base.replace("127.0.0.1", "localhost");
+    return fetch(`${alternateBase}${url.slice(base.length)}`, requestOptions);
+  }
 }
 
 export async function fetchPipelineStatus(): Promise<any> {
@@ -947,6 +965,3 @@ export async function fetchConfigStatus(): Promise<any> {
     return null;
   }
 }
-
-
-

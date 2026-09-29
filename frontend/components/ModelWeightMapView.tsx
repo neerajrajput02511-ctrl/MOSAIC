@@ -62,6 +62,78 @@ export type OverlayViewMode =
 
 export type BaseMapStyle = "satellite" | "dark" | "terrain" | "street";
 
+const MODEL_COLORS: Record<string, string> = {
+  aifs: "#8b5cf6",
+  ifs: "#06b6d4",
+  gfs: "#3b82f6",
+  gefs: "#f59e0b",
+};
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+}
+
+function mixHex(start: string, end: string, amount: number): string {
+  const t = clamp01(amount);
+  const channels = [1, 3, 5].map((offset) => {
+    const a = Number.parseInt(start.slice(offset, offset + 2), 16);
+    const b = Number.parseInt(end.slice(offset, offset + 2), 16);
+    return Math.round(a + (b - a) * t).toString(16).padStart(2, "0");
+  });
+  return `#${channels.join("")}`;
+}
+
+function colorBetween(a: string, b: string, amount: number): string {
+  return mixHex(a, b, amount);
+}
+
+function modelKey(model: string): string {
+  if (model.includes("AIFS")) return "aifs";
+  if (model.includes("IFS")) return "ifs";
+  if (model.includes("GFS")) return "gfs";
+  return "gefs";
+}
+
+function colorForMetric(value: number, mode: OverlayViewMode): string {
+  const v = clamp01(value);
+  if (mode === "disagreement") {
+    return v < 0.5
+      ? colorBetween("#10b981", "#f59e0b", v / 0.5)
+      : colorBetween("#f59e0b", "#ef4444", (v - 0.5) / 0.5);
+  }
+  if (mode === "entropy") {
+    return v < 0.5
+      ? colorBetween("#06b6d4", "#6366f1", v / 0.5)
+      : colorBetween("#6366f1", "#ec4899", (v - 0.5) / 0.5);
+  }
+  return v < 0.5
+    ? colorBetween("#f97316", "#3b82f6", v / 0.5)
+    : colorBetween("#3b82f6", "#10b981", (v - 0.5) / 0.5);
+}
+
+function getCellColor(
+  weights: Record<string, number>,
+  dominantModel: string,
+  mode: OverlayViewMode,
+  disagreement: number,
+  entropy: number,
+  confidence: number,
+): string {
+  const keys: Record<string, string> = {
+    aifs: "ECMWF_AIFS",
+    ifs: "ECMWF_IFS",
+    gfs: "NOAA_GFS",
+    gefs: "NOAA_GEFS",
+  };
+  if (mode === "disagreement") return colorForMetric(disagreement / 0.5, mode);
+  if (mode === "entropy") return colorForMetric(entropy, mode);
+  if (mode === "confidence") return colorForMetric(confidence, mode);
+
+  const key = mode === "dominant" ? modelKey(dominantModel) : mode;
+  const weight = clamp01(weights[keys[key]] ?? 0);
+  return mixHex("#f8fafc", MODEL_COLORS[key], weight / 0.62);
+}
+
 const MAP_STYLES: Record<BaseMapStyle, { name: string; style: any }> = {
   satellite: {
     name: "Satellite Hybrid",
@@ -196,6 +268,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
   const [mapStyleType, setMapStyleType] = useState<BaseMapStyle>("satellite");
   const [overlayViewMode, setOverlayViewMode] = useState<OverlayViewMode>("dominant");
   const [overlayOpacity, setOverlayOpacity] = useState<number>(0.70);
+  const [mapViewportRevision, setMapViewportRevision] = useState(0);
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -229,86 +302,11 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
   // Helper function to compute active color and opacity for a region based on the overlay mode
   const computeStyleForRegion = useCallback((r: SpatialRegionCell, mode: OverlayViewMode, opacityFactor: number) => {
     const w = r.weights || {};
-    const domWeight = (r.dominant_weight_pct || 40) / 100.0;
-    let activeColor = r.color || "#8b5cf6";
-    let activeOpacity = 0.50;
-
-    switch (mode) {
-      case "dominant":
-        activeColor = r.dominant_model.includes("AIFS") 
-          ? "#8b5cf6" 
-          : r.dominant_model.includes("IFS") 
-          ? "#06b6d4" 
-          : r.dominant_model.includes("GFS") 
-          ? "#3b82f6" 
-          : "#f59e0b";
-        // Section 6: Dominant model weight intensity (72% visibly stronger than 41%)
-        activeOpacity = Math.max(0.25, Math.min(0.95, (0.22 + domWeight * 0.58) * opacityFactor));
-        break;
-
-      case "aifs":
-        activeColor = "#8b5cf6";
-        const aifsW = w["ECMWF_AIFS"] || 0;
-        activeOpacity = Math.max(0.10, Math.min(0.95, (aifsW * 1.15) * opacityFactor));
-        break;
-
-      case "ifs":
-        activeColor = "#06b6d4";
-        const ifsW = w["ECMWF_IFS"] || 0;
-        activeOpacity = Math.max(0.10, Math.min(0.95, (ifsW * 1.15) * opacityFactor));
-        break;
-
-      case "gfs":
-        activeColor = "#3b82f6";
-        const gfsW = w["NOAA_GFS"] || 0;
-        activeOpacity = Math.max(0.10, Math.min(0.95, (gfsW * 1.15) * opacityFactor));
-        break;
-
-      case "gefs":
-        activeColor = "#f59e0b";
-        const gefsW = w["NOAA_GEFS"] || 0;
-        activeOpacity = Math.max(0.10, Math.min(0.95, (gefsW * 1.15) * opacityFactor));
-        break;
-
-      case "disagreement":
-        const vals = Object.values(w);
-        const dis = r.disagreement ?? (vals.length > 0 ? Math.max(...vals) - Math.min(...vals) : 0.22);
-        if (dis < 0.18) {
-          activeColor = "#10b981"; // Low disagreement (emerald)
-        } else if (dis < 0.30) {
-          activeColor = "#f59e0b"; // Moderate disagreement (amber)
-        } else {
-          activeColor = "#ef4444"; // High disagreement (crimson)
-        }
-        activeOpacity = Math.max(0.28, Math.min(0.95, (0.35 + dis * 0.50) * opacityFactor));
-        break;
-
-      case "entropy":
-        const ent = r.bma_entropy ?? 0.82;
-        if (ent < 0.65) {
-          activeColor = "#06b6d4"; // Low entropy (determinate)
-        } else if (ent < 0.82) {
-          activeColor = "#6366f1"; // Moderate entropy
-        } else {
-          activeColor = "#ec4899"; // High entropy (uncertainty spread)
-        }
-        activeOpacity = Math.max(0.28, Math.min(0.95, (0.35 + ent * 0.45) * opacityFactor));
-        break;
-
-      case "confidence":
-        const conf = r.confidence ?? 0.78;
-        if (conf > 0.75) {
-          activeColor = "#10b981"; // High confidence
-        } else if (conf > 0.55) {
-          activeColor = "#3b82f6"; // Moderate confidence
-        } else {
-          activeColor = "#f97316"; // Low confidence
-        }
-        activeOpacity = Math.max(0.28, Math.min(0.95, (0.35 + conf * 0.45) * opacityFactor));
-        break;
-    }
-
-    return { activeColor, activeOpacity };
+    const disagreement = r.disagreement ?? 0;
+    const entropy = r.bma_entropy ?? 0;
+    const confidence = r.confidence ?? 0;
+    const activeColor = getCellColor(w, r.dominant_model, mode, disagreement, entropy, confidence);
+    return { activeColor, activeOpacity: Math.max(0.12, Math.min(0.95, opacityFactor)) };
   }, []);
 
   // 1. Fetch live telemetry from backend
@@ -380,56 +378,15 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           const domModel = c.dominantModel || c.dominant_model || "ECMWF_AIFS";
           const domWeight = (c.dominant_weight_pct || 40) / 100.0;
           
-          let cellColor = "#8b5cf6";
-          let cellOpacity = 0.55;
-          
-          switch (currentMode) {
-            case "dominant":
-              cellColor = domModel.includes("AIFS") 
-                ? "#8b5cf6" 
-                : domModel.includes("IFS") 
-                ? "#06b6d4" 
-                : domModel.includes("GFS") 
-                ? "#3b82f6" 
-                : "#f59e0b";
-              cellOpacity = Math.max(0.30, Math.min(0.95, (0.35 + domWeight * 0.55) * Math.max(0.45, currentOpacity)));
-              break;
-            case "aifs":
-              cellColor = "#8b5cf6";
-              const aifsW = w["ECMWF_AIFS"] || 0;
-              cellOpacity = Math.max(0.18, Math.min(0.95, (0.20 + aifsW * 0.80) * currentOpacity));
-              break;
-            case "ifs":
-              cellColor = "#06b6d4";
-              const ifsW = w["ECMWF_IFS"] || 0;
-              cellOpacity = Math.max(0.18, Math.min(0.95, (0.20 + ifsW * 0.80) * currentOpacity));
-              break;
-            case "gfs":
-              cellColor = "#3b82f6";
-              const gfsW = w["NOAA_GFS"] || 0;
-              cellOpacity = Math.max(0.18, Math.min(0.95, (0.20 + gfsW * 0.80) * currentOpacity));
-              break;
-            case "gefs":
-              cellColor = "#f59e0b";
-              const gefsW = w["NOAA_GEFS"] || 0;
-              cellOpacity = Math.max(0.18, Math.min(0.95, (0.20 + gefsW * 0.80) * currentOpacity));
-              break;
-            case "disagreement":
-              const dis = c.disagreement ?? 0.22;
-              cellColor = dis < 0.20 ? "#10b981" : (dis < 0.35 ? "#f59e0b" : "#ef4444");
-              cellOpacity = Math.max(0.28, Math.min(0.95, (0.32 + dis * 0.58) * currentOpacity));
-              break;
-            case "entropy":
-              const ent = c.entropy ?? 0.82;
-              cellColor = ent < 0.65 ? "#06b6d4" : (ent < 0.82 ? "#6366f1" : "#ec4899");
-              cellOpacity = Math.max(0.28, Math.min(0.95, (0.32 + ent * 0.55) * currentOpacity));
-              break;
-            case "confidence":
-              const conf = c.confidence ?? 0.78;
-              cellColor = conf > 0.75 ? "#10b981" : (conf > 0.55 ? "#3b82f6" : "#f97316");
-              cellOpacity = Math.max(0.28, Math.min(0.95, (0.32 + conf * 0.55) * currentOpacity));
-              break;
-          }
+          const cellColor = getCellColor(
+            w,
+            domModel,
+            currentMode,
+            c.disagreement ?? 0,
+            c.entropy ?? 0,
+            c.confidence ?? 0,
+          );
+          const cellOpacity = Math.max(0.12, Math.min(0.95, currentOpacity));
 
           const bbox = c.bbox || [c.longitude - 0.125, c.latitude - 0.125, c.longitude + 0.125, c.latitude + 0.125];
           return {
@@ -452,7 +409,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               region_code: c.region_code || "",
               region_name: c.region_name || "Meteorological Subdivision",
               dominant_model: domModel,
-              dominant_weight_pct: c.dominant_weight_pct || Math.round(domWeight * 100),
+              dominant_weight_pct: c.dominant_weight_pct ?? Math.round(domWeight * 100),
               cell_color: cellColor,
               cell_opacity: cellOpacity,
               w_aifs: Math.round((w["ECMWF_AIFS"] || 0) * 100),
@@ -460,14 +417,15 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
               w_gfs: Math.round((w["NOAA_GFS"] || 0) * 100),
               w_gefs: Math.round((w["NOAA_GEFS"] || 0) * 100),
               elevation_m: Math.round(c.elevation_m || 0),
-              entropy: c.entropy || 0.82,
-              confidence: c.confidence || 0.78,
-              disagreement: c.disagreement || 0.22,
+              entropy: c.entropy ?? 0,
+              confidence: c.confidence ?? 0,
+              disagreement: c.disagreement ?? 0,
               lead_time_hours: c.leadTime || leadTime
             }
           };
         })
       };
+      const hasGridData = gridCellsGeoJSON.features.length > 0;
 
       // 2. GeoJSON for Subdivisions
       const subdivisionsGeoJSON: GeoJSON.FeatureCollection = {
@@ -487,7 +445,9 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                 dominant_model: r.dominant_model,
                 dominant_weight_pct: r.dominant_weight_pct,
                 active_color: style.activeColor,
-                active_opacity: style.activeOpacity,
+                // Grid cells carry the detailed weight field. Use subdivision fills
+                // only when a grid is absent, so coarse fills cannot hide the data.
+                active_opacity: hasGridData ? 0 : style.activeOpacity,
                 color: style.activeColor,
                 elevation_m: r.elevation_m || 0,
                 orographic_feature: r.orographic_feature || "",
@@ -566,9 +526,9 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           type: "line",
           source: "grid-cells-src",
           paint: {
-            "line-color": "#ffffff",
-            "line-width": 0.5,
-            "line-opacity": 0.22
+            "line-color": "#f8fafc",
+            "line-width": 0.7,
+            "line-opacity": 0.42
           }
         });
 
@@ -640,6 +600,25 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
         });
       }
 
+      // A small colored center mark keeps individual 0.25° grid values legible
+      // over satellite imagery at regional zoom levels, where cell edges can blend
+      // into terrain and administrative boundaries.
+      if (m.getSource("grid-cells-src") && !m.getLayer("grid-cells-centers")) {
+        m.addLayer({
+          id: "grid-cells-centers",
+          type: "circle",
+          source: "grid-cells-src",
+          paint: {
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 1.5, 7, 3.2, 10, 4.5],
+            "circle-color": ["get", "cell_color"],
+            "circle-opacity": ["get", "cell_opacity"],
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 0.5,
+            "circle-stroke-opacity": 0.75
+          }
+        });
+      }
+
       // Upsert Subdivisions Source & Layers
       const subSource = m.getSource("subdivisions-src") as maplibregl.GeoJSONSource;
       if (subSource) {
@@ -657,12 +636,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
           source: "subdivisions-src",
           paint: {
             "fill-color": ["get", "active_color"],
-            "fill-opacity": [
-              "case",
-              ["==", ["get", "isSelected"], 1],
-              0.35,
-              0.0
-            ]
+              "fill-opacity": ["get", "active_opacity"]
           }
         });
 
@@ -800,12 +774,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
       }
       if (m.getLayer("subdivisions-fill")) {
         m.setPaintProperty("subdivisions-fill", "fill-color", ["get", "active_color"]);
-        m.setPaintProperty("subdivisions-fill", "fill-opacity", [
-          "case",
-          ["==", ["get", "isSelected"], 1],
-          0.35,
-          0.0
-        ]);
+        m.setPaintProperty("subdivisions-fill", "fill-opacity", ["get", "active_opacity"]);
       }
       if (m.getLayer("subdivisions-line")) {
         m.setPaintProperty("subdivisions-line", "line-color", [
@@ -846,6 +815,17 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     });
     map.current = m;
 
+    let overlayFrame: number | null = null;
+    const refreshProjectedOverlay = () => {
+      if (overlayFrame !== null) return;
+      overlayFrame = window.requestAnimationFrame(() => {
+        overlayFrame = null;
+        setMapViewportRevision((revision) => revision + 1);
+      });
+    };
+    m.on("move", refreshProjectedOverlay);
+    m.on("resize", refreshProjectedOverlay);
+
     m.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
 
     hoverPopup.current = new maplibregl.Popup({
@@ -863,6 +843,9 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
     });
 
     return () => {
+      m.off("move", refreshProjectedOverlay);
+      m.off("resize", refreshProjectedOverlay);
+      if (overlayFrame !== null) window.cancelAnimationFrame(overlayFrame);
       m.remove();
       map.current = null;
       mapReadyRef.current = false;
@@ -1345,6 +1328,61 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
             {/* MapLibre DOM Node */}
             <div ref={mapContainer} className="w-full h-full" />
 
+            {/* Projected data overlay: renders the same grid cell weights directly
+                above the basemap, keeping the spatial field visible on satellite,
+                terrain, and street styles. */}
+            <svg
+              aria-hidden="true"
+              className="absolute inset-0 z-[4] h-full w-full pointer-events-none"
+              viewBox={`0 0 ${map.current?.getCanvas().clientWidth || 1} ${map.current?.getCanvas().clientHeight || 1}`}
+              data-camera-revision={mapViewportRevision}
+            >
+              {mapReadyRef.current && mapData?.cells?.map((cell, index) => {
+                const bounds = cell.bbox || [
+                  cell.longitude - 0.125,
+                  cell.latitude - 0.125,
+                  cell.longitude + 0.125,
+                  cell.latitude + 0.125,
+                ];
+                const mapInstance = map.current;
+                if (!mapInstance || !bounds.every(Number.isFinite)) return null;
+                const corners = [
+                  mapInstance.project([bounds[0], bounds[1]]),
+                  mapInstance.project([bounds[2], bounds[1]]),
+                  mapInstance.project([bounds[2], bounds[3]]),
+                  mapInstance.project([bounds[0], bounds[3]]),
+                ];
+                const canvas = mapInstance.getCanvas();
+                const xValues = corners.map((point) => point.x);
+                const yValues = corners.map((point) => point.y);
+                if (
+                  Math.max(...xValues) < 0 || Math.min(...xValues) > canvas.clientWidth ||
+                  Math.max(...yValues) < 0 || Math.min(...yValues) > canvas.clientHeight
+                ) return null;
+                const dominantModel = cell.dominantModel || "ECMWF_AIFS";
+                const color = getCellColor(
+                  cell.weights || {},
+                  dominantModel,
+                  overlayViewMode,
+                  cell.disagreement ?? 0,
+                  cell.entropy ?? 0,
+                  cell.confidence ?? 0,
+                );
+                return (
+                  <polygon
+                    key={`spatial-cell-${index}`}
+                    points={corners.map((point) => `${point.x},${point.y}`).join(" ")}
+                    fill={color}
+                    fillOpacity={overlayOpacity}
+                    stroke="#f8fafc"
+                    strokeOpacity={0.38}
+                    strokeWidth={0.7}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                );
+              })}
+            </svg>
+
             {/* In-Map Top-Left Status Overlay */}
             <div className="absolute top-3 left-3 z-10 flex items-center gap-2 pointer-events-none">
               <div className="px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-md border border-[#D9E0E7] text-[11px] font-mono text-[#0B1F33] flex items-center gap-1.5 shadow-sm">
@@ -1382,7 +1420,7 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                     </div>
                   </div>
                   <div className="text-[9px] text-[#64748B] pt-1 border-t border-[#EDF2F7]">
-                    Intensity indicates dominant weight (40%–100%)
+                    Darker fill means a higher dominant model weight
                   </div>
                 </div>
               )}
@@ -1397,9 +1435,9 @@ export const ModelWeightMapView: React.FC<ModelWeightMapViewProps> = ({
                     <div 
                       className="w-32 h-2.5 rounded border border-[#D9E0E7]"
                       style={{
-                        background: `linear-gradient(to right, rgba(0,0,0,0.05), ${
+                        background: `linear-gradient(to right, #f8fafc 0%, ${
                           overlayViewMode === "aifs" ? "#8b5cf6" : overlayViewMode === "ifs" ? "#06b6d4" : overlayViewMode === "gfs" ? "#3b82f6" : "#f59e0b"
-                        })`
+                        } 62%, ${overlayViewMode === "aifs" ? "#8b5cf6" : overlayViewMode === "ifs" ? "#06b6d4" : overlayViewMode === "gfs" ? "#3b82f6" : "#f59e0b"} 100%)`
                       }}
                     />
                     <span className="text-[#64748B]">100%</span>
